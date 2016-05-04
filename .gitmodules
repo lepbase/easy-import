@@ -1,0 +1,8 @@
+[submodule "ee"]
+	path = ee
+	url = https://github.com/lepbase/ensembl-easy
+	branch = master
+[submodule "gff-parser"]
+	path = gff-parser
+	url = https://github.com/rjchallis/gff-parser
+	branch = develop
