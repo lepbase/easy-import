@@ -5,9 +5,13 @@ use Cwd 'abs_path';
 use File::Basename;
 
 ## find the full path to the directory that this script is executing in
-my $dirname  = dirname(abs_path($0));
-
+our $dirname;
+BEGIN {
+  $dirname  = dirname(abs_path($0));
+}
+print $dirname,"\n";
 use lib "$dirname/../modules";
+use lib "$dirname/../gff-parser";
 use Ensembl_Import;
 
 ## load parameters from an INI-style config file
