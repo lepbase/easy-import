@@ -16,7 +16,7 @@ sudo apt-get install git
 cd ~
 git clone https://github.com/lepbase/easy-import ei # with gff-parser and ensembl-easy as submodules
 cd ~/ei/ee
-sudo ./install-dependencies.sh import.ini
+sudo ./install-dependencies.sh ../setup.ini
 ```
 
 ### Step 1.2: Setup database connections
@@ -25,12 +25,22 @@ Again, recycle ensembl-easy
 
 ```bash
 cd ~/ei/ee
-./setup-databases.sh import-databases.ini
+./setup-databases.sh ../setup-db.ini
 ```
+
+### Step 1.3: git clone any essential ensembl repositories
+
+Recycle ensembl-easy (could be submodules?)
+
+```bash
+cd ~/ei
+./update-ensembl-code.sh ../setup.ini
+```
+
 
 ## 2. Core import
 
-### Step 2.1: Fetch assembly/annotation files
+### Step 2.1: Fetch/summarise assembly/annotation files
 
 ```bash
 cd ~/ei/core
@@ -77,7 +87,7 @@ cd ~/ei/core
 
 ## 4. Web site configuration
 
-### Step 4.1: Update Ensembl code
+### Step 4.1: Update Ensembl webcode
 
 Return to step 3 of ensembl-easy
 
@@ -86,7 +96,7 @@ cd ~/ei/ee
 ./update-ensembl-code.sh example.ini
 ```
 
-### Step 4.2: Reload Ensembl site
+### Step 4.2: Reload Ensembl website
 
 Step 4 of ensembl-easy
 
