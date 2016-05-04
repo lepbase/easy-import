@@ -43,13 +43,17 @@ cd ~/ei/ee
 ### Step 2.1: Fetch/summarise assembly/annotation files
 
 ```bash
-cd ~/ei/core
+mkdir ~/import
+cd ~/import
+perl ../ei/core/00_summarise_files.pl ../ei/conf/test.ini
 ```
 
 ### Step 2.2: create database and load sequence data
 
 ```bash
-cd ~/ei/core
+cd ~/import
+perl ../ei/core/10_import_sequences.pl ../ei/conf/test.ini
+perl ../ei/core/12_import_sequence_synonyms.pl ../ei/conf/test.ini
 ```
 
 ### Step 2.3: Prepare the gff file for import
@@ -58,12 +62,14 @@ Handle any exceptions
 
 ```bash
 cd ~/ei/core
+perl ../ei/core/20_prepare_gff.pl ../ei/conf/test.ini
 ```
 
 ### Step 2.4: import gff from modified file
 
 ```bash
 cd ~/ei/core
+perl ../ei/core/30_import_gene_models.pl ../ei/conf/test.ini
 ```
 
 ### Step 2.5: import additional annotations

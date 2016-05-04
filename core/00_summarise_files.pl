@@ -9,7 +9,6 @@ our $dirname;
 BEGIN {
   $dirname  = dirname(abs_path($0));
 }
-print $dirname,"\n";
 use lib "$dirname/../modules";
 use lib "$dirname/../gff-parser";
 use Ensembl_Import;
