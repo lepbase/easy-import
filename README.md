@@ -14,7 +14,7 @@ sudo apt-get update
 sudo apt-get upgrade
 sudo apt-get install git
 cd ~
-git clone https://github.com/lepbase/easy-import ei # with gff-parser and ensembl-easy as submodules
+git clone --recursive https://github.com/lepbase/easy-import ei # with gff-parser and ensembl-easy as submodules
 cd ~/ei/ee
 sudo ./install-dependencies.sh ../setup.ini
 ```
