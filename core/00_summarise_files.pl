@@ -1,12 +1,14 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Ensembl_Import;
 use Cwd 'abs_path';
 use File::Basename;
 
 ## find the full path to the directory that this script is executing in
 my $dirname  = dirname(abs_path($0));
+
+use lib "$dirname/../modules";
+use Ensembl_Import;
 
 ## load parameters from an INI-style config file
 ## check that all required parameters have been defined in the config file
