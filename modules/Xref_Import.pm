@@ -399,7 +399,7 @@ sub repeat_consensus {
 
 sub repeat_type {
   my $repeat_class = shift;
-  $repeat_class = substr($repeat_class,0,3)
+  $repeat_class = substr($repeat_class,0,3);
   my %types = ( 'LIN' => 'Type I Transposons/LINE',
                 'SIN' => 'Type I Transposons/SINE',
                 'DNA' => 'Type II Transposons',
