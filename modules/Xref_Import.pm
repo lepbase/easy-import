@@ -375,7 +375,7 @@ sub protein_feature {
 sub repeat_consensus {
 	my ($dbh,$repeat_name,$repeat_class) = @_;
   my $id;
-	my $sth = $dbh->prepare("SELECT repeat_consenus_id FROM repeat_consensus WHERE repeat_name = '$repeat_name'");
+	my $sth = $dbh->prepare("SELECT repeat_consensus_id FROM repeat_consensus WHERE repeat_name = '$repeat_name'");
   $sth->execute;
   if ($sth->rows > 0){
 	  $id = $sth->fetchrow_arrayref()->[0];
