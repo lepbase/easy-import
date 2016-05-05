@@ -14,13 +14,20 @@ use lib "$dirname/../gff-parser";
 use Ensembl_Import;
 
 ## load parameters from an INI-style config file
+my %sections = (
+  'FILES' => 	{	'GFF' => 1,
+          'SCAFFOLD' => [ 'CONTIG' ],
+          'CONTIG' => [ 'SCAFFOLD']
+        }
+  );
 ## check that all required parameters have been defined in the config file
 die "ERROR: you must specify at least one ini file\n",usage(),"\n" unless $ARGV[0];
 my %params;
 my $params = \%params;
 while (my $ini_file = shift @ARGV){
-	load_ini($params,$ini_file);
+	load_ini($params,$ini_file,\%sections);
 }
+
 
 ## download/obtain files using methods suggested by file paths and extensions
 my %infiles;

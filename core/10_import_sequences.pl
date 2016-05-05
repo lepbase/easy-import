@@ -14,12 +14,44 @@ use lib "$dirname/../gff-parser";
 use Ensembl_Import;
 
 ## load parameters from an INI-style config file
+my %sections = (
+  'ENSEMBL' =>	{ 	'LOCAL' => 1
+          },
+  'DATABASE_CORE' =>	{ 	'NAME' => 1,
+              'HOST' => 1,
+              'PORT' => 1,
+              'RW_USER' => 1,
+              'RW_PASS' => 1,
+              'RO_USER' => 1
+            },
+  'DATABASE_TAXONOMY' => {	'NAME' => 1,
+                'HOST' => 1,
+                'PORT' => 1,
+                'RO_USER' => 1
+              },
+  'DATABASE_TEMPLATE' => 	{	'NAME' => 1,
+                'HOST' => 1,
+                'PORT' => 1,
+                'RO_USER' => 1
+              },
+  'META' =>	{	'SPECIES.PRODUCTION_NAME' => 1,
+          'SPECIES.SCIENTIFIC_NAME' => 1,
+          'SPECIES.TAXONOMY_ID' => 1,
+          'ASSEMBLY.NAME' => 1,
+          'GENEBUILD.METHOD' => 1,
+          'PROVIDER.NAME' => 1,
+          'PROVIDER.URL' => 1
+        },
+  'FILES' => 	{	'SCAFFOLD' => [ 'CONTIG' ],
+          'CONTIG' => [ 'SCAFFOLD']
+        }
+  );
 ## check that all required parameters have been defined in the config file
 die "ERROR: you must specify at least one ini file\n",usage(),"\n" unless $ARGV[0];
 my %params;
 my $params = \%params;
 while (my $ini_file = shift @ARGV){
-	load_ini($params,$ini_file);
+	load_ini($params,$ini_file,\%sections);
 }
 
 ## download/obtain files using methods suggested by file paths and extensions

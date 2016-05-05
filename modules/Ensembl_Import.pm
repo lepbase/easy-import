@@ -2174,60 +2174,9 @@ sub clone_ensembl_code {
 }
 
 sub load_ini {
-	my ($params,$ini_file,$skip_validation) = @_;
+	my ($params,$ini_file,$sections) = @_;
 	open INI,$ini_file || die "ERROR: unable to open file $ini_file\n",usage(),"\n";
-	my %sections = (
-		'ENSEMBL' =>	{ 	'ENSEMBL' => 1,
-							'PRODUCTION' => 1,
-							'BRANCH' => 1,
-							'PIPELINE' => 1,
-							'LOCAL' => 1
-						},
-		'DATABASE_CORE' =>	{ 	'NAME' => 1,
-								'HOST' => 1,
-								'PORT' => 1,
-								'RW_USER' => 1,
-								'RW_PASS' => 1,
-								'RO_USER' => 1,
-								'RO_PASS' => 1
-							},
-		'DATABASE_TAXONOMY' => {	'NAME' => 1,
-									'HOST' => 1,
-									'PORT' => 1,
-									'RO_USER' => 1,
-									'RO_PASS' => 1
-								},
-		'DATABASE_TEMPLATE' => 	{	'NAME' => 1,
-									'HOST' => 1,
-									'PORT' => 1,
-									'RO_USER' => 1,
-									'RO_PASS' => 1
-								},
-		'META' =>	{	'SPECIES.PRODUCTION_NAME' => 1,
-						'SPECIES.SCIENTIFIC_NAME' => 1,
-						'SPECIES.TAXONOMY_ID' => 1,
-						'ASSEMBLY.NAME' => 1,
-						'GENEBUILD.METHOD' => 1,
-						'PROVIDER.NAME' => 1,
-						'PROVIDER.URL' => 1
-					},
-		'FILES' => 	{	'GFF' => 1,
-						'SCAFFOLD' => [ 'CONTIG' ],
-						'CONTIG' => [ 'SCAFFOLD']
-					},
-		'GENE_DESCRIPTIONS' =>	{	#'GFF' => 1,
-									#'PROTEIN' => 1
-								},
-		'GENE_STABLE_IDS' =>	{	#'GFF' => 1,
-							#'PROTEIN' => 1
-						},
-		'GENE_NAMES' =>	{	#'GFF' => 1,
-							#'PROTEIN' => 1
-						},
-		'XREFS' =>	{
-					}
-
-		);
+	my %sections = %$sections;
 	my $section;
 	while (<INI>){
 		chomp;
@@ -2252,65 +2201,64 @@ sub load_ini {
 			$params->{$section}{$key} = $value;
 		}
 	}
-	if (!$skip_validation){
-		my $warnings = 0;
-		foreach $section (keys %sections){
-			if (scalar keys %{$sections{$section}} > 0){
-				if (!$params->{$section}){
-					# warn missing section
-					warn "WARNING: missing section [$section]\n";
-					$warnings++;
-				}
-				foreach my $subsection (keys %{$sections{$section}}){
-					if ($sections{$section}{$subsection} == 1){
-						if (!$params->{$section}{$subsection}){
-							# warn missing subsection
-							warn "WARNING: missing subsection [$section] $subsection\n";
-							$warnings++;
-						}
+	my $warnings = 0;
+	foreach $section (keys %sections){
+		if (scalar keys %{$sections{$section}} > 0){
+			if (!$params->{$section}){
+				# warn missing section
+				warn "WARNING: missing section [$section]\n";
+				$warnings++;
+			}
+			foreach my $subsection (keys %{$sections{$section}}){
+				if ($sections{$section}{$subsection} == 1){
+					if (!$params->{$section}{$subsection}){
+						# warn missing subsection
+						warn "WARNING: missing subsection [$section] $subsection\n";
+						$warnings++;
 					}
-					else {
-						if (!$params->{$section}{$subsection}){
-							# look for alternate section
-							my $alt;
-							for (my $i = 0; $i < @{$sections{$section}{$subsection}}; $i++){
-								if ($params->{$section}{$sections{$section}{$subsection}->[$i]}){
-									$alt = 1;
-									last;
-								}
+				}
+				else {
+					if (!$params->{$section}{$subsection}){
+						# look for alternate section
+						my $alt;
+						for (my $i = 0; $i < @{$sections{$section}{$subsection}}; $i++){
+							if ($params->{$section}{$sections{$section}{$subsection}->[$i]}){
+								$alt = 1;
+								last;
 							}
-							next if $alt;
-							my $str = join (' or ',@{$sections{$section}{$subsection}});
-							warn "WARNING: section [$section] must have at least one subsection of type $subsection or $str\n";
-							$warnings++;
 						}
-					}
-				}
-			}
-		}
-		# now check that all files in GENE_DESCRIPTIONS, GENE_NAMES, TRANSCRIPT_DESCRIPTIONS and TRANSCRIPT_NAMES also have GENE_STABLE_IDS/TRANSCRIPT_STABLE_IDS and FILES
-		my @features = qw ( GENE TRANSCRIPT );
-		my @properties = qw ( DESCRIPTIONS NAMES );
-		foreach my $feature (@features){
-			foreach my $property (@properties){
-				foreach my $subsection (keys %{$params->{$feature.'_'.$property}}){
-					if (!$params->{$feature.'_STABLE_IDS'}{$subsection}){
-						# warn no stable_id for property
-						warn "WARNING: no matching [".$feature."_STABLE_IDS] $subsection for [".$feature."_".$property."] $subsection\n";
-						$warnings++;
-					}
-					if (!$params->{'FILES'}{$subsection}){
-						# warn no file for property
-						warn "WARNING: no matching [FILES] $subsection for [".$feature."_".$property."] $subsection\n";
+						next if $alt;
+						my $str = join (' or ',@{$sections{$section}{$subsection}});
+						warn "WARNING: section [$section] must have at least one subsection of type $subsection or $str\n";
 						$warnings++;
 					}
 				}
 			}
-		}
-		if ($warnings > 0){
-			die "ERROR: unable to parse ini file $ini_file without warnings\n";
 		}
 	}
+	# now check that all files in GENE_DESCRIPTIONS, GENE_NAMES, TRANSCRIPT_DESCRIPTIONS and TRANSCRIPT_NAMES also have GENE_STABLE_IDS/TRANSCRIPT_STABLE_IDS and FILES
+	my @features = qw ( GENE TRANSCRIPT );
+	my @properties = qw ( DESCRIPTIONS NAMES );
+	foreach my $feature (@features){
+		foreach my $property (@properties){
+			foreach my $subsection (keys %{$params->{$feature.'_'.$property}}){
+				if (!$params->{$feature.'_STABLE_IDS'}{$subsection}){
+					# warn no stable_id for property
+					warn "WARNING: no matching [".$feature."_STABLE_IDS] $subsection for [".$feature."_".$property."] $subsection\n";
+					$warnings++;
+				}
+				if (!$params->{'FILES'}{$subsection}){
+					# warn no file for property
+					warn "WARNING: no matching [FILES] $subsection for [".$feature."_".$property."] $subsection\n";
+					$warnings++;
+				}
+			}
+		}
+	}
+	if ($warnings > 0){
+		die "ERROR: unable to parse ini file $ini_file without warnings\n";
+	}
+
 	return 1;
 }
 

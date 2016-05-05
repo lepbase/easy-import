@@ -40,12 +40,32 @@ cd ~/ei/ee
 
 ## 2. Core import
 
-### Step 2.1: Fetch/summarise assembly/annotation files
+### Step 2.1: (optional) Fetch/summarise assembly/annotation files
 
 ```bash
 mkdir ~/import
 cd ~/import
 perl ../ei/core/00_summarise_files.pl ../ei/conf/test.ini
+```
+
+```bash
+summary/GFF.Obru_genes.gff.sorted.attribute_counts.txt (END)
+CDS     ID      16912
+CDS     Parent  16912
+exon    ID      79932
+exon    Parent  79932
+five_prime_UTR  ID      759
+five_prime_UTR  Parent  759
+gene    Alias   16912
+gene    ID      16912
+gene    Name    16912
+mRNA    Alias   16912
+mRNA    ID      16912
+mRNA    Name    16912
+mRNA    Parent  16912
+three_prime_UTR ID      35
+three_prime_UTR Parent  35
+summary/GFF.Obru_genes.gff.sorted.attribute_counts.txt (END)
 ```
 
 ### Step 2.2: create database and load sequence data
@@ -58,12 +78,12 @@ perl ../ei/core/12_import_sequence_synonyms.pl ../ei/conf/test.ini
 
 ### Step 2.3: Prepare the gff file for import
 
-Handle any exceptions
-
 ```bash
 cd ~/ei/core
 perl ../ei/core/20_prepare_gff.pl ../ei/conf/test.ini
 ```
+
+TODO - Handle any exceptions
 
 ### Step 2.4: import gff from modified file
 
@@ -72,7 +92,7 @@ cd ~/ei/core
 perl ../ei/core/30_import_gene_models.pl ../ei/conf/test.ini
 ```
 
-### Step 2.5: import additional annotations
+### Optional: import additional annotations
 
 - interpro
 - blastp
@@ -82,11 +102,30 @@ perl ../ei/core/30_import_gene_models.pl ../ei/conf/test.ini
 cd ~/ei/core
 ```
 
-### Step 2.6: export files, verify and summarise
+### Optional: export files
 
 ```bash
 cd ~/ei/core
 ```
+
+### Optional: verify import
+
+```bash
+cd ~/ei/core
+```
+
+### Optional: generate search index
+
+```bash
+cd ~/ei/core
+```
+
+### Optional: generate files for web
+
+```bash
+cd ~/ei/core
+```
+
 
 ## 3. Compara import
 
