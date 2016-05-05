@@ -47,6 +47,9 @@ sub read_blastp {
 sub read_repeatmasker {
 	my ($dbh,$params,$analysis_id) = @_;
 	my (%repeats,%seq_regions);
+  <>;
+  <>;
+  <>;
 	while (<>){
 		chomp;
     s/^\s+//;
@@ -81,9 +84,6 @@ sub read_repeatmasker {
 sub read_iprscan {
 	my ($dbh,$params) = @_;
 	my $external_db_id = 1200;
-  <>;
-  <>;
-  <>;
 	while (<>){
 		chomp;
 		my ($name,$hash,$protein_length,$analysis,$hitname,$desc,$start,$end,$evalue,@row) = split /\t/;
