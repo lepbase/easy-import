@@ -2029,9 +2029,9 @@ sub fetch_file {
 	my $command;
   my $compression;
 	if ($filename =~ s/\.(gz|gzip|tar\.gz|tgz|zip)$//){
-		$compression = $1;
+		$compression = ".".$1;
 	}
-	if (($new_name && !-e $new_name) || (!$new_name && !-e $filename)){
+	if (($new_name && !-e $new_name) || (!$new_name && !-e $filename.$compression)){
 		if ($location =~ m/^(?:ftp|http|https):/){
 			$command = 'wget';
 			system "wget $location -O $filename";
@@ -2046,23 +2046,23 @@ sub fetch_file {
 		}
 	}
 	if ($compression && !-e $filename){
-		if (!-e "$filename.$compression"){
+		if (!-e $filename.$compression){
 			# something went wrong when copying the file
-			die "ERROR: could not $command $location to $filename.$compression\n";
+			die "ERROR: could not $command $location to $filename"."$compression\n";
 		}
 		else {
 			if ($compression =~ m/^t/){
-				system "tar xf $filename.$compression";
+				system "tar xf $filename"."$compression";
 			}
 			elsif ($compression =~ m/^g/){
-				system "gunzip $filename.$compression";
+				system "gunzip $filename"."$compression";
 			}
 			elsif ($compression =~ m/^z/){
-				system "unzip $filename.$compression";
+				system "unzip $filename"."$compression";
 			}
 			if (!-e $filename){
 				# this compression type is not currently supported
-				die "ERROR: could not extract $filename.$compression to $filename\n";
+				die "ERROR: could not extract $filename"."$compression to $filename\n";
 			}
 		}
 	}
