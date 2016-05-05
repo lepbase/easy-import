@@ -2022,6 +2022,10 @@ sub fetch_file {
 	$location =~ m/.+\/([^\/]+)$/;
 	my $filename = $1 ? $1 : $location;
 	my $command;
+  my $compression;
+	if ($filename =~ s/\.(gz|gzip|tar\.gz|tgz|zip)$//){
+		$compression = $1;
+	}
 	if (($new_name && !-e $new_name) || (!$new_name && !-e $filename)){
 		if ($location =~ m/^(?:ftp|http|https):/){
 			$command = 'wget';
@@ -2035,10 +2039,6 @@ sub fetch_file {
 			$command = 'cp';
 			system "cp $location $filename";
 		}
-	}
-	my $compression;
-	if ($filename =~ s/\.(gz|gzip|tar\.gz|tgz|zip)$//){
-		$compression = $1;
 	}
 	if ($compression && !-e $filename){
 		if (!-e "$filename.$compression"){
