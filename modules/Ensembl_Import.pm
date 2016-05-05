@@ -2051,13 +2051,13 @@ sub fetch_file {
 			die "ERROR: could not $command $location to $filename"."$compression\n";
 		}
 		else {
-			if ($compression =~ m/^t/){
+			if ($compression =~ m/^\.t/){
 				system "tar xf $filename"."$compression";
 			}
-			elsif ($compression =~ m/^g/){
+			elsif ($compression =~ m/^\.g/){
 				system "gunzip $filename"."$compression";
 			}
-			elsif ($compression =~ m/^z/){
+			elsif ($compression =~ m/^\.z/){
 				system "unzip $filename"."$compression";
 			}
 			if (!-e $filename){
