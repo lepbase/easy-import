@@ -2176,7 +2176,7 @@ sub clone_ensembl_code {
 sub load_ini {
 	my ($params,$ini_file,$sections) = @_;
 	open INI,$ini_file || die "ERROR: unable to open file $ini_file\n",usage(),"\n";
-	my %sections = %$sections;
+	my %sections = %$sections || ();
 	my $section;
 	while (<INI>){
 		chomp;
