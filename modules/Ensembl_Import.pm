@@ -2196,7 +2196,7 @@ sub load_ini {
 			$params->{$section}{$key} = $value;
 		}
 	}
-	
+
 		# now check that all files in GENE_DESCRIPTIONS, GENE_NAMES, TRANSCRIPT_DESCRIPTIONS and TRANSCRIPT_NAMES also have GENE_STABLE_IDS/TRANSCRIPT_STABLE_IDS and FILES
 		my @features = qw ( GENE TRANSCRIPT );
 		my @properties = qw ( DESCRIPTIONS NAMES );
@@ -2219,7 +2219,7 @@ sub load_ini {
 		if ($warnings > 0){
 			die "ERROR: unable to parse ini file $ini_file without warnings\n";
 		}
-	}
+	
 	return 1;
 }
 
