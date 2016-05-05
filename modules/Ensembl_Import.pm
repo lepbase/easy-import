@@ -1724,7 +1724,7 @@ sub gff_feature_summary {
 	my ($params,$infile) = @_;
 	my %features_by_type;
 	my $file = $infile;
-	if ($params->{'GFF'}{'SORT'} && $file !~ m/\.sorted$/){
+	if ($params->{'GFF'}{'SORT'} && $file !~ m/\.sorted/){
 		$file .= ".sorted";
 		if (!-e $file){
 			system "cat ".$infile." | sort > ".$file.".tmp";
