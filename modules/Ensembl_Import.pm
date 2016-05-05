@@ -2031,7 +2031,7 @@ sub fetch_file {
 	if ($filename =~ s/\.(gz|gzip|tar\.gz|tgz|zip)$//){
 		$compression = ".".$1;
 	}
-	if (($new_name && !-e $new_name) || (!$new_name && !-e $filename.$compression)){
+	if (($new_name && !-e $new_name) || (!$new_name && !-e $filename)){
 		if ($location =~ m/^(?:ftp|http|https):/){
 			$command = 'wget';
 			system "wget $location -O $filename"."$compression";
