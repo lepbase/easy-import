@@ -432,9 +432,7 @@ sub add_repeat_feature {
      	  				 .",".$score
 	  					 	 .")");
 	    $sth->execute;
-	    $id = $sth->fetchrow_arrayref()->[0];
-	}
-	return $id;
+	return 1;
 }
 
 
