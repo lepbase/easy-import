@@ -62,15 +62,6 @@ die "ERROR: no features in rewritten gff file\n" unless $gff_file;
 ## summarise the rewritten gff file
 my $stats = gff_feature_summary($params,$gff_file);
 
-if ($stats->{'gene_count'}){
-	system "perl -p -i -e 's/GENE_COUNT/".$stats->{'gene_count'}."/' summary/stats_".ucfirst($params->{'META'}{'SPECIES.PRODUCTION_NAME'}).".html"
-}
-if ($stats->{'transcript_count'}){
-	system "perl -p -i -e 's/TRANSCRIPT_COUNT/".$stats->{'transcript_count'}."/' summary/stats_".ucfirst($params->{'META'}{'SPECIES.PRODUCTION_NAME'}).".html"
-}
-if ($stats->{'translation_count'}){
-	system "perl -p -i -e 's/TRANSLATION_COUNT/".$stats->{'translation_count'}."/' summary/stats_".ucfirst($params->{'META'}{'SPECIES.PRODUCTION_NAME'}).".html"
-}
 
 
 
