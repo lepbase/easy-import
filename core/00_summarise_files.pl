@@ -35,29 +35,9 @@ if ($params{'GFF'}{'SPLIT'}){
 }
 
 
-## generate summaries of fasta, agp, gff files
-my %stats;
+## generate summary of gff file
 foreach my $file (keys %infiles){
-	if ($file =~ m/(:?SCAFFOLD|CONTIG)/ && $infiles{$file}{'type'} eq 'fas'){
-		## calculate scaffold stats and write to file
-		print STDERR "Calculating summary statistics on [FILES] $file $infiles{$file}{'name'}\n";
-		my $tmp_stats = fasta_file_summary($params,$infiles{$file},$file);
-		foreach my $key (keys %{$tmp_stats}){
-			next if $file !~ m/SCAFFOLD/ && $stats{$key};
-			$stats{$key} = $tmp_stats->{$key};
-		}
-	}
-	elsif ($infiles{$file}{'type'} eq 'agp'){
-		## calculate scaffold stats and write to file
-		print STDERR "Calculating summary statistics on [FILES] $file $infiles{$file}{'name'}\n";
-		my $tmp_stats = agp_file_summary($params,$infiles{$file},$file);
-		foreach my $key (keys %{$tmp_stats}){
-			next if $file !~ m/SCAFFOLD/ && $stats{$key};
-			$stats{$key} = $tmp_stats->{$key};
-		}
-
-	}
-	elsif ($infiles{$file}{'type'} eq 'gff'){
+	if ($infiles{$file}{'type'} eq 'gff'){
 		## generate feature summary and write to file
 		print STDERR "Calculating summary statistics on [FILES] $file $infiles{$file}{'name'}\n";
 		gff_feature_summary($params,$infiles{'GFF'}->{'name'});
