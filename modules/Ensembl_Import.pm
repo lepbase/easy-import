@@ -1084,7 +1084,7 @@ sub setup_core_db {
 
 	## add meta_key = taxonomy
 	my $dbh_tax = taxonomy_db_connect($params);
-	my $sth_tax = $dbh_tax->prepare("SELECT names.taxonid, names.name FROM names JOIN nodes ON names.taxonid = nodes.parenttaxonid WHERE nodes.taxonid = ? limit 1");
+	my $sth_tax = $dbh_tax->prepare("SELECT names.taxon_id, names.name FROM ncbi_taxa_name AS names JOIN ncbi_taxa_node AS nodes ON names.taxon_id = nodes.parent_id WHERE nodes.taxonid = ? limit 1");
 	$sth_tax->execute($params->{'META'}{'SPECIES.TAXONOMY_ID'});
 	my $last_taxid = -1;
 	while (my ($taxid,$name) = $sth_tax->fetchrow_array()){
