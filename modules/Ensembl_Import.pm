@@ -678,7 +678,12 @@ sub rewrite_gff {
 		}
 	}
 
-	system "mv ".$filename.".exception.gff.tmp ".$filename.".exception.gff";
+	if (-z $filename.".exception.gff.tmp"){
+    unlink $filename.".exception.gff.tmp"
+  }
+  else {
+    system "mv ".$filename.".exception.gff.tmp ".$filename.".exception.gff";
+  }
 	if (%dups){
 		warn "WARNING: duplicate stable_ids introduced in [FILES] GFF\n";
 		system "mv ".$filename.".gff.tmp ".$filename.".dup.gff";
