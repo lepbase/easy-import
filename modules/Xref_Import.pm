@@ -431,7 +431,6 @@ sub add_repeat_feature {
      	  				 .",".$analysis_id
      	  				 .",".$score
 	  					 	 .")");
-	    $sth->execute;
 	return 1;
 }
 
