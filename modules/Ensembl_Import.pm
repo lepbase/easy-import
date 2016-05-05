@@ -2034,15 +2034,15 @@ sub fetch_file {
 	if (($new_name && !-e $new_name) || (!$new_name && !-e $filename.$compression)){
 		if ($location =~ m/^(?:ftp|http|https):/){
 			$command = 'wget';
-			system "wget $location -O $filename";
+			system "wget $location -O $filename"."$compression";
 		}
 		elsif ($location =~ m/:[\/~]/){
 			$command = 'scp';
-			system "scp $location $filename";
+			system "scp $location $filename"."$compression";
 		}
 		else {
 			$command = 'cp';
-			system "cp $location $filename";
+			system "cp $location $filename"."$compression";
 		}
 	}
 	if ($compression && !-e $filename){
