@@ -56,11 +56,12 @@ foreach my $subsection (keys %{$params->{'TRANSCRIPT_NAMES'}}){
 ## TODO: include test for phase, currently using flag
 
 my $gff_file = rewrite_gff($params,\%{$infiles{'GFF'}},\%gene_properties,$params->{'GENE_STABLE_IDS'}{'GFF'},$params->{'GENE_DESCRIPTIONS'}{'GFF'},$params->{'GENE_NAMES'}{'GFF'},\%transcript_properties,$params->{'TRANSCRIPT_STABLE_IDS'}{'GFF'},$params->{'TRANSCRIPT_DESCRIPTIONS'}{'GFF'},$params->{'TRANSCRIPT_NAMES'}{'GFF'},$params->{'TRANSLATION_STABLE_IDS'}{'GFF'});
+print $gff_file,"\n";
 
 die "ERROR: no features in rewritten gff file\n" unless $gff_file;
 
 ## summarise the rewritten gff file
-my $stats = gff_feature_summary($params,$gff_file);
+gff_feature_summary($params,$gff_file);
 
 
 
