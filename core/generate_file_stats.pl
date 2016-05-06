@@ -63,9 +63,10 @@ foreach my $file (keys %infiles){
 	}
 }
 
-$infiles{'SCAFFOLD'}->{'name'} = $params->{'META'}{'SPECIES.DISPLAY_NAME'}.'_-_scaffolds.fa';
-$infiles{'SCAFFOLD'}->{'type'} = 'fas';
-$infiles{'SCAFFOLD'}->{'name'} =~ s/\s/_/g;
+#$infiles{'SCAFFOLD'}->{'name'} = $params->{'META'}{'SPECIES.DISPLAY_NAME'}.'_-_scaffolds.fa';
+#$infiles{'SCAFFOLD'}->{'type'} = 'fas';
+#$infiles{'SCAFFOLD'}->{'name'} =~ s/\s/_/g;
+
 
 
 if (-s $infiles{'SCAFFOLD'}->{'name'}){
