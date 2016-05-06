@@ -195,7 +195,7 @@ use DBI;
   	my $params = shift;
     my $dirname = shift;
   	my $dbh = search_db_host_connect($params);
-    eval ($dbh->do('USE '.$params->{'DATABASE_SEARCH'}{'NAME'}) || die "database does not exist");
+    eval ($dbh->do('USE '.$params->{'DATABASE_SEARCH'}{'NAME'}));
     return $dbh unless $@;
     $dbh = setup_search_db($dbh,$params,$dirname);
     $dbh->do('USE '.$params->{'DATABASE_SEARCH'}{'NAME'}) || die "ERROR: unable to connect to [DATABASE_SEARCH] NAME ".$params->{'DATABASE_SEARCH'}{'NAME'}." using provided settings";
