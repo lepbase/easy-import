@@ -53,9 +53,9 @@ my $production_name = lc $params->{'META'}{'SPECIES.PRODUCTION_NAME'};
 $search_dbh->do("DROP TABLE IF EXISTS $production_name");
 $search_dbh->do("DROP TABLE IF EXISTS $production_name"."_32");
 $search_dbh->do("DROP TABLE IF EXISTS $production_name"."_255");
-$search_dbh->do("DELETE FROM multi WHERE production_name = $search_dbh->quote($production_name)");
-$search_dbh->do("DELETE FROM multi_32 WHERE production_name = $search_dbh->quote($production_name)");
-$search_dbh->do("DELETE FROM multi_255 WHERE production_name = $search_dbh->quote($production_name)");
+$search_dbh->do("DELETE FROM multi WHERE production_name = ".$search_dbh->quote($production_name));
+$search_dbh->do("DELETE FROM multi_32 WHERE production_name = ".$search_dbh->quote($production_name));
+$search_dbh->do("DELETE FROM multi_255 WHERE production_name = ".$search_dbh->quote($production_name));
 
 
 # loop through seq regions and genes adding search data to search db
