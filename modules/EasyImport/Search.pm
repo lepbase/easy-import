@@ -195,8 +195,8 @@ use DBI;
   	my $params = shift;
     my $dirname = shift;
   	my $dbh = search_db_host_connect($params);
-    eval ($dbh->do('USE '.$params->{'DATABASE_SEARCH'}{'NAME'}));
-    if ($@){
+    my $sth = $dbh->prepare("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = ".$dbh->quote($params->{'DATABASE_SEARCH'}{'NAME'}));
+    if ($sth->rows == 0){
       $dbh = setup_search_db($dbh,$params,$dirname);
     }
     $dbh->do('USE '.$params->{'DATABASE_SEARCH'}{'NAME'}) || die "ERROR: unable to connect to [DATABASE_SEARCH] NAME ".$params->{'DATABASE_SEARCH'}{'NAME'}." using provided settings";
