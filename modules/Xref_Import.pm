@@ -46,7 +46,6 @@ sub read_blastp {
 
 sub read_repeatmasker {
 	my ($dbh,$params) = @_;
-  my $analysis_id = analysis_id($dbh,$analysis,$analysis);
 	my (%repeats,%seq_regions);
   <>;
   <>;
@@ -58,7 +57,8 @@ sub read_repeatmasker {
         $seq_region_name,$seq_region_start,$seq_region_end,undef,$seq_region_strand,
         $repeat_name,$repeat_class,$repeat_start,$repeat_end,$repeat_left,
         undef,undef) = split /\s+/;
-
+    my $analysis = $repeat_class == 'Simple_repeat' ? 'Simple_repeat' : 'repeatmasker';
+    my $analysis_id = analysis_id($dbh,$analysis,$analysis);
     if ($seq_region_strand eq 'C'){
       $seq_region_strand = -1;
       $repeat_start = $repeat_left;
