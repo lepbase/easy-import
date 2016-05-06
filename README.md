@@ -94,12 +94,13 @@ perl ../ei/core/30_import_gene_models.pl ../ei/conf/test.ini
 
 ### Optional: import additional annotations
 
-- interpro
-- blastp
-- repeats
+TODO - test these:
 
 ```bash
 cd ~/ei/core
+perl ../ei/core/60_import_blastp.pl ../ei/conf/test*.ini
+perl ../ei/core/62_import_repeatmasker.pl ../ei/conf/test*.ini
+perl ../ei/core/64_import_interproscan.pl ../ei/conf/test*.ini
 ```
 
 ### Optional: export files

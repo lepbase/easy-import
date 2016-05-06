@@ -170,20 +170,30 @@ sub update_description {
 	my ($dbh,$name,$acc,$desc,$source) = @_;
 
 	# test to see if the gene for this transcript already has a description
-	my $sth = $dbh->prepare("SELECT g.gene_id,g.description FROM gene AS g JOIN transcript AS t ON g.gene_id = t.gene_id WHERE t.stable_id LIKE ".$dbh->quote($name));
-	$sth->execute;
-	return undef if $sth->rows == 0;
+  my $sth = $dbh->prepare("SELECT g.gene_id,g.description FROM gene AS g JOIN transcript AS t ON g.gene_id = t.gene_id WHERE t.stable_id LIKE ".$dbh->quote($name));
+  $sth->execute();
+  my $values;
 
-	my $values = $sth->fetchrow_arrayref();
-	my $gene_id = $values->[0];
-	my $description = $values->[1] || 'NULL';
+  if ($sth->rows == 0){
+      my $sth2 = $dbh->prepare("SELECT tsc.stable_id FROM transcript AS tsc JOIN translation AS tsl ON tsc.transcript_id = tsl.transcript_id WHERE tsl.stable_id LIKE ".$dbh->quote($name));
+      $sth2->execute();
+      return undef if $sth2->rows == 0;
+      my $tsc_stable_id = $sth2->fetchrow_arrayref()->[0];
+      my $sth = $dbh->prepare("SELECT g.gene_id,g.description FROM gene AS g JOIN transcript AS t ON g.gene_id = t.gene_id WHERE t.stable_id LIKE ".$dbh->quote($tsc_stable_id));
+      $sth->execute();
+      return undef if $sth->rows == 0;
+      $values = $sth->fetchrow_arrayref();
+  }
 
-	return $gene_id unless $description eq 'Unknown function' or $description eq 'NULL' or $description =~ m/Source:UniProtKB\/TrEMBL/;
+  my $gene_id = $values->[0];
+  my $description = $values->[1] || 'NULL';
 
-	$desc .= " [Source:$source;Acc:" . $acc . "]";
-	$dbh->do("UPDATE gene SET description = ".$dbh->quote($desc)." WHERE gene_id = $gene_id");
+  return $gene_id unless $description eq 'Unknown function' or $description eq 'NULL' or $description =~ m/Source:UniProtKB\/TrEMBL/;
 
-	return $gene_id;
+  $desc .= " [Source:$source;Acc:" . $acc . "]";
+  $dbh->do("UPDATE gene SET description = ".$dbh->quote($desc)." WHERE gene_id = $gene_id");
+
+  return $gene_id;
 
 }
 
