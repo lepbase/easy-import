@@ -42,7 +42,7 @@ while (my $ini_file = shift @ARGV){
 }
 
 ## connect to the core_db
-my $dbh = core_db_connect($params);
+my $core_dbh = core_db_connect($params);
 
 # connect to/create search database
 my $search_dbh = search_db_connect($params);
