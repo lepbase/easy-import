@@ -45,7 +45,7 @@ cd ~/ei/ee
 ```bash
 mkdir ~/import
 cd ~/import
-perl ../ei/core/00_summarise_files.pl ../ei/conf/test.ini
+perl ../ei/core/summarise_files.pl ../ei/conf/test.ini
 ```
 
 ```bash
@@ -72,15 +72,15 @@ summary/GFF.Obru_genes.gff.sorted.attribute_counts.txt (END)
 
 ```bash
 cd ~/import
-perl ../ei/core/10_import_sequences.pl ../ei/conf/test.ini
-perl ../ei/core/12_import_sequence_synonyms.pl ../ei/conf/test.ini
+perl ../ei/core/import_sequences.pl ../ei/conf/test.ini
+perl ../ei/core/import_sequence_synonyms.pl ../ei/conf/test.ini
 ```
 
 ### Step 2.3: Prepare the gff file for import
 
 ```bash
 cd ~/ei/core
-perl ../ei/core/20_prepare_gff.pl ../ei/conf/test.ini
+perl ../ei/core/prepare_gff.pl ../ei/conf/test.ini
 ```
 
 TODO - Handle any exceptions
@@ -89,7 +89,7 @@ TODO - Handle any exceptions
 
 ```bash
 cd ~/ei/core
-perl ../ei/core/30_import_gene_models.pl ../ei/conf/test.ini
+perl ../ei/core/import_gene_models.pl ../ei/conf/test.ini
 ```
 
 ### Optional: import additional annotations
@@ -98,9 +98,9 @@ TODO - test these:
 
 ```bash
 cd ~/ei/core
-perl ../ei/core/60_import_blastp.pl ../ei/conf/test*.ini
-perl ../ei/core/62_import_repeatmasker.pl ../ei/conf/test*.ini
-perl ../ei/core/64_import_interproscan.pl ../ei/conf/test*.ini
+perl ../ei/core/import_blastp.pl ../ei/conf/test*.ini
+perl ../ei/core/import_repeatmasker.pl ../ei/conf/test*.ini
+perl ../ei/core/import_interproscan.pl ../ei/conf/test*.ini
 ```
 
 ### Optional: export files

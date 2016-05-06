@@ -51,5 +51,5 @@ if ($params->{'FILES'}{'SCAFFOLD_NAMES'} || $params->{'SCAFFOLD_NAMES'}){
 
 
 sub usage {
-	return "USAGE: perl -I /path/to/dir/containing/Ensembl_Import.pm /path/to/gene_model_import.pl ini_file";
+	return "USAGE: perl /path/to/import_sequence_synonyms.pl /pat/to/config_file.ini";
 }

@@ -11,8 +11,8 @@ BEGIN {
 }
 use lib "$dirname/../modules";
 use lib "$dirname/../gff-parser";
-use Ensembl_Import;
-use Xref_Import;
+use EasyImport::Core;
+use EasyImport::Xref;
 
 ## load parameters from an INI-style config file
 ## check that all required parameters have been defined in the config file

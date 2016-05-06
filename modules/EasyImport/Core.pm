@@ -3,7 +3,7 @@
 use strict;
 use DBI;
 use GFFTree;
-use GFF_Import;
+use EasyImport::GFF;
 use List::Util qw(sum);
 
 sub truncate_seq_tables {

@@ -11,11 +11,11 @@ BEGIN {
 }
 use lib "$dirname/../modules";
 use lib "$dirname/../gff-parser";
-use Ensembl_Import;
+use EasyImport::Core;
 
 ## load parameters from an INI-style config file
 my %sections = (
-  
+
   );
 ## check that all required parameters have been defined in the config file
 die "ERROR: you must specify at least one ini file\n",usage(),"\n" unless $ARGV[0];
@@ -93,5 +93,5 @@ assembly_page($params,\%stats);
 web_ini_file($params,\%stats);
 
 sub usage {
-	return "USAGE: perl -I /path/to/dir/containing/Ensembl_Import.pm /path/to/gene_model_import.pl ini_file";
+	return "USAGE: perl /path/to/generate_file_stats.pl /pat/to/config_file.ini";
 }

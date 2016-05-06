@@ -11,7 +11,7 @@ BEGIN {
 }
 use lib "$dirname/../modules";
 use lib "$dirname/../gff-parser";
-use Ensembl_Import;
+use EasyImport::Core;
 
 ## load parameters from an INI-style config file
 my %sections = (
@@ -95,5 +95,5 @@ count_sequences($params,\%infiles,$dbh);
 
 
 sub usage {
-	return "USAGE: perl -I /path/to/dir/containing/Ensembl_Import.pm /path/to/gene_model_import.pl ini_file";
+	return "USAGE: perl /path/to/import_sequences.pl /pat/to/config_file.ini";
 }

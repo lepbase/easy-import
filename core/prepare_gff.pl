@@ -11,7 +11,7 @@ BEGIN {
 }
 use lib "$dirname/../modules";
 use lib "$dirname/../gff-parser";
-use Ensembl_Import;
+use EasyImport::Core;
 
 ## load parameters from an INI-style config file
 my %sections = (
@@ -74,5 +74,5 @@ gff_feature_summary($params,$gff_file);
 
 
 sub usage {
-	return "USAGE: perl -I /path/to/dir/containing/Ensembl_Import.pm /path/to/prepare_gff.pl ini_file";
+	return "USAGE: perl /path/to/prepare_gff.pl /pat/to/config_file.ini";
 }
