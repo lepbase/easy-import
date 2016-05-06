@@ -292,12 +292,66 @@ sub analysis_id {
 						 		.")");
 		$sth->execute;
 		$analysis_id = $sth->fetchrow_arrayref()->[0];
-		my $web_data = $dbh->quote("{"."'type' "."="."> "."'domain'"."}");
-		$web_data = 'NULL' if $logic_name eq 'Phobius' || $logic_name eq 'SignalP_EUK' || $logic_name eq 'TMHMM';
+    my %descriptions = (
+      'Simple_repeat' => [ 'Simple repeat predictions from RepeatMasker',
+              'Simple repeats'
+            ],
+      'repeatmasker' => [ 'Repeat predictions from RepeatMasker',
+              'RepeatMasker'
+            ],
+      'BLASTP' => [ 'BLASTP hits to the Uniprot database',
+              'BLASTP'
+            ],
+      'Gene3D' => [ 'Gene3D predictions from InterPro Scan',
+              'Gene3D',
+              "{'type' => 'domain'}"
+            ],
+      'SMART' => [ 'SMART predictions from InterPro Scan',
+              'SMART',
+              "{'type' => 'domain'}"
+            ],
+      'Pfam' => [ 'Pfam predictions from InterPro Scan',
+              'Pfam',
+              "{'type' => 'domain'}"
+            ],
+      'ProSiteProfiles' => [ 'ProSiteProfiles predictions from InterPro Scan',
+              'ProSiteProfiles',
+              "{'type' => 'domain'}"
+            ],
+      'SUPERFAMILY' => [ 'SUPERFAMILY predictions from InterPro Scan',
+              'SUPERFAMILY',
+              "{'type' => 'domain'}"
+            ],
+      'Phobius' => [ 'Phobius predictions from InterPro Scan',
+              'Phobius'
+            ],
+      'TMHMM' => [ 'TMHMM predictions from InterPro Scan',
+              'TMHMM'
+            ],
+      'ProSitePatterns' => [ 'ProSitePatterns predictions from InterPro Scan',
+              'ProSitePatterns',
+              "{'type' => 'domain'}"
+            ],
+      'SignalP_EUK' => [ 'SignalP_EUK predictions from InterPro Scan',
+              'SignalP_EUK'
+            ],
+      'PRINTS' => [ 'PRINTS predictions from InterPro Scan',
+              'PRINTS',
+              "{'type' => 'domain'}"
+            ],
+      'TIGRFAM' => [ 'TIGRFAM predictions from InterPro Scan',
+              'TIGRFAM',
+              "{'type' => 'domain'}"
+            ]
+    )
+
+
+    my $arr_ref = $descriptions{$logic_name};
+		my $web_data = $arr_ref->[2] ? $dbh->quote($arr_ref->[2]) : 'NULL';
 		$dbh->do("INSERT INTO analysis_description (analysis_id,description,display_label,displayable,web_data)
 						VALUES (".$analysis_id
-								.",".$dbh->quote($logic_name." predictions from InterPro Scan")
-								.",".$dbh->quote($logic_name)
+								.",".$dbh->quote($arr_ref->[0])
+								.",".$dbh->quote($arr_ref->[1])
 								.",".1
 								.",".$web_data
 						 		.")");
