@@ -343,7 +343,7 @@ sub analysis_id {
               'TIGRFAM',
               "{'type' => 'domain'}"
             ]
-    )
+    );
 
 
     my $arr_ref = $descriptions{$logic_name};
