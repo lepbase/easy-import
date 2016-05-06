@@ -37,7 +37,7 @@ my $dbh = core_db_connect($params);
 
 ## load the REPEATMASKER file into the database
 push @ARGV,$infiles{'REPEATMASKER'}{'name'};
-my $hits = read_repeatmasker($dbh,$params,15); # repeatmasker analysis_id should always be 15
+my $hits = read_repeatmasker($dbh,$params);
 
 
 

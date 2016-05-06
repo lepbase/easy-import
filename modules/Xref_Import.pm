@@ -45,7 +45,8 @@ sub read_blastp {
 }
 
 sub read_repeatmasker {
-	my ($dbh,$params,$analysis_id) = @_;
+	my ($dbh,$params) = @_;
+  my $analysis_id = analysis_id($dbh,$analysis,$analysis);
 	my (%repeats,%seq_regions);
   <>;
   <>;
