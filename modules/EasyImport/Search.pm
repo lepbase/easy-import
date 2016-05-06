@@ -198,7 +198,7 @@ use DBI;
     if ($dbh->do('USE '.$params->{'DATABASE_SEARCH'}{'NAME'})){
       return $dbh;
     }
-    $dbh = setup_search_db($dnh,$params,$dirname);
+    $dbh = setup_search_db($dbh,$params,$dirname);
     $dbh->do('USE '.$params->{'DATABASE_SEARCH'}{'NAME'}) || die "ERROR: unable to connect to [DATABASE_SEARCH] NAME ".$params->{'DATABASE_SEARCH'}{'NAME'}." using provided settings";
   	return $dbh;
   }
