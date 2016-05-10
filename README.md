@@ -34,43 +34,45 @@ cd ~/ei/ee
 
 ## 2. Core import
 
+``example.ini`` will install a new core database for *Operophtera brumata*
+
 ### Step 2.1: (optional) Fetch/summarise assembly/annotation files
 
 ```bash
 mkdir ~/import
 cd ~/import
-perl ../ei/core/summarise_files.pl ../ei/conf/test.ini
+perl ../ei/core/summarise_files.pl ../ei/conf/example.ini
 ```
 
 ### Step 2.2: create database and load sequence data
 
 ```bash
 cd ~/import
-perl ../ei/core/import_sequences.pl ../ei/conf/test.ini
-perl ../ei/core/import_sequence_synonyms.pl ../ei/conf/test.ini
+perl ../ei/core/import_sequences.pl ../ei/conf/example.ini
+perl ../ei/core/import_sequence_synonyms.pl ../ei/conf/example.ini
 ```
 
 ### Step 2.3: Prepare the gff file for import
 
 ```bash
 cd ~/import
-perl ../ei/core/prepare_gff.pl ../ei/conf/test.ini
+perl ../ei/core/prepare_gff.pl ../ei/conf/example.ini
 ```
 
 ### Step 2.4: import gff from modified file
 
 ```bash
 cd ~/import
-perl ../ei/core/import_gene_models.pl ../ei/conf/test.ini
+perl ../ei/core/import_gene_models.pl ../ei/conf/example.ini
 ```
 
 ### Optional: import additional annotations
 
 ```bash
 cd ~/import
-perl ../ei/core/import_blastp.pl ../ei/conf/test.ini ../ei/conf/test-extra.ini
-perl ../ei/core/import_repeatmasker.pl ../ei/conf/test.ini ../ei/conf/test-extra.ini
-perl ../ei/core/import_interproscan.pl ../ei/conf/test.ini ../ei/conf/test-extra.ini
+perl ../ei/core/import_blastp.pl ../ei/conf/test.ini ../ei/conf/example-extra.ini
+perl ../ei/core/import_repeatmasker.pl ../ei/conf/test.ini ../ei/conf/example-extra.ini
+perl ../ei/core/import_interproscan.pl ../ei/conf/test.ini ../ei/conf/example-extra.ini
 ```
 
 ### Optional: export files
@@ -89,14 +91,14 @@ perl ../ei/core/import_interproscan.pl ../ei/conf/test.ini ../ei/conf/test-extra
 
 ```bash
 cd ~/import
-perl ../ei/core/generate_file_stats.pl ../ei/conf/test.ini
+perl ../ei/core/generate_file_stats.pl ../ei/conf/example.ini
 ```
 
 ### Optional: generate files for web
 
 ```bash
 cd ~/import
-perl ../ei/core/generate_file_stats.pl ../ei/conf/test.ini
+perl ../ei/core/generate_file_stats.pl ../ei/conf/example.ini
 ```
 
 
@@ -107,14 +109,16 @@ perl ../ei/core/generate_file_stats.pl ../ei/conf/test.ini
 
 ### Step 4.1: Update Ensembl webcode
 
+edit ``setup.ini`` to add ``operophtera_brumata_v1_core_31_84_1`` to ``[DATA_SOURCE] SPECIES_DBS``
+
 ```bash
 cd ~/ei/ee
-./update-ensembl-code.sh file.ini
+./update-ensembl-code.sh ../conf/setup.ini
 ```
 
 ### Step 4.2: Reload Ensembl website
 
 ```bash
 cd ~/ei/ee
-./reload-ensembl-site.sh file.ini
+./reload-ensembl-site.sh ../conf/setup.ini
 ```
