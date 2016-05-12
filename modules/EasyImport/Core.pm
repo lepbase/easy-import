@@ -357,7 +357,6 @@ sub rewrite_gff {
 	$gff->name('GFF');
 	$gff->expect_columns(9,'skip');
 	$gff->lacks_id('all','make');
-	$gff->lacks_id('cds','Name');
   	#$gff->multiline('CDS');
 	#$gff->add_expectation('cds','hasSister','exon','make');
 	#$gff->add_expectation('mrna','hasParent','gene','force');
@@ -373,6 +372,14 @@ sub rewrite_gff {
 			my $type = shift @value;
 			if ($type eq 'MULTILINE'){
 				$gff->multiline(@value);
+			}
+			elsif ($type eq 'OVERRIDE'){
+        if ($value[1]){
+				  $gff->override({$value[0] => {$value[1] => 1}});
+        }
+        else {
+          $gff->override({$value[0] => {}});
+        }
 			}
 			elsif ($type eq 'LACKS_ID'){
 				$gff->lacks_id(@value);
