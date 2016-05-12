@@ -10,7 +10,7 @@ Code to make it easy to import heterogeneous data into an [EnsEMBL](http://ensem
 ```bash
 sudo apt-get update
 sudo apt-get upgrade
-sudo apt-get install git
+sudo apt-get install git cpanminus
 cd ~
 git clone --recursive https://github.com/lepbase/easy-import ei # with gff-parser and ensembl-easy as submodules
 cd ~/ei/ee
