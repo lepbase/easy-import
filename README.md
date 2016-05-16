@@ -91,7 +91,7 @@ perl ../ei/core/import_interproscan.pl ../ei/conf/test.ini ../ei/conf/example-ex
 
 ```bash
 cd ~/import
-perl ../ei/core/generate_file_stats.pl ../ei/conf/example.ini
+perl ../ei/core/index_database.pl ../ei/conf/example.ini
 ```
 
 ### Optional: generate files for web
