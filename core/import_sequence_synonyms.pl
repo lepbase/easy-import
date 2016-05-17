@@ -11,7 +11,7 @@ BEGIN {
 }
 use lib "$dirname/../modules";
 use lib "$dirname/../gff-parser";
-use Ensembl_Import;
+use EasyImport::Core;
 
 ## load parameters from an INI-style config file
 my %sections = (
