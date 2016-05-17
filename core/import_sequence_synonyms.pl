@@ -22,8 +22,8 @@ my %sections = (
               'RW_PASS' => 1,
               'RO_USER' => 1
             },
-  'META' =>	{	'ASSEMBLY.NAME' => 1},'
-  FILES' => 	{	'SCAFFOLD_NAMES' => 1
+  'META' =>	{	'ASSEMBLY.NAME' => 1},
+  'FILES' => 	{	'SCAFFOLD_NAMES' => 1
         }
   );
 ## check that all required parameters have been defined in the config file
