@@ -873,9 +873,9 @@ sub add_seq_region_synonyms {
 	if ($infiles->{'SCAFFOLD_NAMES'}){
 		open IN,$infiles->{'SCAFFOLD_NAMES'}{'name'};
 		if ($params->{'SCAFFOLD_NAMES'}{'HEADER'}){
-			<IN>;
-			chomp;
-			@header = split /\t/;
+			my $head = <IN>;
+			chomp $head;
+			@header = split /\t/,$head;
 		}
 		while (<IN>){
 			chomp $_;
