@@ -384,6 +384,9 @@ sub rewrite_gff {
 			elsif ($type eq 'LACKS_ID'){
 				$gff->lacks_id(@value);
 			}
+			elsif ($type eq 'FILL_GAPS'){
+				$gff->fill_gaps(@value);
+			}
 			elsif ($type eq 'EXPECTATION'){
 				$gff->add_expectation(@value);
 			}
