@@ -2037,7 +2037,7 @@ sub fetch_file {
 	$location =~ m/.+\/([^\/]+)$/;
 	my $filename = $1 ? $1 : $location;
 	my $command;
-  my $compression;
+  my $compression = '';
 	if ($filename =~ s/\.(gz|gzip|tar\.gz|tgz|zip)$//){
 		$compression = ".".$1;
 	}
