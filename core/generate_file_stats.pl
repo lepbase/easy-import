@@ -29,7 +29,7 @@ my %stats;
 while (my $ini_file = shift @inis){
 	load_ini($params,$ini_file,\%sections);
 	## download/obtain files using methods suggested by file paths and extensions
-	foreach my $subsection (keys %{$params->{'FILES'}}){
+	foreach my $subsection (sort keys %{$params->{'FILES'}}){
 		($infiles{$subsection}{'name'},$infiles{$subsection}{'type'}) = fetch_file($params->{'FILES'}{$subsection});
 
 	}
