@@ -49,7 +49,7 @@ foreach my $file (keys %infiles){
 		print STDERR "Calculating summary statistics on [FILES] $file $infiles{$file}{'name'}\n";
 		gff_feature_summary($params,$infiles{'GFF'}->{'name'});
 	}
-  if ($infiles{$file}{'type'} eq 'fa'){
+  if ($infiles{$file}{'type'} eq 'fas'){
 		## generate feature summary and write to file
 		print STDERR "Counting sequences in [FILES] $file $infiles{$file}{'name'}\n";
 		fa_sequence_count($infiles{'GFF'}->{'name'});
