@@ -11,7 +11,6 @@ BEGIN {
   $dirname  = dirname(abs_path($0));
 }
 use lib "$dirname/../modules";
-use lib "$dirname/../gff-parser";
 use EasyImport::Core;
 
 ## load parameters from an INI-style config file
