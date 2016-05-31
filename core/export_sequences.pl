@@ -3,6 +3,7 @@
 use strict;
 use Cwd 'abs_path';
 use File::Basename;
+use Module::load;
 
 ## find the full path to the directory that this script is executing in
 our $dirname;
@@ -23,8 +24,6 @@ my %sections = (
               'RW_USER' => 1,
               'RW_PASS' => 1,
               'RO_USER' => 1
-            },
-  'META' =>	{ 	'SPECIES.PRODUCTION_NAME' => 1
             }
   );
 ## check that all required parameters have been defined in the config file
@@ -41,8 +40,9 @@ foreach my $subsection (sort keys %{$params->{'FILES'}}){
 	($infiles{$subsection}{'name'},$infiles{$subsection}{'type'}) = fetch_file($params->{'FILES'}{$subsection});
 }
 
-use lib $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl/modules';
-use Bio::EnsEMBL::DBSQL::DBAdaptor;
+my $lib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl/modules';
+push @INC, $lib;
+load Bio::EnsEMBL::DBSQL::DBAdaptor;
 
 =head1
 
@@ -76,11 +76,11 @@ extract_blast_sequences.pl heliconius_melpomene_hmel2_27_80_1
 
 =cut
 
-my $dbname = shift @ARGV;
+my $dbname = $params->{'DATABASE_CORE'}{'NAME'};
 
 my $dba = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
     -user   => $params->{'DATABASE_CORE'}{'RO_USER'},
-    -dbname => lc $params->{'META'}{'SPECIES.PRODUCTION_NAME'},
+    -dbname => $dbname,
     -host   => $params->{'DATABASE_CORE'}{'HOST'},
     -port   => $params->{'DATABASE_CORE'}{'PORT'},
     -driver => 'mysql'
