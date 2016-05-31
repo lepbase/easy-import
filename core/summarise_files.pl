@@ -42,17 +42,17 @@ if ($params{'GFF'}{'SPLIT'}){
 }
 
 
-## generate summary of gff file
+## generate summary of gff/fasta file
 foreach my $file (keys %infiles){
 	if ($infiles{$file}{'type'} eq 'gff'){
 		## generate feature summary and write to file
 		print STDERR "Calculating summary statistics on [FILES] $file $infiles{$file}{'name'}\n";
 		gff_feature_summary($params,$infiles{'GFF'}->{'name'});
 	}
-  if ($infiles{$file}{'type'} eq 'fas'){
+  elsif ($infiles{$file}{'type'} eq 'fas'){
 		## generate feature summary and write to file
 		print STDERR "Counting sequences in [FILES] $file $infiles{$file}{'name'}\n";
-		fa_sequence_count($infiles{'GFF'}->{'name'},$file);
+		fa_sequence_count($infiles{$file}->{'name'},$file);
 	}
 }
 
