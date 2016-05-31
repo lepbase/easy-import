@@ -56,6 +56,8 @@ $registry->load_registry_from_db(
     -driver => 'mysql',
 );
 
+my $dbname = $params->{'DATABASE_CORE'}{'NAME'};
+
 my $dba = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
     -user   => $params->{'DATABASE_CORE'}{'RO_USER'},
     -dbname => $dbname,
@@ -63,6 +65,11 @@ my $dba = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
     -port   => $params->{'DATABASE_CORE'}{'PORT'},
     -driver => 'mysql'
 );
+
+
+my $meta_container = $dba->get_adaptor("MetaContainer");
+
+my $display_name    = $meta_container->get_display_name();
 
 my   $output_fh;
 open $output_fh, "$display_name.gff";
