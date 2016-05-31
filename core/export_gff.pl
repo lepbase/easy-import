@@ -42,8 +42,10 @@ foreach my $subsection (sort keys %{$params->{'FILES'}}){
 
 my $lib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl/modules';
 my $iolib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-io/modules';
+my $comparalib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-compara/modules';
 push @INC, $lib;
 push @INC, $iolib;
+push @INC, $comparalib;
 load Bio::EnsEMBL::Registry;
 load Bio::EnsEMBL::Utils::IO::GFFSerializer;
 
