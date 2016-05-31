@@ -1218,7 +1218,7 @@ sub _agp_file_to_hash {
 }
 
 sub fa_sequence_count {
-	my $infile = shift;
+	my ($infile,$type) = @_;
   open IN,$infile;
   my $count = 0;
   while (<IN>){
@@ -1226,7 +1226,7 @@ sub fa_sequence_count {
   }
   close IN;
   mkdir "summary";
-	open OUT,">summary/$infile.sequence_count.txt";
+	open OUT,">summary/$type.$infile.sequence_count.txt";
   print OUT $count,"\n";
   close OUT;
 }

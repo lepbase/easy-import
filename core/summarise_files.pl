@@ -52,7 +52,7 @@ foreach my $file (keys %infiles){
   if ($infiles{$file}{'type'} eq 'fas'){
 		## generate feature summary and write to file
 		print STDERR "Counting sequences in [FILES] $file $infiles{$file}{'name'}\n";
-		fa_sequence_count($infiles{'GFF'}->{'name'});
+		fa_sequence_count($infiles{'GFF'}->{'name'},$file);
 	}
 }
 
