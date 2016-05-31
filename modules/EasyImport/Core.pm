@@ -1218,10 +1218,10 @@ sub _agp_file_to_hash {
 }
 
 sub fa_sequence_count {
-	my ($infile) = @_;
+	my $infile = shift;
   open IN,$infile;
   my $count = 0;
-  while <IN>){
+  while (<IN>){
     $count++ if m/^>/;
   }
   close IN;
