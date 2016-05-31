@@ -1217,6 +1217,20 @@ sub _agp_file_to_hash {
     return \%main_hash;
 }
 
+sub fa_sequence_count {
+	my ($infile) = @_;
+  open IN,$infile;
+  my $count = 0;
+  while <IN>){
+    $count++ if m/^>/;
+  }
+  close IN;
+  mkdir "summary";
+	open OUT,">summary/$infile.sequence_count.txt";
+  print OUT $count,"\n";
+  close OUT;
+}
+
 sub fasta_file_summary {
 	my ($params,$infile,$type) = @_;
 	my (%scaffold_hash,%all_stats,%N50nums);
