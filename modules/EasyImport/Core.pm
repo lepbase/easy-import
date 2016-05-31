@@ -5,6 +5,7 @@ use DBI;
 use GFFTree;
 use EasyImport::GFF;
 use List::Util qw(sum);
+use Bio::SeqIO;
 
 sub truncate_seq_tables {
 	my ($dbh) = @_;
