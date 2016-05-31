@@ -72,7 +72,7 @@ my $meta_container = $dba->get_adaptor("MetaContainer");
 my $display_name    = $meta_container->get_display_name();
 
 my   $output_fh;
-open $output_fh, "$display_name.gff";
+open $output_fh, ">$display_name.gff";
 
 my   $ontology_adaptor = $registry->get_adaptor( 'Multi', 'Ontology', 'OntologyTerm' );
 my   $serializer       = Bio::EnsEMBL::Utils::IO::GFFSerializer->new($ontology_adaptor,$output_fh);
