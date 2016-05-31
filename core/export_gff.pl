@@ -44,8 +44,8 @@ my $lib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl/modules';
 my $iolib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-io/modules';
 push @INC, $lib;
 push @INC, $iolib;
-use Bio::EnsEMBL::Registry;
-use Bio::EnsEMBL::Utils::IO::GFFSerializer;
+load Bio::EnsEMBL::Registry;
+load Bio::EnsEMBL::Utils::IO::GFFSerializer;
 
 my $registry = 'Bio::EnsEMBL::Registry';
 
