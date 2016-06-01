@@ -121,14 +121,14 @@ my $transcript_adaptor = $dba->get_TranscriptAdaptor();
 my $gene_adaptor       = $dba->get_GeneAdaptor();
 my @transcripts        = @{$transcript_adaptor->fetch_all_by_biotype('protein_coding')};
 my $gene;
-my ($pep, $cds, $transcript_id, $translation_id, $desc)  = ("","","","","");
-my ($protein_fh, $cds_fh, $cds_translationid_fh);
+my ($pep, $cds, $bounded_exon, $transcript_id, $translation_id, $desc)  = ("","","","","");
+my ($protein_fh, $cds_fh, $cds_bounded_exon_fh, $cds_translationid_fh);
 my $protein_count = 0;
 
 open $protein_fh,           ">", "$display_name\_-_proteins.fa"          or die $!;
 open $cds_fh,               ">", "$display_name\_-_cds.fa"               or die $!;
 open $cds_translationid_fh, ">", "$display_name\_-_cds_translationid.fa" or die $!;
-open $bounded_exon_fh,      ">", "$display_name\_-_cds_bounded_exon.fa"  or die $!;
+open $cds_bounded_exon_fh,      ">", "$display_name\_-_cds_bounded_exon.fa"  or die $!;
 
 foreach my $transcript (@transcripts) {
     if (defined $transcript->translate() ) {
