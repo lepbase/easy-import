@@ -50,12 +50,3 @@ setup_compara_db($params);
 sub usage {
 	return "USAGE: perl setup_database.pl ini_file";
 }
-
-my $lib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl/modules';
-my $iolib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-io/modules';
-my $comparalib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-compara/modules';
-push @INC, $lib;
-push @INC, $iolib;
-push @INC, $comparalib;
-load Bio::EnsEMBL::Registry;
-load Bio::EnsEMBL::Utils::IO::GFFSerializer;
