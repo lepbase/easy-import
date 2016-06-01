@@ -44,7 +44,7 @@ push @INC, $comparalib;
 my $dbh = compara_db_connect($params);
 
 opendir DIR, $params->{'ORTHOGROUP'}{'PATH'} or die "Cannot open directory: $!";
-my $prefix = $params->{'ORTHOGROUP'}{'PREFIX'};
+our $prefix = $params->{'ORTHOGROUP'}{'PREFIX'};
 my @files = grep { /^$prefix\d+$/ } readdir DIR;
 closedir DIR;
 
@@ -55,10 +55,9 @@ closedir DIR;
 find(&wanted,$params->{'ORTHOGRUP'}{'PATH'});
 
 sub wanted {
-  my $file = shift;
   my $prefix = $params->{'ORTHOGRUP'}{'PREFIX'};
-  if ($file =~ m/^$prefix\w+$/){
-    load_sequences($dbh,$params,$file);
+  if (m/^$prefix\w+$/){
+    load_sequences($dbh,$params,$_);
   }
 }
 
