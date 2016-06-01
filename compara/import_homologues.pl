@@ -43,25 +43,22 @@ push @INC, $comparalib;
 
 my $dbh = compara_db_connect($params);
 
-opendir DIR, $params->{'ORTHOGROUP'}{'PATH'} or die "Cannot open directory: $!";
 our $prefix = $params->{'ORTHOGROUP'}{'PREFIX'};
-my @files = grep { /^$prefix\d+$/ } readdir DIR;
-closedir DIR;
 
 
 #use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
 #use Bio::EnsEMBL::Compara::Graph::NewickParser;
 
-find(&wanted,$params->{'ORTHOGRUP'}{'PATH'});
-
-sub wanted {
-  my $prefix = $params->{'ORTHOGRUP'}{'PREFIX'};
-  if (m/^$prefix\w+$/){
-    load_sequences($dbh,$params,$_);
+find({wanted => sub {
+  my $file = $File::Find::name;
+  if (!-d $file){
+    if ($file =~ m/$prefix\w+$/){
+      load_sequences($dbh,$params,$file);
+    }
   }
-}
-
+},
+no_chdir => 1},'.');
 
 sub usage {
-	return "USAGE: perl -I /path/to/dir/containing/Ensembl_Import.pm /path/to/import_homologues.pl ini_file";
+        return "USAGE: perl -I /path/to/dir/containing/Ensembl_Import.pm /path/to/import_homologues.pl ini_file";
 }
