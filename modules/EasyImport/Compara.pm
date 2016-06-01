@@ -3,8 +3,6 @@
 use strict;
 use DBI;
 use Bio::SeqIO;
-use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
-use Bio::EnsEMBL::Compara::Graph::NewickParser;
 
 {
 my %core_dbs;
