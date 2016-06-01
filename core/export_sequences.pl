@@ -122,13 +122,13 @@ my $gene_adaptor       = $dba->get_GeneAdaptor();
 my @transcripts        = @{$transcript_adaptor->fetch_all_by_biotype('protein_coding')};
 my $gene;
 my ($pep, $cds, $bounded_exon, $transcript_id, $translation_id, $desc)  = ("","","","","");
-my ($protein_fh, $cds_fh, $cds_bounded_exon_fh, $cds_translationid_fh);
+my ($protein_fh, $cds_fh, $bounded_exon_fh, $cds_translationid_fh);
 my $protein_count = 0;
 
 open $protein_fh,           ">", "$display_name\_-_proteins.fa"          or die $!;
 open $cds_fh,               ">", "$display_name\_-_cds.fa"               or die $!;
 open $cds_translationid_fh, ">", "$display_name\_-_cds_translationid.fa" or die $!;
-open $cds_bounded_exon_fh,      ">", "$display_name\_-_cds_bounded_exon.fa"  or die $!;
+open $bounded_exon_fh,      ">", "$display_name\_-_protein_bounded_exon.fa"  or die $!;
 
 foreach my $transcript (@transcripts) {
     if (defined $transcript->translate() ) {
@@ -151,7 +151,7 @@ foreach my $transcript (@transcripts) {
         # print $protein_fh           ">$translation_id $dbname protein $desc\n$pep\n";
         print $cds_fh               ">$transcript_id $dbname cds $desc\n$cds\n";
         print $cds_translationid_fh ">$translation_id $dbname cds_translationid $desc\n$cds\n";
-        print $cds_bounded_exon_fh  ">$translation_id $dbname cds_bounded_exon $desc\n$bounded_exon\n";
+        print $bounded_exon_fh      ">$translation_id $dbname protein_bounded_exon $desc\n$bounded_exon\n";
         print $protein_fh           ">$translation_id $dbname protein $desc\n$pep\n";
         $protein_count++;
     }
