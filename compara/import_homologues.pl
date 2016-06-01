@@ -48,7 +48,11 @@ my $prefix = $params->{'ORTHOGROUP'}{'PREFIX'};
 my @files = grep { /^$prefix\d+$/ } readdir DIR;
 closedir DIR;
 
-find(&wanted,$params->{'ORTHOGRUP'}{'PATH'})
+
+#use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
+#use Bio::EnsEMBL::Compara::Graph::NewickParser;
+
+find(&wanted,$params->{'ORTHOGRUP'}{'PATH'});
 
 sub wanted {
   my $file = shift;
