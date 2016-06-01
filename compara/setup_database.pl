@@ -28,7 +28,7 @@ my %sections = (
             },
   'DATABASE_TEMPLATE' =>	{ 	'NAME' => 1,
               'HOST' => 1,
-              'PORT' => 1
+              'PORT' => 1,
               'RO_USER' => 1
             }
   );
