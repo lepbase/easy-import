@@ -668,7 +668,7 @@ sub compara_db_connect {
 	my $params = shift;
 	my $dsn = "DBI:mysql:host=$params->{'DATABASE_COMPARA'}{'HOST'};port=$params->{'DATABASE_COMPARA'}{'PORT'}";
 	my $dbh = DBI->connect($dsn,"$params->{'DATABASE_COMPARA'}{'RW_USER'}","$params->{'DATABASE_COMPARA'}{'RW_PASS'}") || die "ERROR: unable to connect to [DATABASE_COMPARA] HOST ".$params->{'DATABASE_COMPARA'}{'HOST'}." using provided settings";
-	#$dbh->do('CREATE DATABASE IF NOT EXISTS '.$params->{'DATABASE_COMPARA'}{'NAME'}) || die "ERROR: unable to create [DATABASE_COMPARA] NAME ".$params->{'DATABASE_COMPARA'}{'NAME'}." using provided settings";
+	$dbh->do('CREATE DATABASE IF NOT EXISTS '.$params->{'DATABASE_COMPARA'}{'NAME'}) || die "ERROR: unable to create [DATABASE_COMPARA] NAME ".$params->{'DATABASE_COMPARA'}{'NAME'}." using provided settings";
 	$dbh->do('USE '.$params->{'DATABASE_COMPARA'}{'NAME'}) || die "ERROR: unable to connect to [DATABASE_COMPARA] NAME ".$params->{'DATABASE_COMPARA'}{'NAME'}." using provided settings";
 	return $dbh;
 }
