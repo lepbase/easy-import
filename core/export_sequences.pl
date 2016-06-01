@@ -128,6 +128,7 @@ my $protein_count = 0;
 open $protein_fh,           ">", "$display_name\_-_proteins.fa"          or die $!;
 open $cds_fh,               ">", "$display_name\_-_cds.fa"               or die $!;
 open $cds_translationid_fh, ">", "$display_name\_-_cds_translationid.fa" or die $!;
+open $bounded_exon_fh,      ">", "$display_name\_-_cds_bounded_exon.fa"  or die $!;
 
 foreach my $transcript (@transcripts) {
     if (defined $transcript->translate() ) {
@@ -144,11 +145,13 @@ foreach my $transcript (@transcripts) {
         # }
         $pep = $transcript->translate()->seq;
         $cds = $transcript->translateable_seq();
+        $bounded_exon = _prepare_exon_sequences($transcript,$pep);
         # print $cds_fh               ">$transcript_id $dbname cds $desc\n$cds\n";
         # print $cds_translationid_fh ">$translation_id $dbname cds_translationid $desc\n$cds\n";
         # print $protein_fh           ">$translation_id $dbname protein $desc\n$pep\n";
         print $cds_fh               ">$transcript_id $dbname cds $desc\n$cds\n";
         print $cds_translationid_fh ">$translation_id $dbname cds_translationid $desc\n$cds\n";
+        print $cds_bounded_exon_fh  ">$translation_id $dbname cds_bounded_exon $desc\n$bounded_exon\n";
         print $protein_fh           ">$translation_id $dbname protein $desc\n$pep\n";
         $protein_count++;
     }
@@ -159,4 +162,55 @@ print "$dbname - Num of proteins     : $protein_count\n";
 
 sub usage {
 	return "USAGE: perl /path/to/export_sequences.pl /path/to/config_file.ini";
+}
+
+sub _prepare_exon_sequences {
+
+
+#    my $self = shift;
+#
+#    # If there is the exon_bounded sequence, it is only a matter of splitting it and alternating the case
+#    my $exon_bounded_seq = $self->{_sequence_exon_bounded};
+#    $exon_bounded_seq = $self->adaptor->db->get_SequenceAdaptor->fetch_other_sequence_by_member_id_type($self->seq_member_id, 'exon_bounded') unless $exon_bounded_seq;
+#
+#    if ($exon_bounded_seq) {
+#        $self->{_sequence_exon_bounded} = $exon_bounded_seq;
+#        my $i = 0;
+#        $self->{_sequence_exon_cased} = join('', map {$i++%2 ? lc($_) : $_} split( /[boj]/, $exon_bounded_seq));
+#
+#    } else {
+#
+#        my $sequence = $self->sequence;
+        my ($transcript,$sequence) = @_;
+        my $sequence_exon_bounded;
+        my @exons = @{$transcript->get_all_translateable_Exons};
+        # @exons probably doesn't match the protein if there are such edits
+        my @seq_edits = @{$transcript->translation->get_all_SeqEdits('amino_acid_sub')};
+        push @seq_edits, @{$transcript->get_all_SeqEdits('_rna_edit')};
+
+        if (((scalar @exons) <= 1) or (scalar(@seq_edits) > 0)) {
+            $sequence_exon_bounded = $sequence;
+            return $sequence_exon_bounded;
+        }
+
+        # Otherwise, we have to parse the exons
+        my %boundary_chars = (0 => 'o', 1 => 'b', 2 => 'j');
+        my $left_over = $exons[0]->phase > 0 ? -$exons[0]->phase : 0;
+        my @this_seq = ();
+       # my @exon_sequences = ();
+        foreach my $exon (@exons) {
+            my $exon_pep_len = POSIX::ceil(($exon->length - $left_over) / 3);
+            my $exon_seq = substr($sequence, 0, $exon_pep_len, '');
+            $left_over += 3*$exon_pep_len - $exon->length;
+            #printf("%s: exon of len %d -> phase %d: %s\n", $transcript->stable_id, $exon_pep_len, $left_over, $exon_seq);
+            push @this_seq, $exon_seq;
+            push @this_seq, $boundary_chars{$left_over};
+           # push @exon_sequences, scalar(@exon_sequences)%2 ? $exon_seq : lc($exon_seq);
+            die sprintf('Invalid phase: %s', $left_over) unless exists $boundary_chars{$left_over}
+        }
+        die sprintf('%d characters left in the sequence of %s', length($sequence), $transcript->stable_id) if $sequence;
+        pop @this_seq;
+        $sequence_exon_bounded = join('', @this_seq);
+        #$sequence_exon_cased = join('', @exon_sequences);
+
 }
