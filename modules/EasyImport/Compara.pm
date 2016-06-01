@@ -91,7 +91,7 @@ sub load_sequences {
 			print "species_set_id: ",$species_set_id,"\n";
 			my $method_link_id = 401;
 			my $mlss_id = add_method_link_species_set($dbh,$method_link_id,$species_set_id,'protein_tree_lepbase_v1','lepbase');
-			add_gene_tree ($cluster_id . $params->{'ORTHOMCL'}{'TREE'}, 'protein', 'tree', 'default', $mlss_id, $gene_align_id, $cluster_id, 1);
+			add_gene_tree ($params,$cluster_id . $params->{'ORTHOMCL'}{'TREE'}, 'protein', 'tree', 'default', $mlss_id, $gene_align_id, $cluster_id, 1);
 
 		}
 	}
@@ -99,7 +99,7 @@ sub load_sequences {
 }
 
 sub add_gene_tree {
-	my ($newick_treefile, $member_type, $tree_type, $clusterset_id, $mlss_id, $gene_align_id, $stable_id, $version) = @_;
+	my ($params,$newick_treefile, $member_type, $tree_type, $clusterset_id, $mlss_id, $gene_align_id, $stable_id, $version) = @_;
 	my $cdba = new Bio::EnsEMBL::Compara::DBSQL::DBAdaptor(
 		-host => $params->{'DATABASE_COMPARA'}{'HOST'},
 		-user => $params->{'DATABASE_COMPARA'}{'RW_USER'},
