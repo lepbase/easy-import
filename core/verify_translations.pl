@@ -155,10 +155,18 @@ for my $id (sort keys %providerhash) {
             push @identical, $id;
         }
         elsif (index ($providerhash{$id},$exportedhash{$id}) >=0) {
-            push @substrexportedofprovider, $id . "\t" . distance($providerhash{$id},$exportedhash{$id}) . "\t" . index ($providerhash{$id},$exportedhash{$id});
+            my $providertostop = $providerhash{$id};
+            $providertostop =~ s/\*.*//;
+            my $exportedtostop = $exportedhash{$id};
+            $exportedtostop =~ s/\*.*//;
+            push @substrexportedofprovider, $id . "\t" . distance($providerhash{$id},$exportedhash{$id}) . "\t" . distance($providertostop,$exportedtostop) . "\t" . index ($providerhash{$id},$exportedhash{$id});
         }
         elsif (index ($exportedhash{$id},$providerhash{$id}) >=0) {
-            push @substrproviderofexported, $id . "\t" . distance($providerhash{$id},$exportedhash{$id}) . "\t" . index ($exportedhash{$id},$providerhash{$id});
+            my $providertostop = $providerhash{$id};
+            $providertostop =~ s/\*.*//;
+            my $exportedtostop = $exportedhash{$id};
+            $exportedtostop =~ s/\*.*//;
+            push @substrproviderofexported, $id . "\t" . distance($providerhash{$id},$exportedhash{$id}) . "\t" . distance($providertostop,$exportedtostop) . "\t" . index ($exportedhash{$id},$providerhash{$id});
         }
         else {
             push @different,  $id . "\t" . distance($providerhash{$id},$exportedhash{$id});
