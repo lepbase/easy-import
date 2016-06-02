@@ -45,6 +45,12 @@ my $dbh = compara_db_connect($params);
 
 our $prefix = $params->{'ORTHOGROUP'}{'PREFIX'};
 
+my $taxlist;
+foreach my $key (keys %{$params->{'TAXA'}}){
+  $taxlist .= $params->{'TAXA'}{$key}->[0].'|';
+}
+chop $taxlist;
+$params->{'ORTHOGROUP'}{'TAXA'} = $taxlist;
 
 #use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
 #use Bio::EnsEMBL::Compara::Graph::NewickParser;
