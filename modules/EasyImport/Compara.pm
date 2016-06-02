@@ -118,7 +118,7 @@ sub add_gene_tree {
 		print $node->name . "\n" if defined $node->name;
 		if ($node->is_leaf) {
 			my $node_name = $node->name();
-			$node_name =~ s/^[A-Z]{4}_//;
+			$node_name =~ m/^($taxa).(.+)$/;
 			$node->name($node_name);
 			my $seqm = $seqma->fetch_by_stable_id($node->name);
 			$node = bless $node, 'Bio::EnsEMBL::Compara::GeneTreeMember';
