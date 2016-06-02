@@ -76,7 +76,7 @@ sub read_seqs_to_hash {
 		$seq->display_id() =~ m/^($taxa).(.+)$/;
 		my $sp = $1;
 		my $tsl_stable_id = $2;
-		$seqs{$sp}{$tsl_stable_id}{$key} = $seq->seq();
+		$seqs->{$sp}{$tsl_stable_id}{$key} = $seq->seq();
     $len = $seq->length() if $seq->length() > $len;
 	}
   return $len;
