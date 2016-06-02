@@ -13,7 +13,6 @@ my %genes;
 sub load_sequences {
 	my ($dbh,$params,$fullname) = @_;
   my ($file,$path) = fileparse($fullname);
-  $params->{'ORTHOGROUP'}{'PATH'} = $path.'/'.$file;
 	my %seqs;
 
 	# Leave out gene_tree_root function for now, assume supertree of treetype clusterset default exists in database with root_id 1
@@ -62,7 +61,7 @@ sub load_sequences {
 	print "species_set_id: ",$species_set_id,"\n";
 	my $method_link_id = 401;
 	my $mlss_id = add_method_link_species_set($dbh,$method_link_id,$species_set_id,'protein_tree_lepbase_v1','lepbase');
-	add_gene_tree ($params,$cluster_id . $params->{'ORTHOGROUP'}{'TREE'}, 'protein', 'tree', 'default', $mlss_id, $gene_align_id, $cluster_id, 1);
+	add_gene_tree ($params,$path.'/'.$file.''.$params->{'ORTHOGROUP'}{'TREE'}, 'protein', 'tree', 'default', $mlss_id, $gene_align_id, $cluster_id, 1);
 
 
 	return 1;
@@ -101,7 +100,7 @@ sub add_gene_tree {
 
 	$gta->store($newtree);
 
-	open TREEFILE, "<".$params->{'ORTHOGROUP'}{'PATH'}."$newick_treefile" or die "Could not open newick treefile ".$params->{'ORTHOGROUP'}{'PATH'}."/$newick_treefile\n";
+	open TREEFILE, "<$newick_treefile" or die "Could not open newick treefile $newick_treefile\n";
 	chomp(my $newick_tree = <TREEFILE>);
 	my $newroot = Bio::EnsEMBL::Compara::Graph::NewickParser::parse_newick_into_tree($newick_tree, "Bio::EnsEMBL::Compara::GeneTreeNode");
 	$newroot->build_leftright_indexing;
