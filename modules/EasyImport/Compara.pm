@@ -13,6 +13,7 @@ my %genes;
 sub load_sequences {
 	my ($dbh,$params,$fullname) = @_;
   my ($file,$path) = fileparse($fullname);
+  $params->{'ORTHOGROUP'}{'PATH'} = $path.'/'.$file;
 	my %seqs;
 
 	# Leave out gene_tree_root function for now, assume supertree of treetype clusterset default exists in database with root_id 1
@@ -100,7 +101,7 @@ sub add_gene_tree {
 
 	$gta->store($newtree);
 
-	open TREEFILE, "<$newick_treefile" or die "Could not open newick treefile $newick_treefile\n";
+	open TREEFILE, "<".$params->{'ORTHOGROUP'}{'PATH'}."/$newick_treefile" or die "Could not open newick treefile $newick_treefile\n";
 	chomp(my $newick_tree = <TREEFILE>);
 	my $newroot = Bio::EnsEMBL::Compara::Graph::NewickParser::parse_newick_into_tree($newick_tree, "Bio::EnsEMBL::Compara::GeneTreeNode");
 	$newroot->build_leftright_indexing;
