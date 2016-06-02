@@ -29,7 +29,6 @@ sub load_sequences {
 
 	my $gene_align_id;
 	$gene_align_id = add_gene_align($dbh,$aln_method,$aln_length);
-	my $seqin = Bio::SeqIO->new(-file => $cluster_id . $params->{'ORTHOGROUP'}{'PROTEIN'} , -format => 'fasta');
 	foreach my $sp (keys %seqs){
     foreach my $tsl_stable_id (keys %{$seqs{$sp}}){
       my $seqstr = $seqs{$sp}{$tsl_stable_id}{'protein'};
