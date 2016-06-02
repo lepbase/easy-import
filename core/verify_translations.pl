@@ -69,11 +69,14 @@ while ( my $seq = $providerin->next_seq) {
     }
 }
 
+my $outdir = 'summary';
+mkdir $outdir;
+
 print STDERR "Num of unique     seq IDs in $provider: " . scalar (keys %providerhash) . "\n";
 print STDERR "Num of duplicated seq IDs in $provider: " . scalar (@providerdups) . "\n";
 
 if (scalar @providerdups > 0) {
-    open  DUP1, ">$provider.dups.ids" or die $!;
+    open  DUP1, ">$outdir/$provider.dups.ids" or die $!;
     print DUP1  join("\n",@providerdups)  . "\n";
 }
 
@@ -106,8 +109,8 @@ print STDERR "Num of unique     seq IDs in $exported: " . scalar (keys %exported
 print STDERR "Num of duplicated seq IDs in $exported: " . scalar (@exporteddups) . "\n";
 
 if (scalar @exporteddups > 0) {
-    open  DUP1, ">$exported.dups.ids" or die $!;
-    print DUP1  join("\n",@exporteddups)  . "\n";
+    open  DUP2, ">$outdir/$exported.dups.ids" or die $!;
+    print DUP2  join("\n",@exporteddups)  . "\n";
 }
 
 ####
@@ -115,7 +118,7 @@ if (scalar @exporteddups > 0) {
 #print STDERR "\n----\nChecking for extra seq IDs in $file1\n----\n";
 
 my $extraprovidercount = 0;
-open EXTRA1, ">$provider.extra.ids" or die $!;
+open EXTRA1, ">$outdir/$provider.extra.ids" or die $!;
 for my $id (sort keys %providerhash) {
     if (not exists $exportedhash{$id}) {
         print EXTRA1 "$id\n";
@@ -130,7 +133,7 @@ print STDERR "Num of extra      seq IDs in $provider: " . $extraprovidercount . 
 #print STDERR "\n----\nChecking for extra seq IDs in $file2\n----\n";
 
 my $extraexportedcount = 0;
-open EXTRA2, ">$exported.extra.ids" or die $!;
+open EXTRA2, ">$outdir/$exported.extra.ids" or die $!;
 for my $id (sort keys %exportedhash) {
     if (not exists $providerhash{$id}) {
         print EXTRA2 "$id\n";
@@ -147,6 +150,8 @@ print STDERR "Checking sequences with same ID in $provider and $exported\n";
 my @identical;
 my @substrproviderofexported;
 my @substrexportedofprovider;
+my $substrproviderofexportedtostop = 0;
+my $substrexportedofprovidertostop = 0;
 my @different;
 
 for my $id (sort keys %providerhash) {
@@ -160,6 +165,7 @@ for my $id (sort keys %providerhash) {
             my $exportedtostop = $exportedhash{$id};
             $exportedtostop =~ s/\*.*//;
             push @substrexportedofprovider, $id . "\t" . distance($providerhash{$id},$exportedhash{$id}) . "\t" . distance($providertostop,$exportedtostop) . "\t" . index ($providerhash{$id},$exportedhash{$id});
+            $substrexportedofprovidertostop++ if (index($providertostop,$exportedtostop));
         }
         elsif (index ($exportedhash{$id},$providerhash{$id}) >=0) {
             my $providertostop = $providerhash{$id};
@@ -167,6 +173,7 @@ for my $id (sort keys %providerhash) {
             my $exportedtostop = $exportedhash{$id};
             $exportedtostop =~ s/\*.*//;
             push @substrproviderofexported, $id . "\t" . distance($providerhash{$id},$exportedhash{$id}) . "\t" . distance($providertostop,$exportedtostop) . "\t" . index ($exportedhash{$id},$providerhash{$id});
+            $substrproviderofexportedtostop++ if (index($exportedtostop,$providertostop));
         }
         else {
             push @different,  $id . "\t" . distance($providerhash{$id},$exportedhash{$id});
@@ -175,15 +182,15 @@ for my $id (sort keys %providerhash) {
 }
 
 print STDERR "Identical: " . scalar(@identical) . "\n";
-print STDERR "Sequence in $exported is substr of sequence in $provider: " . scalar(@substrexportedofprovider) . "\n";
-print STDERR "Sequence in $provider is substr of sequence in $exported: " . scalar(@substrproviderofexported) . "\n";
+print STDERR "Sequence in $exported is substr of sequence in $provider: $substrexportedofprovidertostop (" . scalar(@substrexportedofprovider) . ")\n";
+print STDERR "Sequence in $provider is substr of sequence in $exported: $substrproviderofexportedtostop (" . scalar(@substrproviderofexported) . ")\n";
 print STDERR "Different: " . scalar(@different) . "\n";
 
-open  OUT, ">identical.ids" or die $!;
+open  OUT, ">$outdir/identical.ids" or die $!;
 print OUT  join("\n",@identical)  . "\n" if scalar @identical > 0;
-open  OUT, ">substrexportedofprovider.ids" or die $!;
+open  OUT, ">$outdir/substrexportedofprovider.ids" or die $!;
 print OUT  join("\n",@substrexportedofprovider) . "\n" if scalar @substrexportedofprovider > 0;
-open  OUT, ">substrproviderofexported.ids" or die $!;
+open  OUT, ">$outdir/substrproviderofexported.ids" or die $!;
 print OUT  join("\n",@substrproviderofexported) . "\n" if scalar @substrproviderofexported > 0;
-open  OUT, ">different.ids" or die $!;
+open  OUT, ">$outdir/different.ids" or die $!;
 print OUT  join("\n",@different) . "\n" if scalar @different > 0;
