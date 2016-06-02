@@ -5,6 +5,7 @@ use strict;
 use Cwd 'abs_path';
 use File::Basename;
 use File::Find;
+use Module::Load;
 
 ## find the full path to the directory that this script is executing in
 our $dirname;
@@ -49,6 +50,7 @@ my $lib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl/modules';
 my $comparalib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-compara/modules';
 push @INC, $lib;
 push @INC, $comparalib;
+load Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
 
 my $dbh = compara_db_connect($params);
 
