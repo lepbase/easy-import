@@ -18,12 +18,12 @@ sub load_sequences {
 	# Leave out gene_tree_root function for now, assume supertree of treetype clusterset default exists in database with root_id 1
 	# my $root_id = add_gene_tree_root($dbh,'protein','clusterset','default',$mlss_id);
 
-	read_seqs_to_hash(\%seqs,$path.'/'.$file.'.'.$params->{'ORTHOGROUP'}{'PROTEIN'},$params->{'ORTHOGROUP'}{'TAXA'},'protein');
-	read_seqs_to_hash(\%seqs,$path.'/'.$file.'.'.$params->{'ORTHOGROUP'}{'FNAFILE'},$params->{'ORTHOGROUP'}{'TAXA'},'fna');
-	read_seqs_to_hash(\%seqs,$path.'/'.$file.'.'.$params->{'ORTHOGROUP'}{'BOUNDEDFILE'},$params->{'ORTHOGROUP'}{'TAXA'},'bounded');
+	read_seqs_to_hash(\%seqs,$path.'/'.$file.''.$params->{'ORTHOGROUP'}{'PROTEIN'},$params->{'ORTHOGROUP'}{'TAXA'},'protein');
+	read_seqs_to_hash(\%seqs,$path.'/'.$file.''.$params->{'ORTHOGROUP'}{'FNAFILE'},$params->{'ORTHOGROUP'}{'TAXA'},'fna');
+	read_seqs_to_hash(\%seqs,$path.'/'.$file.''.$params->{'ORTHOGROUP'}{'BOUNDEDFILE'},$params->{'ORTHOGROUP'}{'TAXA'},'bounded');
 	my $cluster_id = $file;
   my $aln_method = $params->{'ORTHOGROUP'}{'PROTEIN_ALIGN'}->[1];
-  my $aln_length = read_seqs_to_hash(\%seqs,$path.'/'.$file.'.'.$$params->{'ORTHOGROUP'}{'PROTEIN_ALIGN'}->[0],$params->{'ORTHOGROUP'}{'TAXA'},'aln');
+  my $aln_length = read_seqs_to_hash(\%seqs,$path.'/'.$file.''.$$params->{'ORTHOGROUP'}{'PROTEIN_ALIGN'}->[0],$params->{'ORTHOGROUP'}{'TAXA'},'aln');
 
 
 
