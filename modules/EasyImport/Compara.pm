@@ -23,7 +23,7 @@ sub load_sequences {
 	read_seqs_to_hash(\%seqs,$path.'/'.$file.''.$params->{'ORTHOGROUP'}{'BOUNDEDFILE'},$params->{'ORTHOGROUP'}{'TAXA'},'bounded');
 	my $cluster_id = $file;
   my $aln_method = $params->{'ORTHOGROUP'}{'PROTEIN_ALIGN'}->[1];
-  my $aln_length = read_seqs_to_hash(\%seqs,$path.'/'.$file.''.$$params->{'ORTHOGROUP'}{'PROTEIN_ALIGN'}->[0],$params->{'ORTHOGROUP'}{'TAXA'},'aln');
+  my $aln_length = read_seqs_to_hash(\%seqs,$path.'/'.$file.''.$params->{'ORTHOGROUP'}{'PROTEIN_ALIGN'}->[0],$params->{'ORTHOGROUP'}{'TAXA'},'aln');
 
 
 
