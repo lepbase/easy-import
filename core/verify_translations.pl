@@ -59,7 +59,7 @@ my @providerdups;
 while ( my $seq = $providerin->next_seq) {
     my $id  = $seq->display_id;
     my $seqstr = $seq->seq;
-    $seqstr =~ s/\*$//;
+    $seqstr =~ s/\W*$//;
     if (exists $providerhash{$id}) {
         print STDERR "DUPLICATE $id\n";
         push  @providerdups, $id;
@@ -92,7 +92,7 @@ my @exporteddups;
 while ( my $seq = $exportedin->next_seq) {
     my $id  = $seq->display_id;
     my $seqstr = $seq->seq;
-    $seqstr =~ s/\*$//;
+    $seqstr =~ s/\W*$//;
     if (exists $exportedhash{$id}) {
         print STDERR "DUPLICATE $id\n";
         push  @exporteddups, $id;
