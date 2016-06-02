@@ -51,6 +51,9 @@ my $comparalib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-compara/modules';
 push @INC, $lib;
 push @INC, $comparalib;
 load Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
+load Bio::EnsEMBL::Compara::Graph::NewickParser;
+load Bio::EnsEMBL::Compara::GeneTreeNode;
+load Bio::EnsEMBL::Compara::GeneTreeMember;
 
 my $dbh = compara_db_connect($params);
 
