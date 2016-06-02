@@ -3,100 +3,85 @@
 use strict;
 use DBI;
 use Bio::SeqIO;
+use File::Basename;
 
 {
 my %core_dbs;
 my %genes;
-my %seqs;
 
 # fill in/select from
 sub load_sequences {
-	my ($dbh,$params) = @_;
+	my ($dbh,$params,$fullname) = @_;
+  my ($file,$path) = fileparse($fullname);
 	my %seqs;
 
 	# Leave out gene_tree_root function for now, assume supertree of treetype clusterset default exists in database with root_id 1
 	# my $root_id = add_gene_tree_root($dbh,'protein','clusterset','default',$mlss_id);
 
-	my $fna = $params->{'ORTHOMCL'}{'FNAFILE'};
-	my $bounded = $params->{'ORTHOMCL'}{'BOUNDEDFILE'};
-	my $fnain = Bio::SeqIO->new(-file => $fna, -format => 'fasta');
-	while (my $seq = $fnain->next_seq()){
-		$seq->display_id() =~ m/^(\w{4}).(.+)$/;
-		my $sp = $1;
-		my $tsl_stable_id = $2;
-		$seqs{$sp}{$tsl_stable_id}{'fna'} = $seq->seq();
+	read_seqs_to_hash(\%seqs,$path.'/'.$file.'.'.$params->{'ORTHOMCL'}{'Protein'},$params->{'ORTHOMCL'}{'TAXA'},'protein');
+	read_seqs_to_hash(\%seqs,$path.'/'.$file.'.'.$params->{'ORTHOMCL'}{'FNAFILE'},$params->{'ORTHOMCL'}{'TAXA'},'fna');
+	read_seqs_to_hash(\%seqs,$path.'/'.$file.'.'.$params->{'ORTHOMCL'}{'BOUNDEDFILE'},$params->{'ORTHOMCL'}{'TAXA'},'bounded');
+	my $cluster_id = $file;
+  my $aln_method = $params->{'ORTHOMCL'}{'PROTEIN_ALIGN'}->[1];
+  my $aln_length = read_seqs_to_hash(\%seqs,$path.'/'.$file.'.'.$$params->{'ORTHOMCL'}{'PROTEIN_ALIGN'}->[0],$params->{'ORTHOMCL'}{'TAXA'},'aln');
+
+
+
+	my $gene_align_id;
+	$gene_align_id = add_gene_align($dbh,$aln_method,$aln_length);
+	my $seqin = Bio::SeqIO->new(-file => $cluster_id . $params->{'ORTHOMCL'}{'PROTEIN'} , -format => 'fasta');
+	foreach my $sp (keys %seqs){
+    foreach my $tsl_stable_id (keys %{$seqs{$sp}}){
+      my $seqstr = $seqs{$sp}{$tsl_stable_id}{'protein'};
+  		my $length = length $seqstr;
+  		my $taxon_id;
+  		my $sp_name;
+  		my $seq_member_id;
+  		if (my $value = $params->{'TAXA'}{$sp}){
+  			if (ref $value){
+  				($sp_name,$taxon_id) = @$value;
+  				# TODO: can't ignore these forever...
+  			}
+  			elsif (!$core_dbs{$sp}) {
+  				fetch_meta_from_core_db($dbh,$sp,$value,$params);
+  			}
+  		}
+  		if ($core_dbs{$sp}) {
+  			$seq_member_id = fetch_gene_from_core_db($dbh,$sp,$tsl_stable_id,$seqstr,$length);
+  		}
+  		if ($seq_member_id){
+  			# load seqs from from fna and faa.bounded files
+  			add_other_member_sequence($dbh,$seq_member_id,'cds',$seqs{$sp}{$tsl_stable_id}{'fna'}) if $seqs{$sp}{$tsl_stable_id}{'fna'};
+  			add_other_member_sequence($dbh,$seq_member_id,'exon_bounded',$seqs{$sp}{$tsl_stable_id}{'bounded'}) if $seqs{$sp}{$tsl_stable_id}{'bounded'};
+  			# TODO: fill in gene_align_member table
+  			add_gene_align_member($dbh,$seq_member_id,$gene_align_id,$seqs{$sp}{$tsl_stable_id}{'aln'});
+  		}
+    }
 	}
-	my $boundin = Bio::SeqIO->new(-file => $bounded, -format => 'fasta');
-	while (my $seq = $boundin->next_seq()){
-		$seq->display_id() =~ m/^(\w{4}).(.+)$/;
-		my $sp = $1;
-		my $tsl_stable_id = $2;
-		$seqs{$sp}{$tsl_stable_id}{'bounded'} = $seq->seq();
-	}
+	my $species_set_id = get_species_set_id($dbh,'lepidoptera');
+	print "species_set_id: ",$species_set_id,"\n";
+	my $method_link_id = 401;
+	my $mlss_id = add_method_link_species_set($dbh,$method_link_id,$species_set_id,'protein_tree_lepbase_v1','lepbase');
+	add_gene_tree ($params,$cluster_id . $params->{'ORTHOMCL'}{'TREE'}, 'protein', 'tree', 'default', $mlss_id, $gene_align_id, $cluster_id, 1);
 
-	opendir DIR,      $params->{'ORTHOMCL'}{'PATH'} or die "Cannot open directory: $!";
-	my $prefix      = $params->{'ORTHOMCL'}{'PREFIX'};
-	my $tree_suffix = $params->{'ORTHOMCL'}{'TREE'};
-	my @files = grep { /^$prefix\d+$tree_suffix$/ } readdir DIR;
-	closedir DIR;
 
-	for my $file (@files) {
-
-		if ($file =~ m/^(.+)$tree_suffix$/){
-			my $cluster_id = $1;
-			my $aln        = $cluster_id . $params->{'ORTHOMCL'}{'PROTEIN_ALIGN'}->[0];
-			my $aln_method =               $params->{'ORTHOMCL'}{'PROTEIN_ALIGN'}->[1];
-			my $alnin = Bio::SeqIO->new(-file => $aln, -format => 'fasta');
-			my $aln_length;
-			while (my $seq = $alnin->next_seq()){
-				$seq->display_id() =~ m/^(\w{4}).(.+)$/;
-				my $sp = $1;
-				my $tsl_stable_id = $2;
-				$seqs{$sp}{$tsl_stable_id}{'aln'} = $seq->seq();
-				$aln_length = $seq->length();
-			}
-			my $gene_align_id;
-			$gene_align_id = add_gene_align($dbh,$aln_method,$aln_length);
-			my $seqin = Bio::SeqIO->new(-file => $cluster_id . $params->{'ORTHOMCL'}{'PROTEIN'} , -format => 'fasta');
-			while (my $seq = $seqin->next_seq()){
-				$seq->display_id() =~ m/^(\w{4}).(.+)$/;
-				my $sp = $1;
-				my $tsl_stable_id = $2;
-				my $seqstr = $seq->seq();
-				my $length = $seq->length();
-				my $taxon_id;
-				my $sp_name;
-				my $seq_member_id;
-				if (my $value = $params->{'TAXA'}{$sp}){
-					if (ref $value){
-						($sp_name,$taxon_id) = @$value;
-						# TODO: can't ignore these forever...
-					}
-					elsif (!$core_dbs{$sp}) {
-						fetch_meta_from_core_db($dbh,$sp,$value,$params);
-					}
-				}
-				if ($core_dbs{$sp}) {
-					$seq_member_id = fetch_gene_from_core_db($dbh,$sp,$tsl_stable_id,$seqstr,$length);
-				}
-				if ($seq_member_id){
-					# load seqs from from fna and faa.bounded files
-					add_other_member_sequence($dbh,$seq_member_id,'cds',$seqs{$sp}{$tsl_stable_id}{'fna'}) if $seqs{$sp}{$tsl_stable_id}{'fna'};
-					add_other_member_sequence($dbh,$seq_member_id,'exon_bounded',$seqs{$sp}{$tsl_stable_id}{'bounded'}) if $seqs{$sp}{$tsl_stable_id}{'bounded'};
-					# TODO: fill in gene_align_member table
-					add_gene_align_member($dbh,$seq_member_id,$gene_align_id,$seqs{$sp}{$tsl_stable_id}{'aln'});
-				}
-			}
-			my $species_set_id = get_species_set_id($dbh,'lepidoptera');
-			print "species_set_id: ",$species_set_id,"\n";
-			my $method_link_id = 401;
-			my $mlss_id = add_method_link_species_set($dbh,$method_link_id,$species_set_id,'protein_tree_lepbase_v1','lepbase');
-			add_gene_tree ($params,$cluster_id . $params->{'ORTHOMCL'}{'TREE'}, 'protein', 'tree', 'default', $mlss_id, $gene_align_id, $cluster_id, 1);
-
-		}
-	}
 	return 1;
 }
+
+sub read_seqs_to_hash {
+  my ($seqs,$file,$taxa,$key) = @_;
+  my $seqin = Bio::SeqIO->new(-file => $file, -format => 'fasta');
+  my $len = -1;
+	while (my $seq = $seqin->next_seq()){
+		$seq->display_id() =~ m/^($taxa).(.+)$/;
+		my $sp = $1;
+		my $tsl_stable_id = $2;
+		$seqs{$sp}{$tsl_stable_id}{$key} = $seq->seq();
+    $len = $seq->length() if $seq->length() > $len;
+	}
+  return $len;
+}
+
 
 sub add_gene_tree {
 	my ($params,$newick_treefile, $member_type, $tree_type, $clusterset_id, $mlss_id, $gene_align_id, $stable_id, $version) = @_;
