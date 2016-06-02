@@ -634,15 +634,17 @@ sub setup_compara_db {
 	$dbh->do('USE '.$params->{'DATABASE_COMPARA'}{'NAME'});
 	## add method_link, ncbi_taxa_name and ncbi_taxa_node tables
 
-  system "wget ".$params->{'DATABASE_TEMPLATE'}{'URL'}."/".$params->{'DATABASE_TEMPLATE'}{'NAME'}."/{method_link,ncbi_taxa_name,ncbi_taxa_node}.txt.gz";
-  system "gunzip {method_link,ncbi_taxa_name,ncbi_taxa_node}.txt.gz";
+  system "wget ".$params->{'DATABASE_TEMPLATE'}{'URL'}."/".$params->{'DATABASE_TEMPLATE'}{'NAME'}."/method_link.txt.gz";
+  system "wget ".$params->{'DATABASE_TEMPLATE'}{'URL'}."/".$params->{'DATABASE_TEMPLATE'}{'NAME'}."/ncbi_taxa_name.txt.gz";
+  system "wget ".$params->{'DATABASE_TEMPLATE'}{'URL'}."/".$params->{'DATABASE_TEMPLATE'}{'NAME'}."/ncbi_taxa_node.txt.gz";
+  system "gunzip *.txt.gz";
 	system 'mysqlimport --fields_escaped_by=\\\\ '
 			.' -h '.$params->{'DATABASE_COMPARA'}{'HOST'}
 			.' -P '.$params->{'DATABASE_COMPARA'}{'PORT'}
 			.' -u '.$params->{'DATABASE_COMPARA'}{'RW_USER'}
 			.' -p'.$params->{'DATABASE_COMPARA'}{'RW_PASS'}
 			.' '.$params->{'DATABASE_COMPARA'}{'NAME'}
-      .' -L {method_link,ncbi_taxa_name,ncbi_taxa_node}.txt';
+      .' -L method_link.txt ncbi_taxa_name.txt ncbi_taxa_node.txt';
 
 	return $dbh;
 }
