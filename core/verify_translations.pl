@@ -69,6 +69,7 @@ while ( my $seq = $providerin->next_seq) {
     }
 }
 
+my $exportdir = 'exported';
 my $outdir = 'summary';
 mkdir $outdir;
 
@@ -85,7 +86,7 @@ if (scalar @providerdups > 0) {
 #print STDERR "\n----\nChecking for duplicates in $exported\n----\n";
 
 my $exportedin = Bio::SeqIO->new(
-                            -file   => "<$exported",
+                            -file   => "<$exportdir/$exported",
                             -format => "FASTA",
                             );
 
