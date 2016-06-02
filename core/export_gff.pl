@@ -34,11 +34,6 @@ while (my $ini_file = shift @ARGV){
 	load_ini($params,$ini_file,\%sections);
 }
 
-## download/obtain files using methods suggested by file paths and extensions
-my %infiles;
-foreach my $subsection (sort keys %{$params->{'FILES'}}){
-	($infiles{$subsection}{'name'},$infiles{$subsection}{'type'}) = fetch_file($params->{'FILES'}{$subsection});
-}
 
 my $lib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl/modules';
 my $iolib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-io/modules';
