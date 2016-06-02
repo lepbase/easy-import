@@ -645,6 +645,7 @@ sub setup_compara_db {
 			.' -p'.$params->{'DATABASE_COMPARA'}{'RW_PASS'}
 			.' '.$params->{'DATABASE_COMPARA'}{'NAME'}
       .' -L method_link.txt ncbi_taxa_name.txt ncbi_taxa_node.txt';
+  system "rm method_link.txt ncbi_taxa_name.txt ncbi_taxa_node.txt";
 
 	return $dbh;
 }
