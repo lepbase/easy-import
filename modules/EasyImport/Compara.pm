@@ -121,7 +121,7 @@ sub add_gene_tree {
 
 			$node_name =~ m/^($taxa).(.+)$/;
 			$node->name($node_name);
-			my $seqm = $seqma->fetch_by_stable_id($node->name);
+			my $seqm = $seqma->fetch_by_stable_id($2);
 			$node = bless $node, 'Bio::EnsEMBL::Compara::GeneTreeMember';
 			$node->seq_member_id($seqm->seq_member_id);
 		} else {
