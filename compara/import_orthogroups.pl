@@ -26,6 +26,15 @@ my %sections = (
               'RW_USER' => 1,
               'RW_PASS' => 1,
               'RO_USER' => 1
+            },
+    'TAXA' => {},
+    'ORTHOGROUP' => {  'PREFIX' => 1,
+  	           'PROTEIN' => 1,
+  	           'PROTEIN_ALIGN' => 1,
+  	           'PROTEIN_TRIMMED' => 1,
+  	           'FNAFILE' => 1,
+  	           'BOUNDEDFILE' => 1,
+  	           'TREE' => 1
             }
   );
 ## check that all required parameters have been defined in the config file
