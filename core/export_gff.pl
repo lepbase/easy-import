@@ -73,6 +73,9 @@ my $meta_container = $dba->get_adaptor("MetaContainer");
 
 my $display_name    = $meta_container->get_display_name();
 
+# convert display name spaces to underscores
+$display_name =~ s/ /_/g;
+
 my   $output_fh;
 open $output_fh, ">$display_name.gff";
 
