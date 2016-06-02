@@ -113,11 +113,12 @@ sub add_gene_tree {
 
 	my $supertree = $gta->fetch_by_root_id(1);
 	$supertree->root->add_child($newroot);
-
+  my $taxa = $params->{'ORTHOGROUP'}{'TAXA'};
 	foreach my $node (@{$newroot->get_all_nodes}) {
 		print $node->name . "\n" if defined $node->name;
 		if ($node->is_leaf) {
 			my $node_name = $node->name();
+
 			$node_name =~ m/^($taxa).(.+)$/;
 			$node->name($node_name);
 			my $seqm = $seqma->fetch_by_stable_id($node->name);
