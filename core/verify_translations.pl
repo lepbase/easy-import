@@ -34,9 +34,8 @@ while (my $ini_file = shift @ARGV){
 
 ## download/obtain files using methods suggested by file paths and extensions
 my %infiles;
-foreach my $subsection (sort keys %{$params->{'FILES'}}){
-	($infiles{$subsection}{'name'},$infiles{$subsection}{'type'}) = fetch_file($params->{'FILES'}{$subsection});
-}
+($infiles{'PROTEIN'}{'name'},$infiles{'PROTEIN'}{'type'}) = fetch_file($params->{'FILES'}{'PROTEIN'});
+
 
 my $display_name = $params->{'META'}{'SPECIES.DISPLAY_NAME'};
 $display_name =~ s/ /_/g;
