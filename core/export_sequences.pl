@@ -97,13 +97,16 @@ my $display_name    = $meta_container->get_display_name();
 # convert display name spaces to underscores
 $display_name =~ s/ /_/g;
 
+my $outdir = 'exported';
+mkdir $outdir;
+
 # Get all scaffolds
 
 my $slice_adaptor = $dba->get_SliceAdaptor();
 my @supercontigs  = @{$slice_adaptor->fetch_all('toplevel')};
 my $supercontig_count = 0;
 
-open (SCAFFOLDS, ">", "$display_name\_-_scaffolds.fa") or die $!;
+open (SCAFFOLDS, ">", "$outdir/$display_name\_-_scaffolds.fa") or die $!;
 
 foreach my $slice (@supercontigs) {
     print SCAFFOLDS ">" . $slice->seq_region_name() . " $dbname scaffold\n" . $slice->seq() . "\n";
@@ -125,10 +128,10 @@ my ($pep, $cds, $bounded_exon, $transcript_id, $translation_id, $desc)  = ("",""
 my ($protein_fh, $cds_fh, $bounded_exon_fh, $cds_translationid_fh);
 my $protein_count = 0;
 
-open $protein_fh,           ">", "$display_name\_-_proteins.fa"          or die $!;
-open $cds_fh,               ">", "$display_name\_-_cds.fa"               or die $!;
-open $cds_translationid_fh, ">", "$display_name\_-_cds_translationid.fa" or die $!;
-open $bounded_exon_fh,      ">", "$display_name\_-_protein_bounded_exon.fa"  or die $!;
+open $protein_fh,           ">", "$outdir/$display_name\_-_proteins.fa"          or die $!;
+open $cds_fh,               ">", "$outdir/$display_name\_-_cds.fa"               or die $!;
+open $cds_translationid_fh, ">", "$outdir/$display_name\_-_cds_translationid.fa" or die $!;
+open $bounded_exon_fh,      ">", "$outdir/$display_name\_-_protein_bounded_exon.fa"  or die $!;
 
 foreach my $transcript (@transcripts) {
     if (defined $transcript->translate() ) {
