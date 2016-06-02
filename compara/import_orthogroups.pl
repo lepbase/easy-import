@@ -56,7 +56,7 @@ our $prefix = $params->{'ORTHOGROUP'}{'PREFIX'};
 
 my $taxlist;
 foreach my $key (keys %{$params->{'TAXA'}}){
-  $taxlist .= $params->{'TAXA'}{$key}->[0].'|';
+  $taxlist .= $key.'|';
 }
 chop $taxlist;
 $params->{'ORTHOGROUP'}{'TAXA'} = $taxlist;
