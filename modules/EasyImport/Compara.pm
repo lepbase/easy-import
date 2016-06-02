@@ -18,18 +18,18 @@ sub load_sequences {
 	# Leave out gene_tree_root function for now, assume supertree of treetype clusterset default exists in database with root_id 1
 	# my $root_id = add_gene_tree_root($dbh,'protein','clusterset','default',$mlss_id);
 
-	read_seqs_to_hash(\%seqs,$path.'/'.$file.'.'.$params->{'ORTHOMCL'}{'PROTEIN'},$params->{'ORTHOMCL'}{'TAXA'},'protein');
-	read_seqs_to_hash(\%seqs,$path.'/'.$file.'.'.$params->{'ORTHOMCL'}{'FNAFILE'},$params->{'ORTHOMCL'}{'TAXA'},'fna');
-	read_seqs_to_hash(\%seqs,$path.'/'.$file.'.'.$params->{'ORTHOMCL'}{'BOUNDEDFILE'},$params->{'ORTHOMCL'}{'TAXA'},'bounded');
+	read_seqs_to_hash(\%seqs,$path.'/'.$file.'.'.$params->{'ORTHOGROUP'}{'PROTEIN'},$params->{'ORTHOGROUP'}{'TAXA'},'protein');
+	read_seqs_to_hash(\%seqs,$path.'/'.$file.'.'.$params->{'ORTHOGROUP'}{'FNAFILE'},$params->{'ORTHOGROUP'}{'TAXA'},'fna');
+	read_seqs_to_hash(\%seqs,$path.'/'.$file.'.'.$params->{'ORTHOGROUP'}{'BOUNDEDFILE'},$params->{'ORTHOGROUP'}{'TAXA'},'bounded');
 	my $cluster_id = $file;
-  my $aln_method = $params->{'ORTHOMCL'}{'PROTEIN_ALIGN'}->[1];
-  my $aln_length = read_seqs_to_hash(\%seqs,$path.'/'.$file.'.'.$$params->{'ORTHOMCL'}{'PROTEIN_ALIGN'}->[0],$params->{'ORTHOMCL'}{'TAXA'},'aln');
+  my $aln_method = $params->{'ORTHOGROUP'}{'PROTEIN_ALIGN'}->[1];
+  my $aln_length = read_seqs_to_hash(\%seqs,$path.'/'.$file.'.'.$$params->{'ORTHOGROUP'}{'PROTEIN_ALIGN'}->[0],$params->{'ORTHOGROUP'}{'TAXA'},'aln');
 
 
 
 	my $gene_align_id;
 	$gene_align_id = add_gene_align($dbh,$aln_method,$aln_length);
-	my $seqin = Bio::SeqIO->new(-file => $cluster_id . $params->{'ORTHOMCL'}{'PROTEIN'} , -format => 'fasta');
+	my $seqin = Bio::SeqIO->new(-file => $cluster_id . $params->{'ORTHOGROUP'}{'PROTEIN'} , -format => 'fasta');
 	foreach my $sp (keys %seqs){
     foreach my $tsl_stable_id (keys %{$seqs{$sp}}){
       my $seqstr = $seqs{$sp}{$tsl_stable_id}{'protein'};
@@ -62,7 +62,7 @@ sub load_sequences {
 	print "species_set_id: ",$species_set_id,"\n";
 	my $method_link_id = 401;
 	my $mlss_id = add_method_link_species_set($dbh,$method_link_id,$species_set_id,'protein_tree_lepbase_v1','lepbase');
-	add_gene_tree ($params,$cluster_id . $params->{'ORTHOMCL'}{'TREE'}, 'protein', 'tree', 'default', $mlss_id, $gene_align_id, $cluster_id, 1);
+	add_gene_tree ($params,$cluster_id . $params->{'ORTHOGROUP'}{'TREE'}, 'protein', 'tree', 'default', $mlss_id, $gene_align_id, $cluster_id, 1);
 
 
 	return 1;
