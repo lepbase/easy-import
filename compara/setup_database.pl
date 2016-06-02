@@ -27,9 +27,7 @@ my %sections = (
               'RO_USER' => 1
             },
   'DATABASE_TEMPLATE' =>	{ 	'NAME' => 1,
-              'HOST' => 1,
-              'PORT' => 1,
-              'RO_USER' => 1
+              'URL' => 1
             }
   );
 ## check that all required parameters have been defined in the config file

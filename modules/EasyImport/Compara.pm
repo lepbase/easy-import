@@ -633,18 +633,16 @@ sub setup_compara_db {
 
 	$dbh->do('USE '.$params->{'DATABASE_COMPARA'}{'NAME'});
 	## add method_link, ncbi_taxa_name and ncbi_taxa_node tables
-	system 'mysqldump --single-transaction'
-			.' --user='.$params->{'DATABASE_TEMPLATE'}{'RO_USER'}
-			.' --host='.$params->{'DATABASE_TEMPLATE'}{'HOST'}
-			.' --port='.$params->{'DATABASE_TEMPLATE'}{'PORT'}
-			.' '.$params->{'DATABASE_TEMPLATE'}{'NAME'}
-			.' method_link ncbi_taxa_name ncbi_taxa_node'
-			.' | mysql '
+
+  system "wget ".$params->{'DATABASE_TEMPLATE'}{'URL'}."/".$params->{'DATABASE_TEMPLATE'}{'NAME'}."/{method_link,ncbi_taxa_name,ncbi_taxa_node}.txt.gz";
+  system "gunzip {method_link,ncbi_taxa_name,ncbi_taxa_node}.txt.gz";
+	system 'mysqlimport --fields_escaped_by=\\\\ '
 			.' -h '.$params->{'DATABASE_COMPARA'}{'HOST'}
 			.' -P '.$params->{'DATABASE_COMPARA'}{'PORT'}
 			.' -u '.$params->{'DATABASE_COMPARA'}{'RW_USER'}
 			.' -p'.$params->{'DATABASE_COMPARA'}{'RW_PASS'}
-			.' '.$params->{'DATABASE_COMPARA'}{'NAME'};
+			.' '.$params->{'DATABASE_COMPARA'}{'NAME'}
+      .' -L {method_link,ncbi_taxa_name,ncbi_taxa_node}.txt';
 
 	return $dbh;
 }
@@ -658,14 +656,14 @@ sub compara_db_connect {
 	return $dbh;
 }
 
-sub template_db_connect {
-	my $params = shift;
-	my $dsn = "DBI:mysql:host=$params->{'DATABASE_TEMPLATE'}{'HOST'};port=$params->{'DATABASE_TEMPLATE'}{'PORT'}";
-	my $dbh = DBI->connect($dsn,"$params->{'DATABASE_TEMPLATE'}{'RO_USER'}") || die "ERROR: unable to connect to [DATABASE_TEMPLATE] HOST ".$params->{'DATABASE_TEMPLATE'}{'HOST'}." using provided settings";
-	$dbh->do('USE '.$params->{'DATABASE_TEMPLATE'}{'NAME'}) || die "ERROR: unable to connect to [DATABASE_TEMPLATE] NAME ".$params->{'DATABASE_TEMPLATE'}{'NAME'}." using provided settings";
-	return $dbh;
-}
-
+#sub template_db_connect {
+#	my $params = shift;
+#	my $dsn = "DBI:mysql:host=$params->{'DATABASE_TEMPLATE'}{'HOST'};port=$params->{'DATABASE_TEMPLATE'}{'PORT'}";
+#	my $dbh = DBI->connect($dsn,"$params->{'DATABASE_TEMPLATE'}{'RO_USER'}") || die "ERROR: unable to connect to [DATABASE_TEMPLATE] HOST ".$params->{'DATABASE_TEMPLATE'}{'HOST'}." using provided settings";
+#	$dbh->do('USE '.$params->{'DATABASE_TEMPLATE'}{'NAME'}) || die "ERROR: unable to connect to [DATABASE_TEMPLATE] NAME ".$params->{'DATABASE_TEMPLATE'}{'NAME'}." using provided settings";
+#	return $dbh;
+#}
+#
 sub core_db_host_connect {
 	my $params = shift;
 	my $dsn = "DBI:mysql:host=$params->{'DATABASE_CORE'}{'HOST'};port=$params->{'DATABASE_CORE'}{'PORT'}";
