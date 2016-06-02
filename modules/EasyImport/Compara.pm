@@ -482,7 +482,7 @@ sub add_dnafrag {
 
 sub fetch_genome_db_id {
 	my ($name,$assembly,$params) = @_;
-	my $dbh = template_db_connect($params);
+	my $dbh = compara_db_connect($params);
 	my $sth = $dbh->prepare("SELECT genome_db_id FROM genome_db WHERE name = ".$dbh->quote($name)." AND assembly = ".$dbh->quote($assembly));
 	$sth->execute();
 	if ($sth->rows > 0){
