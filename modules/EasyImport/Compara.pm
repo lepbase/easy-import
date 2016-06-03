@@ -125,11 +125,16 @@ sub add_gene_tree {
 			$node = bless $node, 'Bio::EnsEMBL::Compara::GeneTreeMember';
 			$node->seq_member_id($seqm->seq_member_id);
 		} else {
-			if (defined $node->name and $node->name =~ /(\d*)(Y|N)/) {
-				$node->add_tag('bootstrap',$1);
-				$node->add_tag('is_dup',   $2 eq "Y" ? 1 : 0);
-				$node->add_tag('node_type',$2 eq "Y" ? 'duplication' : 'speciation');
-			}
+			if (defined $node->get_tagvalue("Duplication")) {
+				my $is_dup = $node->get_tagvalue("Duplication");
+				$node->add_tag('is_dup', $is_dup );
+				$node->add_tag('node_type',$is_dup == 1 ? 'duplication' : 'speciation');
+			}			
+#			if (defined $node->name and $node->name =~ /(\d*)(Y|N)/) {
+#				$node->add_tag('bootstrap',$1);
+#				$node->add_tag('is_dup',   $2 eq "Y" ? 1 : 0);
+#				$node->add_tag('node_type',$2 eq "Y" ? 'duplication' : 'speciation');
+#			}
 		}
 	}
 
