@@ -639,10 +639,10 @@ sub setup_compara_db {
 	$dbh->do('USE '.$params->{'DATABASE_COMPARA'}{'NAME'});
 	## add method_link, ncbi_taxa_name and ncbi_taxa_node tables
 
-  system "wget ".$params->{'DATABASE_TEMPLATE'}{'URL'}."/".$params->{'DATABASE_TEMPLATE'}{'NAME'}."/method_link.txt.gz";
-  system "wget ".$params->{'DATABASE_TEMPLATE'}{'URL'}."/".$params->{'DATABASE_TEMPLATE'}{'NAME'}."/ncbi_taxa_name.txt.gz";
-  system "wget ".$params->{'DATABASE_TEMPLATE'}{'URL'}."/".$params->{'DATABASE_TEMPLATE'}{'NAME'}."/ncbi_taxa_node.txt.gz";
-  system "gunzip *.txt.gz";
+	system "wget ".$params->{'DATABASE_TEMPLATE'}{'URL'}."/".$params->{'DATABASE_TEMPLATE'}{'NAME'}."/method_link.txt.gz";
+	system "wget ".$params->{'DATABASE_TEMPLATE'}{'URL'}."/".$params->{'DATABASE_TEMPLATE'}{'NAME'}."/ncbi_taxa_name.txt.gz";
+	system "wget ".$params->{'DATABASE_TEMPLATE'}{'URL'}."/".$params->{'DATABASE_TEMPLATE'}{'NAME'}."/ncbi_taxa_node.txt.gz";
+	system "gunzip *.txt.gz";
 	system 'mysqlimport --fields_escaped_by=\\\\ '
 			.' -h '.$params->{'DATABASE_COMPARA'}{'HOST'}
 			.' -P '.$params->{'DATABASE_COMPARA'}{'PORT'}
@@ -650,8 +650,13 @@ sub setup_compara_db {
 			.' -p'.$params->{'DATABASE_COMPARA'}{'RW_PASS'}
 			.' '.$params->{'DATABASE_COMPARA'}{'NAME'}
       .' -L method_link.txt ncbi_taxa_name.txt ncbi_taxa_node.txt';
-  system "rm method_link.txt ncbi_taxa_name.txt ncbi_taxa_node.txt";
+	system "rm method_link.txt ncbi_taxa_name.txt ncbi_taxa_node.txt";
 
+	#initialise gene_tree_root and gene_tree_node
+	$dbh->do("INSERT INTO gene_tree_root (root_id,member_type,tree_type,clusterset_id,method_link_species_set_id,gene_align_id,ref_root_id,stable_id,version) "
+			."VALUES (1,'protein','clusterset','default',1,NULL,NULL,NULL,NULL)");
+	$dbh->do("INSERT INTO gene_tree_node (node_id,parent_id,root_id,left_index,right_index,distance_to_parent,seq_member_id) "
+			."VALUES (1,NULL,1,0,0,0,NULL)");
 	return $dbh;
 }
 
