@@ -79,7 +79,7 @@ if (-s $infiles{'SCAFFOLD'}->{'name'}){
   my $json = JSON->new;
   $json->pretty(1);
   open JSON,">web/stats.json";
-  print JSON $json->encode($output),"\n";
+  print JSON $json->encode($tmp_stats),"\n";
   close JSON;
 	foreach my $key (keys %{$tmp_stats}){
 		$stats{$key} = $tmp_stats->{$key};
