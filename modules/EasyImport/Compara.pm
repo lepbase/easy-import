@@ -58,7 +58,6 @@ sub load_sequences {
     }
 	}
 	my $species_set_id = get_species_set_id($dbh,'lepidoptera');
-	print "species_set_id: ",$species_set_id,"\n";
 	my $method_link_id = 401;
 	my $mlss_id = add_method_link_species_set($dbh,$method_link_id,$species_set_id,'protein_tree_lepbase_v1','lepbase');
 	add_gene_tree ($params,$path.'/'.$file.''.$params->{'ORTHOGROUP'}{'TREE'}, 'protein', 'tree', 'default', $mlss_id, $gene_align_id, $cluster_id, 1);
@@ -115,7 +114,7 @@ sub add_gene_tree {
 	$supertree->root->add_child($newroot);
   my $taxa = $params->{'ORTHOGROUP'}{'TAXA'};
 	foreach my $node (@{$newroot->get_all_nodes}) {
-		print $node->name . "\n" if defined $node->name;
+		#print $node->name . "\n" if defined $node->name;
 		if ($node->is_leaf) {
 			my $node_name = $node->name();
 
@@ -129,7 +128,7 @@ sub add_gene_tree {
 				my $is_dup = $node->get_tagvalue("Duplication");
 				$node->add_tag('is_dup', $is_dup );
 				$node->add_tag('node_type',$is_dup == 1 ? 'duplication' : 'speciation');
-			}			
+			}
 #			if (defined $node->name and $node->name =~ /(\d*)(Y|N)/) {
 #				$node->add_tag('bootstrap',$1);
 #				$node->add_tag('is_dup',   $2 eq "Y" ? 1 : 0);
@@ -291,15 +290,15 @@ sub fetch_gene_from_core_db {
 									WHERE tsl.stable_id LIKE ".$dbh->quote($tsl_stable_id)
 								);
 	$csth->execute();
-	print $tsl_stable_id,"!\n";
+	#print $tsl_stable_id,"!\n";
 	if (my $ref = $csth->fetchrow_hashref()){
 		my $dnafrag_id = add_dnafrag($dbh,$core_dbs{$sp}{'genome_db_id'},$ref->{'cs_name'},$ref->{'sr_name'},$ref->{'sr_length'});
-		print $dnafrag_id,"\t",$ref->{'tsl_stable_id'},"\n";
+		#print $dnafrag_id,"\t",$ref->{'tsl_stable_id'},"\n";
 		my $display_label = 'NULL'; #TODO: look for a display label (display_xref...)
 		my $gene_member_id = add_gene_member($dbh,$sp,$core_dbs{$sp}{'genome_db_id'},$ref->{'g_stable_id'},'ENSEMBLGENE',$core_dbs{$sp}{'taxon_id'},$ref->{'g_description'},$dnafrag_id,$ref->{'g_sr_start'},$ref->{'g_sr_end'},$ref->{'g_sr_strand'},$ref->{'gene_id'},$ref->{'g_xref_id'},$display_label);
-		print $gene_member_id,"\t",$ref->{'g_stable_id'},"\n";
+		#print $gene_member_id,"\t",$ref->{'g_stable_id'},"\n";
 		my $sequence_id = add_sequence($dbh,$seqstr,$length);
-		print $sequence_id," = seq_id\n";
+		#print $sequence_id," = seq_id\n";
 		my ($sr_start,$sr_end);
 		if ($ref->{'tsc_sr_strand'} != -1){
 			$sr_start = $ref->{'se_sr_start'} + $ref->{'tsl_seq_start'} - 1;
@@ -310,7 +309,7 @@ sub fetch_gene_from_core_db {
 			$sr_end = $ref->{'se_sr_end'} - $ref->{'tsl_seq_end'} + 1;
 		}
 		my $seq_member_id = add_seq_member($dbh,$sp,$core_dbs{$sp}{'genome_db_id'},$ref->{'tsl_stable_id'},'ENSEMBLPEP',$core_dbs{$sp}{'taxon_id'},$sequence_id,$gene_member_id,$ref->{'g_description'},$dnafrag_id,$sr_start,$sr_end,$ref->{'tsc_sr_strand'},$ref->{'transcript_id'},$ref->{'tsc_xref_id'},$display_label);
-		print $seq_member_id,"\t",$ref->{'g_stable_id'},"\n";
+		#print $seq_member_id,"\t",$ref->{'g_stable_id'},"\n";
 		if ($ref->{'canonical_transcript_id'} == $ref->{'transcript_id'} ){
 			simple_update($dbh,'gene_member',{'canonical_member_id' => $seq_member_id},{'gene_member_id' => $gene_member_id});
 		}
@@ -444,7 +443,7 @@ sub add_member_xref {
 
 sub add_external_db {
 	my ($dbh,$db_name,$db_release,$status,$priority,$db_display_name,$type,$secondary_db_name,$secondary_db_table,$description) = @_;
-	print $db_name,"\n";
+	#print $db_name,"\n";
 	my $sth = $dbh->prepare("SELECT external_db_id FROM external_db WHERE db_name = ".$dbh->quote($db_name));
 	$sth->execute();
 	if ($sth->rows() > 0){
