@@ -73,6 +73,7 @@ find({wanted => sub {
   my $file = $File::Find::name;
   if (!-d $file){
     if ($file =~ m/$prefix\w+$/){
+      warn "importing $file\n"; 
       load_sequences($dbh,$params,$file);
     }
   }
