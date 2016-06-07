@@ -1541,7 +1541,7 @@ sub stats_page {
 	my $provider_url = $params->{'META'}{'PROVIDER.URL'};
 	my $assembly_date = $params->{'META'}{'ASSEMBLY.DATE'};
   my $db_version = $params->{'DATABASE_CORE'}{'NAME'};
-	$db_version =~ m/(\d+)_([^_]+)$//;
+	$db_version =~ m/(\d+)_([^_]+)$/;
   $db_version = "$1.$2";
 	my $assembly_span = $stats->{'assembly'};
 	$assembly_span = readable($assembly_span,'bp');
