@@ -1540,8 +1540,9 @@ sub stats_page {
 	my $provider_name = $params->{'META'}{'PROVIDER.NAME'};
 	my $provider_url = $params->{'META'}{'PROVIDER.URL'};
 	my $assembly_date = $params->{'META'}{'ASSEMBLY.DATE'};
-	my $db_version = $params->{'ENSEMBL'}{'BRANCH'}.".1";
-	$db_version =~ s/release\///;
+  my $db_version = $params->{'DATABASE_CORE'}{'NAME'};
+	$db_version =~ m/(\d+)_([^_]+)$//;
+  $db_version = "$1.$2";
 	my $assembly_span = $stats->{'assembly'};
 	$assembly_span = readable($assembly_span,'bp');
 	my $assembly_atgc = $stats->{'ATGC'};
@@ -1642,43 +1643,18 @@ EOF
 sub assembly_page {
 	my ($params,$stats) = @_;
 	my $production_name = $params->{'META'}{'SPECIES.PRODUCTION_NAME'};
-	my $species = $params->{'META'}{'SPECIES.SCIENTIFIC_NAME'};
-	my $span = $stats->{'assembly_span'};
-	my $atgc = $stats->{'assembly_atgc'};
-	my $gc = $stats->{'assembly_gc'} * 100;
-	my $n = $span - $atgc;
-	my $cegma_complete = $stats->{'cegma_complete'};
-	my $cegma_partial = $stats->{'cegma_partial'};
-	my @lengths = @{$stats->{'lengths'}};
-	my @ctg_lengths = @{$stats->{'contig_lengths'}};
-	my $scaffolds = 'scaffolds: ['.join(',',@lengths).']';
-	my $contigs = @ctg_lengths ? 'contigs: ['.join(',',@ctg_lengths).'],' : '';
-	my $gcs = $stats->{'GCs'} ? 'GCs: ['.join(',',@{$stats->{'GCs'}}).'],' : '';
-	my $ns = $stats->{'Ns'} ? 'Ns: ['.join(',',@{$stats->{'Ns'}}).'],' : '';
 	open ASM,">web/$production_name"."_assembly.html";
 print ASM <<EOF;
 <script type="text/javascript" src="/components/00_jquery.min.js"></script>
 <script type="text/javascript" src="/components/00_d3.js"></script>
 <script type="text/javascript" src="/components/99_assembly_stats.js"></script>
 <script>
-  var stats = { assembly: $span,
-                ATGC:     $atgc,
-			    GC:       $gc,
-			    N:		  $n,
-			    $gcs
-			    $ns
-			    cegma_complete:	$cegma_complete,
-			    cegma_partial:	$cegma_partial,
-			    $contigs
-			    $scaffolds
-			};
-  var asm = new Assembly (stats);
-  \$(document).ready(function(){
-      var svg = d3.select('#assembly_stats')
-        		.append('svg');
-
-      asm.drawPlot(svg);
-    });
+  d3.json("/i/species/$production_name.stats.json", function(error, json) {
+    if (error) return console.warn(error);
+    stats = json;
+    var asm = new Assembly (stats);
+    asm.drawPlot(assembly_stats);
+  });
 </script>
 <div id="assembly_stats"></div>
 
