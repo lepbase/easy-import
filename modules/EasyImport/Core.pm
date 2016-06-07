@@ -1542,11 +1542,11 @@ sub stats_page {
 	my $assembly_date = $params->{'META'}{'ASSEMBLY.DATE'};
 	my $db_version = $params->{'ENSEMBL'}{'BRANCH'}.".1";
 	$db_version =~ s/release\///;
-	my $assembly_span = $stats->{'assembly_span'};
+	my $assembly_span = $stats->{'assembly'};
 	$assembly_span = readable($assembly_span,'bp');
-	my $assembly_atgc = $stats->{'assembly_atgc'};
+	my $assembly_atgc = $stats->{'ATGC'};
 	$assembly_atgc = readable($assembly_atgc,'bp');
-	my $assembly_gc_pct = $stats->{'assembly_gc'} * 100;
+	my $assembly_gc_pct = $stats->{'GC'};
 	my $genebuild_version = $params->{'META'}{'GENEBUILD.VERSION'};
 	my $genebuild_method = $params->{'META'}{'GENEBUILD.METHOD'};
 	my $gene_count = $stats->{'gene_count'};
