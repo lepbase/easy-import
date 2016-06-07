@@ -1882,7 +1882,7 @@ sub prepared_gff_feature_summary {
 		}
 	}
 	close ATTR;
-	open RDATA,">web/${production_name}_feature";
+	open RDATA,">summary/${production_name}_feature";
 	foreach my $type (sort keys %features_by_type){
 		for (my $i = 0; $i < @{$features_by_type{$type}{'lengths'}}; $i++){
 			print RDATA "$type\t$features_by_type{$type}{'regions'}[$i]\t$features_by_type{$type}{'sources'}[$i]\t$features_by_type{$type}{'lengths'}[$i]\n";
