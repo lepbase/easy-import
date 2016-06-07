@@ -1672,7 +1672,7 @@ sub web_ini_file {
 	my $species = $params->{'META'}{'SPECIES.SCIENTIFIC_NAME'};
 	my $filename = $params->{'DATABASE_CORE'}{'NAME'};
 	my $version = $params->{'META'}{'GENEBUILD.VERSION'} || 1;
-	my $size = int($stats->{'assembly_span'}/10000000)/100 ;
+	my $size = int($stats->{'assembly'}/10000000)/100 ;
 	my $location_param = $params->{'META'}{'SAMPLE.LOCATION_PARAM'} || '';
 	my $location_text = $params->{'META'}{'SAMPLE.LOCATION_TEXT'} || '';
 	my $gene_param = $params->{'META'}{'SAMPLE.GENE_PARAM'} || '';
