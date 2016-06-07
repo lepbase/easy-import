@@ -16,9 +16,9 @@ use EasyImport::Core;
 
 ## load parameters from an INI-style config file
 my %sections = (
-  'ENSEMBL' =>	{ 	'LOCAL' => 1
+  'ENSEMBL' =>  {       'LOCAL' => 1
           },
-  'DATABASE_CORE' =>	{ 	'NAME' => 1,
+  'DATABASE_CORE' =>    {       'NAME' => 1,
               'HOST' => 1,
               'PORT' => 1,
               'RW_USER' => 1,
@@ -31,18 +31,19 @@ die "ERROR: you must specify at least one ini file\n",usage(),"\n" unless $ARGV[
 my %params;
 my $params = \%params;
 while (my $ini_file = shift @ARGV){
-	load_ini($params,$ini_file,\%sections);
+        load_ini($params,$ini_file,\%sections);
 }
 
 
 my $lib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl/modules';
 my $iolib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-io/modules';
-my $comparalib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-compara/modules';
+#my $comparalib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-compara/modules';
 push @INC, $lib;
 push @INC, $iolib;
-push @INC, $comparalib;
+#push @INC, $comparalib;
 load Bio::EnsEMBL::Registry;
 load Bio::EnsEMBL::Utils::IO::GFFSerializer;
+load Bio::EnsEMBL::DBSQL::DBAdaptor;
 
 my $registry = 'Bio::EnsEMBL::Registry';
 
@@ -71,8 +72,9 @@ my $display_name    = $meta_container->get_display_name();
 # convert display name spaces to underscores
 $display_name =~ s/ /_/g;
 
+mkdir 'exported';
 my   $output_fh;
-open $output_fh, ">$display_name.gff";
+open $output_fh, ">exported/$display_name.gff";
 
 my   $ontology_adaptor = $registry->get_adaptor( 'Multi', 'Ontology', 'OntologyTerm' );
 my   $serializer       = Bio::EnsEMBL::Utils::IO::GFFSerializer->new($ontology_adaptor,$output_fh);
@@ -80,10 +82,21 @@ my   $serializer       = Bio::EnsEMBL::Utils::IO::GFFSerializer->new($ontology_a
 my   $slice_adaptor    = $dba->get_adaptor("Slice");
 my   $supercontigs     = $slice_adaptor->fetch_all('toplevel');
 
-$serializer->print_main_header($supercontigs, $slice_adaptor, $output_fh);
-
 foreach my $slice (@{$supercontigs}) {
-    $serializer->print_feature_list($slice->get_all_Genes);
+    my $genes = $slice->get_all_Genes;
+    while ( my $gene = shift @{$genes} ) {
+        $serializer->print_feature($gene);
+        my $transcripts = $gene->get_all_Transcripts();
+        while ( my $transcript = shift @{$transcripts} ) {
+            $serializer->print_feature($transcript);
+            foreach my $exon ( @{ $transcript->get_all_Exons() } ) {
+                $serializer->print_feature($exon);
+            }
+            foreach my $cds ( @{ $transcript->get_all_CDS() } ) {
+                 $serializer->print_feature($cds);
+            }
+        }
+    }
 }
 
 
