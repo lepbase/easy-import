@@ -1933,7 +1933,7 @@ sub cegma_file_summary {
 sub make_feature_plot {
 
 my ($rdatafile) = @_;
-open RSCRIPT, ">summary/$rdatafile.R" or die $!;
+open RSCRIPT, ">$rdatafile.R" or die $!;
 
 print RSCRIPT '
 args <- commandArgs(trailingOnly = TRUE)
