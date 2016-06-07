@@ -78,7 +78,8 @@ if (-s $infiles{'SCAFFOLD'}->{'name'}){
 	my $tmp_stats = fasta_file_summary($params,$infiles{'SCAFFOLD'},'SCAFFOLD',$cegma);
   my $json = JSON->new;
   $json->pretty(1);
-  open JS,">web/stats.json";
+  $production_name = $params->{'META'}{'SPECIES.PRODUCTION_NAME'};
+  open JS,">web/$production_name.stats.json";
   print JS $json->encode($tmp_stats),"\n";
   close JS;
 	foreach my $key (keys %{$tmp_stats}){
