@@ -1243,7 +1243,8 @@ sub fasta_file_summary {
   my $i = -1;
   my @scafs;
   my @ctgs = ();
-  while (<>){
+  open FAS,$infile->{'name'};
+  while (<FAS>){
     chomp;
     if(/^>/){
       push @ctgs,_split_scaf($scafs[$i],$break) if $scafs[$i];
