@@ -4,7 +4,7 @@ use strict;
 use DBI;
 use GFFTree;
 use EasyImport::GFF;
-use List::Util qw(sum);
+use List::Util qw(reduce sum);
 use Bio::SeqIO;
 
 sub truncate_seq_tables {
@@ -1231,67 +1231,160 @@ sub fa_sequence_count {
   close OUT;
 }
 
+
+
 sub fasta_file_summary {
-	my ($params,$infile,$type) = @_;
-	my (%scaffold_hash,%all_stats,%N50nums);
-	$scaffold_hash{$type} = _fasta_file_to_scaffold_hash($infile->{'name'});
-	$scaffold_hash{'contig'} = _scaffold_hash_to_contig_hash($scaffold_hash{$type});
-	$scaffold_hash{'n_hash'} = _scaffold_hash_to_n_hash($scaffold_hash{$type});
-	$all_stats{$type} = _seq_hash_to_stats($scaffold_hash{$type},'seq');
-    $N50nums{$type} = $all_stats{$type}{num_n50};
-    $all_stats{'contig'} = _seq_hash_to_stats($scaffold_hash{'contig'},'seq');
-    $all_stats{'Ns'} = _seq_hash_to_stats($scaffold_hash{'n_hash'},'seq');
+	my ($params,$infile,$type,$extra) = @_;
+
+  my $break = 10; # number of consecutive Ns to break scaffolds into contigs
+  my $bins = 1000; # number of bins to place sequences into
+
+  # read scaffolds from file and split into contigs
+  my $i = -1;
+  my @scafs;
+  my @ctgs = ();
+  while (<>){
+    chomp;
+    if(/^>/){
+      push @ctgs,_split_scaf($scafs[$i],$break) if $scafs[$i];
+      $i++;
+      next;
+    }
+    $scafs[$i] .= $_;
+  }
+  push @ctgs,_split_scaf($scafs[$i],$break);
+
+  my $output = _bin_seqs(\@scafs,$bins,1);
+  my $extra = _bin_seqs(\@ctgs,$bins);
+
+  $output->{contigs} = $extra->{scaffolds};
+  $output->{binned_contig_counts} = $extra->{binned_scaffold_counts};
+  $output->{contig_count} = $extra->{scaffold_count};
+  $output->{binned_contig_lengths} = $extra->{binned_scaffold_lengths};
+  if ($extra){
+    foreach my $key (keys %{$extra}){
+      $output->{$key} = $extra->{$key};
+    }
+  }
+
+  $output;
+
+}
+
+sub _bin_seqs {
+  my ($ref,$bins,$flag) = @_;
+  my %return;
+  # sort sequences (longest first)
+  my @seqs = sort { length $b <=> length $a } @$ref;
+  # count sequences
+  my $count = scalar @seqs;
+  # convert to array of lengths
+  my @seq_lengths = map length, @seqs;
+  # determine span
+  my $span = reduce { $a + $b } @seq_lengths;
+  # determine bin size
+  my $fbin = $span / $bins;
+  my $bin = int ($span / $bins);
+
+  my $sum = 0;
+  my $nsum = 0;
+  my $gcsum = 0;
+  my $catted;
+  my $y = 0;
+  my $z = 0;
+  my @binned_lengths;
+  my @binned_counts;
+  my @binned_gcs;
+  my @binned_ns;
+  my $binned = 0;
+  my @AoH_ns;
+  my @AoH_gcs;
+  my @binseqs = ();
+  my $sum_ns = 0;
+  my $sum_gcs = 0;
+  my $min_ns = 999999999999;
+  my $min_gcs = 999;
+  my $max_ns = -1;
+  my $max_gcs = -1;
+  my $nseqs = @seqs;
+  # place seq lengths and count in $bins bins
+  for (my $x = 0; $x < $count; $x++){
+    $sum += $seq_lengths[$x];
+    $catted .= $seqs[$x];
+    push @binseqs,$seqs[$x];
+    while ($sum >= ($y+1)*$fbin){
+      $z += $bin;
+      $binned_lengths[$y] = $seq_lengths[$x];
+      $binned_counts[$y] = $x+1;
+      if ($flag){
+        if (@binseqs){
+          $sum_ns = 0;
+          $sum_gcs = 0;
+          $min_ns = 999999999999;
+          $min_gcs = 999999999999;
+          $max_ns = -1;
+          $max_gcs = -1;
+          $nseqs = @binseqs;
+          my $len = 0;
+          while (my $str = shift @binseqs){
+            my $ns = () = $str =~ /n/gi;
+            my $gcs = () = $str =~ /[gc]/gi;
+            $len += length($str) - $ns;
+            $ns /= length($str);
+            $ns *= 100;
+            $sum_ns += $ns;
+            $gcs /= (length($str) - $ns);
+            $gcs *= 100;
+            $sum_gcs += $gcs;
+            $min_ns = $ns if $ns < $min_ns;
+            $min_gcs = $gcs if $gcs < $min_gcs;
+            $max_ns = $ns if $ns > $max_ns;
+            $max_gcs = $gcs if $gcs > $max_gcs;
+          }
+        }
+        $AoH_ns[$y] = {'mean'=>$sum_ns/$nseqs,'max'=>$max_ns,'min'=>$min_ns};
+        $AoH_gcs[$y] = {'mean'=>$sum_gcs/$nseqs,'max'=>$max_gcs,'min'=>$min_gcs};
+        # also bin gc and n content
+        my $string = substr($catted,0,$bin,'');
+        # apply a correction to accommodate non-integer bin-sizes
+        my $correction = ($y+1)*$fbin - $z;
+        my $extra = 0;
+        if ($correction >= 0.5){
+          $string .= substr($catted,0,int($correction+0.5),'');
+          $extra = int($correction+0.5);
+          $z += $correction;
+        }
+        $binned_ns[$y] = () = $string =~ /n/gi;
+        $binned_gcs[$y] = () = $string =~ /[gc]/gi;
+        $nsum += $binned_ns[$y];
+        $gcsum += $binned_gcs[$y];
+        $binned_gcs[$y] /= ($bin+$extra-$binned_ns[$y]) / 100;
+        $binned_ns[$y] /= ($bin+$extra) / 100;
+      }
+      $y++;
+    }
+  }
+  $return{assembly} = $span;
+  $return{ATGC} = $span - $nsum;
+  $return{GC} = int($gcsum / ($span - $nsum) * 10000) / 100;
+  $return{N} = $nsum;
+  $return{binned_GCs} = \@AoH_gcs;
+  $return{binned_Ns} = \@AoH_ns;
+  splice @seq_lengths, 1;
+  $return{scaffolds} = \@seq_lengths;
+  $return{scaffold_count} = $count;
+  $return{binned_scaffold_counts} = \@binned_counts;
+  $return{binned_scaffold_lengths} = \@binned_lengths;
+  return \%return
+}
 
 
-    mkdir "summary";
-	open OUT,">summary/$type.stats.txt";
-    print OUT ucfirst(lc($type)).":\n";
-    print OUT "LongestScaffold\t".$all_stats{$type}{max_length},"\n";
-	print OUT "Num\t".$all_stats{$type}{num_seqs},"\n";
-    print OUT "Span\t".$all_stats{$type}{span},"\n";
-    print OUT "Min\t".$all_stats{$type}{min_length},"\n";
-    print OUT "Mean\t".$all_stats{$type}{mean_length},"\n";
-    print OUT "N50\t".$all_stats{$type}{n50},"\n";
-    print OUT "NumN50\t".$all_stats{$type}{num_n50},"\n";
-    print OUT "GC\t".$all_stats{$type}{gc},"\n";
-    if ($type ne 'CONTIG' && $all_stats{'contig'}{num_seqs} && $all_stats{'contig'}{num_seqs} > 0){
-    	$N50nums{'CONTIG'} = $all_stats{'contig'}{num_n50};
-    	print OUT "Contigs:\n";
-    	print OUT "Num\t".$all_stats{'contig'}{num_seqs},"\n";
-    	print OUT "Span\t".$all_stats{'contig'}{span},"\n";
-    	print OUT "N50\t".$all_stats{'contig'}{n50},"\n";
-    	print OUT "NumN50\t".$all_stats{'contig'}{num_n50},"\n";
-    }
-	if ($all_stats{'Ns'}{num_seqs} && $all_stats{'Ns'}{num_seqs} > 0){
-    	$N50nums{'Ns'} = $all_stats{'Ns'}{num_n50};
-		print OUT "Runs of >=10 Ns:\n";
-    	print OUT "Num\t".$all_stats{'Ns'}{num_seqs},"\n";
-    	print OUT "Span\t".$all_stats{'Ns'}{span},"\n";
-    	print OUT "N50\t".$all_stats{'Ns'}{n50},"\n";
-    	print OUT "NumN50\t".$all_stats{'Ns'}{num_n50},"\n";
-    }
-    open RDATA,">summary/$type.stats.Rdata";
-    map { print RDATA ucfirst(lc($type))."\t$_\n" } @{$all_stats{$type}{lengths}};
-    if ($type ne 'CONTIG' && $all_stats{'contig'}{num_seqs} && $all_stats{'contig'}{num_seqs} > 0){
-    	map { print RDATA "Contig\t$_\n" } @{$all_stats{'contig'}{lengths}};
-    }
-    if ($all_stats{'Ns'}{num_seqs} && $all_stats{'Ns'}{num_seqs} > 0){
-    	map { print RDATA "N\t$_\n" } @{$all_stats{'Ns'}{lengths}};
-    }
-    close RDATA;
-	make_cumulative_plot("summary/$type.stats.Rdata",\%N50nums);
 
-	my %return_stats;
-	$return_stats{'assembly_span'} = $all_stats{$type}{span};
-	$return_stats{'assembly_atgc'} = $return_stats{'assembly_span'};
-	$return_stats{'assembly_atgc'} -= $all_stats{'Ns'}{span} if ($all_stats{'Ns'}{num_seqs} && $all_stats{'Ns'}{num_seqs} > 0);
-	$return_stats{'assembly_gc'} = $all_stats{$type}{gc};
-	$return_stats{'lengths'} = $all_stats{'SCAFFOLD'}{lengths} if $all_stats{'SCAFFOLD'};
-	$return_stats{'contig_lengths'} = $all_stats{'contig'}{lengths} if $all_stats{'contig'};
-	$return_stats{'GCs'} = $all_stats{'SCAFFOLD'}{'GCs'} if $all_stats{'SCAFFOLD'}{'GCs'};
-	$return_stats{'Ns'} = $all_stats{'SCAFFOLD'}{'Ns'} if $all_stats{'SCAFFOLD'}{'Ns'};
-	$return_stats{lc($type).'_count'} = $all_stats{$type}{num_seqs};
-	return \%return_stats;
+sub _split_scaf {
+  # break scaffolds into contigs on runs of >= $break Ns
+  my ($seq,$break) = @_;
+  my @ctgs = split /N{$break,}/i,$seq;
+  return @ctgs;
 }
 
 
@@ -1406,81 +1499,11 @@ sub _seq_hash_to_stats {
     return \%stats;
 }
 
-sub make_cumulative_plot {
-
-my ($rdatafile,$N50nums) = @_;
-open RSCRIPT, ">$rdatafile.R" or die $!;
-
-print RSCRIPT '
-args <- commandArgs(trailingOnly = TRUE)
-data=read.delim(args[1],header=F,col.names=c("type","len"))
-for (t in levels(data$type)) {
-     data[data$type==t,"cumsum"] =cumsum   (data[data$type==t,"len"])
-     data[data$type==t,"Rank"]   =seq_along(data[data$type==t,"len"])
-}
-cols = c(rgb(166/255,206/255,227/255),rgb(31/255,120/255,180/255),rgb(178/255,223/255,138/255))
-xmax = max(data[,"Rank"])
-ymax = max(data[,"cumsum"])
-lwd=2
-png(paste(args[1],"png",sep="."),900,900,res=200)
-par(las=1,mar=c(4,5,1,1),cex.axis=0.8,cex.lab=1)
-plot(1,1,type="n",xlab="",ylab="",xlim=c(0,xmax),ylim=c(0,ymax))
-grid(col = "lightgray",lty=1, lwd = 0.5, equilogs = TRUE)
-mtext(text="Cumulative length (bp)", side=2, line=3.5, las=0, cex=1)
-mtext(text="Sequences ranked by size", side=1, line=2.5, las=0, cex=1)
-labels = c(NA)
-legendcols = c(NA)
-';
-if ($N50nums->{'Ns'}){
-print RSCRIPT 'n50 <- data[which(data$Rank=='.$N50nums->{'Ns'}.' & data$type=="N"),]
-lines(c(n50$Rank,-xmax),c(n50$cumsum,n50$cumsum),col=cols[3],lwd=1,lty=2)
-lines(c(n50$Rank,n50$Rank),c(n50$cumsum,-ymax),col=cols[3],lwd=1,lty=2)
-labels = c("Ns",labels)
-legendcols = c(cols[3],legendcols)
-';
-}
-if ($N50nums->{'CONTIG'}){
-print RSCRIPT 'n50 <- data[which(data$Rank=='.$N50nums->{'CONTIG'}.' & data$type=="Contig"),]
-lines(c(n50$Rank,-xmax),c(n50$cumsum,n50$cumsum),col=cols[2],lwd=1,lty=2)
-lines(c(n50$Rank,n50$Rank),c(n50$cumsum,-ymax),col=cols[2],lwd=1,lty=2)
-labels = c("Contigs",labels)
-legendcols = c(cols[2],legendcols)
-';
-}
-if ($N50nums->{'SCAFFOLD'}){
-print RSCRIPT 'n50 <- data[which(data$Rank=='.$N50nums->{'SCAFFOLD'}.' & data$type=="Scaffold"),]
-lines(c(n50$Rank,-xmax),c(n50$cumsum,n50$cumsum),col=cols[1],lwd=1,lty=2)
-lines(c(n50$Rank,n50$Rank),c(n50$cumsum,-ymax),col=cols[1],lwd=1,lty=2)
-labels = c("Scaffolds",labels)
-legendcols = c(cols[1],legendcols)
-';
-}
-if ($N50nums->{'Ns'}){
-print RSCRIPT 'lines(data[data$type=="N",c("Rank","cumsum")],type="l",lwd=lwd,col=cols[3])
-';
-}
-if ($N50nums->{'CONTIG'}){
-print RSCRIPT 'lines(data[data$type=="Contig",c("Rank","cumsum")],type="l",lwd=lwd,col=cols[2])
-';
-}
-if ($N50nums->{'SCAFFOLD'}){
-print RSCRIPT 'lines(data[data$type=="Scaffold",c("Rank","cumsum")],type="l",lwd=lwd,col=cols[1])
-';
-}
-print RSCRIPT 'labels <- labels[-length(labels)]
-legend("bottomright",labels,col=legendcols,lty=1,lwd=lwd,ncol=1,box.col = "black",bg = "white")
-dev.off()
-';
-close RSCRIPT;
-system "Rscript $rdatafile.R $rdatafile >/dev/null";
-#unlink  "$rdatafile.R";
-}
-
 sub about_page {
 	my $params = shift;
 	my $production_name = $params->{'META'}{'SPECIES.PRODUCTION_NAME'};
 	my $species = $params->{'META'}{'SPECIES.SCIENTIFIC_NAME'};
-	open ABOUT,">summary/about_$production_name.html";
+	open ABOUT,">web/about_$production_name.html";
 print ABOUT <<EOF;
 <!-- {about} --><a name="about"></a>
   <h2 id="about" class="first">About <em>$species</em></h2>
@@ -1530,7 +1553,7 @@ sub stats_page {
 	my $translation_count = $stats->{'translation_count'};
 	my $scaffold_count = $stats->{'scaffold_count'} || undef;
 	my $contig_count = $stats->{'contig_count'} || undef;
-	open STATS,">summary/stats_$production_name.html";
+	open STATS,">web/stats_$production_name.html";
 print STATS <<EOF;
 <h3>Summary</h3>
 <table class="ss tint species-stats">
@@ -1631,7 +1654,7 @@ sub assembly_page {
 	my $contigs = @ctg_lengths ? 'contigs: ['.join(',',@ctg_lengths).'],' : '';
 	my $gcs = $stats->{'GCs'} ? 'GCs: ['.join(',',@{$stats->{'GCs'}}).'],' : '';
 	my $ns = $stats->{'Ns'} ? 'Ns: ['.join(',',@{$stats->{'Ns'}}).'],' : '';
-	open ASM,">summary/$production_name"."_assembly.html";
+	open ASM,">web/$production_name"."_assembly.html";
 print ASM <<EOF;
 <script type="text/javascript" src="/components/00_jquery.min.js"></script>
 <script type="text/javascript" src="/components/00_d3.js"></script>
@@ -1680,7 +1703,7 @@ sub web_ini_file {
 	my $transcript_param = $params->{'META'}{'SAMPLE.TRANSCRIPT_PARAM'} || '';
 	my $transcript_text = $params->{'META'}{'SAMPLE.TRANSCRIPT_TEXT'} || '';
 	my $search_text = $params->{'META'}{'SAMPLE.SEARCH_TEXT'} || 'Peptidoglycan';
-	open INI,">summary/$production_name.ini";
+	open INI,">web/$production_name.ini";
 print INI <<EOF;
 [general]
 SPECIES_RELEASE_VERSION = $version
@@ -1859,7 +1882,7 @@ sub prepared_gff_feature_summary {
 		}
 	}
 	close ATTR;
-	open RDATA,">summary/${production_name}_feature";
+	open RDATA,">web/${production_name}_feature";
 	foreach my $type (sort keys %features_by_type){
 		for (my $i = 0; $i < @{$features_by_type{$type}{'lengths'}}; $i++){
 			print RDATA "$type\t$features_by_type{$type}{'regions'}[$i]\t$features_by_type{$type}{'sources'}[$i]\t$features_by_type{$type}{'lengths'}[$i]\n";
@@ -1910,7 +1933,7 @@ sub cegma_file_summary {
 sub make_feature_plot {
 
 my ($rdatafile) = @_;
-open RSCRIPT, ">$rdatafile.R" or die $!;
+open RSCRIPT, ">summary/$rdatafile.R" or die $!;
 
 print RSCRIPT '
 args <- commandArgs(trailingOnly = TRUE)
