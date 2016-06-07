@@ -55,12 +55,13 @@ while (my $ini_file = shift @inis){
 
 
 ## generate summaries of fasta, agp, gff files
+my $cegma;
 foreach my $file (keys %infiles){
 	# 1.1: Read CEGMA scores from completness_report
 	if ($file =~ m/^CEGMA$/ && $infiles{$file}{'type'} eq 'txt'){
-		my $tmp_stats = cegma_file_summary($infiles{$file}->{'name'});
-		foreach my $key (keys %{$tmp_stats}){
-			$stats{$key} = $tmp_stats->{$key};
+		my $cegma = cegma_file_summary($infiles{$file}->{'name'});
+		foreach my $key (keys %{$cegma}){
+			$stats{$key} = $cegma->{$key};
 		}
 	}
 }
@@ -77,7 +78,7 @@ if (-s $infiles{'SCAFFOLD'}->{'name'}){
 	my $tmp_stats = fasta_file_summary($params,$infiles{'SCAFFOLD'},'SCAFFOLD',$cegma);
   my $json = JSON->new;
   $json->pretty(1);
-  open JSON,">web/stats.json"
+  open JSON,">web/stats.json";
   print JSON $json->encode($output),"\n";
   close JSON;
 	foreach my $key (keys %{$tmp_stats}){

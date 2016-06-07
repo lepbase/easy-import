@@ -1234,7 +1234,7 @@ sub fa_sequence_count {
 
 
 sub fasta_file_summary {
-	my ($params,$infile,$type,$extra) = @_;
+	my ($params,$infile,$type,$more) = @_;
 
   my $break = 10; # number of consecutive Ns to break scaffolds into contigs
   my $bins = 1000; # number of bins to place sequences into
@@ -1261,9 +1261,9 @@ sub fasta_file_summary {
   $output->{binned_contig_counts} = $extra->{binned_scaffold_counts};
   $output->{contig_count} = $extra->{scaffold_count};
   $output->{binned_contig_lengths} = $extra->{binned_scaffold_lengths};
-  if ($extra){
-    foreach my $key (keys %{$extra}){
-      $output->{$key} = $extra->{$key};
+  if ($more){
+    foreach my $key (keys %{$more}){
+      $output->{$key} = $more->{$key};
     }
   }
 
