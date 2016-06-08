@@ -45,7 +45,7 @@ my $provider = $infiles{'PROTEIN'}{'name'};
 
 ####
 
-#print STDERR "\n----\nChecking for duplicates in $provider\n----\n";
+#print LOG "\n----\nChecking for duplicates in $provider\n----\n";
 
 my $providerin = Bio::SeqIO->new(
                             -file   => "<$provider",
@@ -60,7 +60,7 @@ while ( my $seq = $providerin->next_seq) {
     my $seqstr = $seq->seq;
     $seqstr =~ s/\W*$//;
     if (exists $providerhash{$id}) {
-        print STDERR "DUPLICATE $id\n";
+        print LOG "DUPLICATE $id\n";
         push  @providerdups, $id;
     }
     else {
@@ -72,8 +72,10 @@ my $exportdir = 'exported';
 my $outdir = 'summary';
 mkdir $outdir;
 
-print STDERR "Num of unique     seq IDs in $provider: " . scalar (keys %providerhash) . "\n";
-print STDERR "Num of duplicated seq IDs in $provider: " . scalar (@providerdups) . "\n";
+open  LOG, ">$outdir/$exported.log" or die $!;
+
+print LOG "Num of unique     seq IDs in $provider: " . scalar (keys %providerhash) . "\n";
+print LOG "Num of duplicated seq IDs in $provider: " . scalar (@providerdups) . "\n";
 
 if (scalar @providerdups > 0) {
     open  DUP1, ">$outdir/$provider.dups.ids" or die $!;
@@ -82,7 +84,7 @@ if (scalar @providerdups > 0) {
 
 ####
 
-#print STDERR "\n----\nChecking for duplicates in $exported\n----\n";
+#print LOG "\n----\nChecking for duplicates in $exported\n----\n";
 
 my $exportedin = Bio::SeqIO->new(
                             -file   => "<$exportdir/$exported",
@@ -97,7 +99,7 @@ while ( my $seq = $exportedin->next_seq) {
     my $seqstr = $seq->seq;
     $seqstr =~ s/\W*$//;
     if (exists $exportedhash{$id}) {
-        print STDERR "DUPLICATE $id\n";
+        print LOG "DUPLICATE $id\n";
         push  @exporteddups, $id;
     }
     else {
@@ -105,8 +107,8 @@ while ( my $seq = $exportedin->next_seq) {
     }
 }
 
-print STDERR "Num of unique     seq IDs in $exported: " . scalar (keys %exportedhash) . "\n";
-print STDERR "Num of duplicated seq IDs in $exported: " . scalar (@exporteddups) . "\n";
+print LOG "Num of unique     seq IDs in $exported: " . scalar (keys %exportedhash) . "\n";
+print LOG "Num of duplicated seq IDs in $exported: " . scalar (@exporteddups) . "\n";
 
 if (scalar @exporteddups > 0) {
     open  DUP2, ">$outdir/$exported.dups.ids" or die $!;
@@ -115,7 +117,7 @@ if (scalar @exporteddups > 0) {
 
 ####
 
-#print STDERR "\n----\nChecking for extra seq IDs in $file1\n----\n";
+#print LOG "\n----\nChecking for extra seq IDs in $file1\n----\n";
 
 my $extraprovidercount = 0;
 open EXTRA1, ">$outdir/$provider.extra.ids" or die $!;
@@ -126,11 +128,11 @@ for my $id (sort keys %providerhash) {
     }
 }
 close EXTRA1;
-print STDERR "Num of extra      seq IDs in $provider: " . $extraprovidercount . "\n";
+print LOG "Num of extra      seq IDs in $provider: " . $extraprovidercount . "\n";
 
 ####
 
-#print STDERR "\n----\nChecking for extra seq IDs in $file2\n----\n";
+#print LOG "\n----\nChecking for extra seq IDs in $file2\n----\n";
 
 my $extraexportedcount = 0;
 open EXTRA2, ">$outdir/$exported.extra.ids" or die $!;
@@ -141,11 +143,11 @@ for my $id (sort keys %exportedhash) {
     }
 }
 close EXTRA2;
-print STDERR "Num of extra      seq IDs in $exported: " . $extraexportedcount . "\n";
+print LOG "Num of extra      seq IDs in $exported: " . $extraexportedcount . "\n";
 
 ####
 
-print STDERR "Checking sequences with same ID in $provider and $exported\n";
+print LOG "Checking sequences with same ID in $provider and $exported\n";
 
 my @identical;
 my @substrproviderofexported;
@@ -181,10 +183,10 @@ for my $id (sort keys %providerhash) {
     }
 }
 
-print STDERR "Identical: " . scalar(@identical) . "\n";
-print STDERR "Sequence in $exported is substr of sequence in $provider: $substrexportedofprovidertostop (" . scalar(@substrexportedofprovider) . ")\n";
-print STDERR "Sequence in $provider is substr of sequence in $exported: $substrproviderofexportedtostop (" . scalar(@substrproviderofexported) . ")\n";
-print STDERR "Different: " . scalar(@different) . "\n";
+print LOG "Identical: " . scalar(@identical) . "\n";
+print LOG "Sequence in $exported is substr of sequence in $provider: $substrexportedofprovidertostop (" . scalar(@substrexportedofprovider) . ")\n";
+print LOG "Sequence in $provider is substr of sequence in $exported: $substrproviderofexportedtostop (" . scalar(@substrproviderofexported) . ")\n";
+print LOG "Different: " . scalar(@different) . "\n";
 
 open  OUT, ">$outdir/identical.ids" or die $!;
 print OUT  join("\n",@identical)  . "\n" if scalar @identical > 0;
