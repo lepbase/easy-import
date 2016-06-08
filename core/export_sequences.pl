@@ -61,7 +61,7 @@ Species_display_name_-_cds_translationid.fa
 Notes:
 
 1. Advantage of using dbname is that we get the production name AND genebuild in the header
-2. Need for cds_translationid.fa is that some orthology pipelines expect the SAME id for protein and cds
+2. Need for cds_translationid.fa is that some orthology pipelines expects the SAME id for protein and cds
 
 USAGE:
 
@@ -101,7 +101,7 @@ my $slice_adaptor = $dba->get_SliceAdaptor();
 my @supercontigs  = @{$slice_adaptor->fetch_all('toplevel')};
 my $supercontig_count = 0;
 
-open (SCAFFOLDS, " | gzip -c > $outdir/$display_name\_-_scaffolds.fa.gz") or die $!;
+open (SCAFFOLDS, ">", "$outdir/$display_name\_-_scaffolds.fa") or die $!;
 
 foreach my $slice (@supercontigs) {
     print SCAFFOLDS ">" . $slice->seq_region_name() . " $dbname scaffold\n" . $slice->seq() . "\n";
@@ -123,10 +123,10 @@ my ($pep, $cds, $bounded_exon, $transcript_id, $translation_id, $desc)  = ("",""
 my ($protein_fh, $cds_fh, $bounded_exon_fh, $cds_translationid_fh);
 my $protein_count = 0;
 
-open $protein_fh,           " | gzip -c > $outdir/$display_name\_-_proteins.fa.gz"          or die $!;
-open $cds_fh,               " | gzip -c > $outdir/$display_name\_-_cds.fa.gz"               or die $!;
-open $cds_translationid_fh, " | gzip -c > $outdir/$display_name\_-_cds_translationid.fa.gz" or die $!;
-open $bounded_exon_fh,      " | gzip -c > $outdir/$display_name\_-_protein_bounded_exon.fa.gz"  or die $!;
+open $protein_fh,           ">", "$outdir/$display_name\_-_proteins.fa"          or die $!;
+open $cds_fh,               ">", "$outdir/$display_name\_-_cds.fa"               or die $!;
+open $cds_translationid_fh, ">", "$outdir/$display_name\_-_cds_translationid.fa" or die $!;
+open $bounded_exon_fh,      ">", "$outdir/$display_name\_-_protein_bounded_exon.fa"  or die $!;
 
 foreach my $transcript (@transcripts) {
     if (defined $transcript->translate() ) {
