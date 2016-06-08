@@ -32,23 +32,33 @@ while (my $ini_file = shift @inis){
 	load_ini($params,$ini_file,\%sections);
 	## download/obtain files using methods suggested by file paths and extensions
 	foreach my $subsection (sort keys %{$params->{'FILES'}}){
-    if ($subsection eq 'SCAFFOLD' || $subsection eq 'CEGMA' || $subsection eq 'GFF'){
+    if ($subsection eq 'CEGMA' || $subsection eq 'BUSCO'){
 		  ($infiles{$subsection}{'name'},$infiles{$subsection}{'type'}) = fetch_file($params->{'FILES'}{$subsection});
     }
 	}
-	foreach my $file (keys %infiles){
-		if ($infiles{$file}{'type'} eq 'gff'){
-			# 1.1 append additional features to existing summary files for second and subsequent GFFs
-			my $filename = $infiles{$file}->{'name'};
-			$filename .= '.sorted' if $params->{'GFF'}{'SORT'};
-			$filename .= '.gff' if -e $filename.'.gff';
-			print STDERR "Calculating summary statistics on [FILES] $file $filename\n";
-			my ($tmp_stats,$features) = prepared_gff_feature_summary($params,$filename,$features);
-			foreach my $key (keys %{$tmp_stats}){
-				$stats{$key} = $tmp_stats->{$key};
-			}
+}
+
+foreach my $file (keys %infiles){
+	if ($infiles{$file}{'type'} eq 'gff'){
+		# 1.1 append additional features to existing summary files for second and subsequent GFFs
+		my $filename = $infiles{$file}->{'name'};
+		$filename .= '.sorted' if $params->{'GFF'}{'SORT'};
+		$filename .= '.gff' if -e $filename.'.gff';
+		print STDERR "Calculating summary statistics on [FILES] $file $filename\n";
+		my ($tmp_stats,$features) = prepared_gff_feature_summary($params,$filename,$features);
+		foreach my $key (keys %{$tmp_stats}){
+			$stats{$key} = $tmp_stats->{$key};
 		}
 	}
+}
+
+my $production_name = $params->{'META'}{'SPECIES.PRODUCTION_NAME'};
+my $exportdir = 'exported';
+my $filename = "$exportdir/$production_name.gff"
+print STDERR "Calculating summary statistics on [FILES] $file $filename\n";
+my ($tmp_stats,$features) = prepared_gff_feature_summary($params,$filename,$features);
+foreach my $key (keys %{$tmp_stats}){
+  $stats{$key} = $tmp_stats->{$key};
 }
 
 
@@ -72,14 +82,14 @@ foreach my $file (keys %infiles){
 #$infiles{'SCAFFOLD'}->{'name'} =~ s/\s/_/g;
 
 
-
+$infiles{'SCAFFOLD'}->{'name'} = "$exportdir/$production_name"."_-_scaffolds.fa";
 if (-s $infiles{'SCAFFOLD'}->{'name'}){
 	## calculate scaffold stats and write to file
 	print STDERR "Calculating summary statistics on [FILES] SCAFFOLD $infiles{'SCAFFOLD'}{'name'}\n";
 	my $tmp_stats = fasta_file_summary($params,$infiles{'SCAFFOLD'},'SCAFFOLD',$cegma);
   my $json = JSON->new;
   $json->pretty(1);
-  my $production_name = $params->{'META'}{'SPECIES.PRODUCTION_NAME'};
+
   open JS,">web/$production_name.stats.json";
   print JS $json->encode($tmp_stats),"\n";
   close JS;
