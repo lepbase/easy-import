@@ -1826,24 +1826,7 @@ sub prepared_gff_feature_summary {
 	my $gff = GFFTree->new({});
 	$gff->name('GFF');
 	$gff->expect_columns(9,'skip');
-	$gff->lacks_id('all','make');
-	$gff->lacks_id('cds','Name');
-	my @tsc_types;
-	foreach my $key (keys %{$params->{'GFF'}}){
-		my $value = $params->{'GFF'}{$key};
-		if (ref $value || ref $value eq 'ARRAY') {
-			my @value = @$value;
-			my $type = shift @value;
-			if ($type eq 'MULTILINE'){
-				$gff->multiline(@value);
-			}
-			elsif ($type eq 'EXPECTATION'){
-				if ($value[1] =~ m/^hasParent$/i && $value[2] =~ m/^gene$/i){
-					push @tsc_types, $value[0];
-				}
-			}
-		}
-	}
+	$gff->multiline('cds');
 	while ($gff->parse_chunk(@{$params->{'GFF'}{'CHUNK'}})){
 		my @features = $gff->daughters();
 		foreach my $feature (@features){
@@ -1852,7 +1835,7 @@ sub prepared_gff_feature_summary {
 	}
 	# print summaries to files
 	mkdir "summary";
-	open ATTR,">summary/GFF.$file.attribute_counts.txt";
+	open ATTR,">summary/GFF.$production_name.gff.attribute_counts.txt";
 	foreach my $type (sort keys %features_by_type){
 		foreach my $attribute (sort keys %{$features_by_type{$type}{'attributes'}}){
 			print ATTR "$type\t$attribute\t$features_by_type{$type}{'attributes'}{$attribute}\n";
