@@ -1850,7 +1850,7 @@ sub prepared_gff_feature_summary {
 	}
 	close RDATA;
 	make_feature_plot("summary/${production_name}_feature");
-
+  my @tsc_types = qw( mRNA transcript );
 	my %return_stats;
 	foreach my $type (sort keys %features_by_type){
 		if ($type =~ m/^gene$/i){
