@@ -1649,11 +1649,13 @@ print ASM <<EOF;
 <script type="text/javascript" src="/components/00_d3.js"></script>
 <script type="text/javascript" src="/components/99_assembly_stats.js"></script>
 <script>
-  d3.json("/i/species/$production_name.stats.json", function(error, json) {
+  d3.text("/ssi/species/$production_name.stats.json", function(error, text) {
     if (error) return console.warn(error);
-    stats = json;
+    text = text.replace(/^[\s\S]+?\{/,'{');
+    text = text.replace(/<[\s\S]+$/,'');
+    stats = JSON.parse(text);
     var asm = new Assembly (stats);
-    asm.drawPlot(assembly_stats);
+    asm.drawPlot('assembly_stats');
   });
 </script>
 <div id="assembly_stats"></div>
@@ -1905,7 +1907,7 @@ data=read.delim(args[1],header=F,col.names=c("type","region","source","len"))
 distrib=aggregate(data$len, by=list(data$region,data$type), FUN=length);
 x = c(1,2,3,4,5)
 j = 6
-names(x) = c("gene","mRNA","exon","CDS")
+names(x) = c("gene","transcript","CDS")
 cols = c(rgb(31/255,120/255,180/255),rgb(166/255,206/255,227/255),rgb(51/255,160/255,44/255),
 rgb(251/255,154/255,153/255),rgb(178/255,223/255,138/255),rgb(227/255,26/255,28/255),
 rgb(253/255,191/255,111/255),rgb(255/255,127/255,0/255),rgb(202/255,178/255,214/255))
@@ -1925,7 +1927,7 @@ for (i in 1:length(alltypes)){
 		}
 	}
 }
-types <- c("gene","mRNA","exon","CDS")
+types <- c("gene","transcript","CDS")
 
 height=150+150*length(types)
 png(paste(args[1],"dist","png",sep="."),900,height,res=200)
