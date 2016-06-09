@@ -38,24 +38,10 @@ while (my $ini_file = shift @inis){
 	}
 }
 
-foreach my $file (keys %infiles){
-	if ($infiles{$file}{'type'} eq 'gff'){
-		# 1.1 append additional features to existing summary files for second and subsequent GFFs
-		my $filename = $infiles{$file}->{'name'};
-		$filename .= '.sorted' if $params->{'GFF'}{'SORT'};
-		$filename .= '.gff' if -e $filename.'.gff';
-		print STDERR "Calculating summary statistics on [FILES] $file $filename\n";
-		my ($tmp_stats,$features) = prepared_gff_feature_summary($params,$filename,$features);
-		foreach my $key (keys %{$tmp_stats}){
-			$stats{$key} = $tmp_stats->{$key};
-		}
-	}
-}
-
 my $production_name = $params->{'META'}{'SPECIES.PRODUCTION_NAME'};
 my $exportdir = 'exported';
 my $filename = "$exportdir/$production_name.gff";
-print STDERR "Calculating summary statistics on [FILES] $file $filename\n";
+print STDERR "Calculating summary statistics on $filename\n";
 my ($tmp_stats,$features) = prepared_gff_feature_summary($params,$filename,$features);
 foreach my $key (keys %{$tmp_stats}){
   $stats{$key} = $tmp_stats->{$key};
