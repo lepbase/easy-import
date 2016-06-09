@@ -1651,8 +1651,8 @@ print ASM <<EOF;
 <script>
   d3.text("/ssi/species/$production_name.stats.json", function(error, text) {
     if (error) return console.warn(error);
-    text = text.replace(/^[\s\S]+?\{/,'{');
-    text = text.replace(/<[\s\S]+$/,'');
+    text = text.replace(/^[\\s\\S]+?\\{/,'{');
+    text = text.replace(/<[\\s\\S]+\$/,'');
     stats = JSON.parse(text);
     var asm = new Assembly (stats);
     asm.drawPlot('assembly_stats');
