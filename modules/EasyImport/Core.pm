@@ -1831,6 +1831,7 @@ sub prepared_gff_feature_summary {
 	$gff->add_expectation('exon','hasParent','transcript|mrna','find');
 	$gff->add_expectation('cds','hasParent','transcript|mrna','find');
 	while ($gff->parse_chunk(@{$params->{'GFF'}{'CHUNK'}})){
+    $gff->validate_all();
 		my @features = $gff->daughters();
 		foreach my $feature (@features){
 			_summarise_feature($feature,\%features_by_type);
