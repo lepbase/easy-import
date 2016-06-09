@@ -70,9 +70,10 @@ foreach my $file (keys %infiles){
 
 
 $infiles{'SCAFFOLD'}->{'name'} = "$exportdir/$production_name"."_-_scaffolds.fa";
+
 if (-s $infiles{'SCAFFOLD'}->{'name'}){
 	## calculate scaffold stats and write to file
-	print STDERR "Calculating summary statistics on [FILES] SCAFFOLD $infiles{'SCAFFOLD'}{'name'}\n";
+	print STDERR "Calculating summary statistics on $infiles{'SCAFFOLD'}{'name'}\n";
 	my $tmp_stats = fasta_file_summary($params,$infiles{'SCAFFOLD'},'SCAFFOLD',$cegma);
   my $json = JSON->new;
   $json->pretty(1);
