@@ -54,7 +54,7 @@ foreach my $file (keys %infiles){
 
 my $production_name = $params->{'META'}{'SPECIES.PRODUCTION_NAME'};
 my $exportdir = 'exported';
-my $filename = "$exportdir/$production_name.gff"
+my $filename = "$exportdir/$production_name.gff";
 print STDERR "Calculating summary statistics on [FILES] $file $filename\n";
 my ($tmp_stats,$features) = prepared_gff_feature_summary($params,$filename,$features);
 foreach my $key (keys %{$tmp_stats}){
