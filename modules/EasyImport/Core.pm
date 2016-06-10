@@ -1512,9 +1512,7 @@ print ABOUT <<EOF;
 <!-- {about} -->
 <!-- {assembly} --><a name="assembly"></a>
   <h2 id="assembly" style="margin-bottom:5px">Assembly</h2>
-  <img style="width:100%;" src="/i/species/about/${production_name}_feature.length.png" title="distribution of feature lengths in the assembly"/>
-  <br/>
-  <img style="width:100%;" src="/i/species/about/${production_name}_feature.dist.png" title="distribution of features across scaffolds"/>
+  <p></p>
 <!-- {assembly} -->
 <!-- {annotation} --><a name="annotation"></a>
   <h2 id="annotation" style="margin-bottom:5px">Annotation</h2>
@@ -1527,6 +1525,9 @@ print ABOUT <<EOF;
   </ol>
  <!-- {references} -->
 EOF
+#  <img style="width:100%;" src="/i/species/about/${production_name}_feature.length.png" title="distribution of feature lengths in the assembly"/>
+#  <br/>
+#  <img style="width:100%;" src="/i/species/about/${production_name}_feature.dist.png" title="distribution of features across scaffolds"/>
 
 close ABOUT;
 	return 1;
