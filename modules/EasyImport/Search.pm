@@ -196,6 +196,7 @@ use DBI;
     my $dirname = shift;
   	my $dbh = search_db_host_connect($params);
     my $sth = $dbh->prepare("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = ".$dbh->quote($params->{'DATABASE_SEARCH'}{'NAME'}));
+    $sth->execute();
     if ($sth->rows == 0){
       $dbh = setup_search_db($dbh,$params,$dirname);
     }
