@@ -46,6 +46,9 @@ while (my $ini_file = shift @inis){
 	}
 }
 
+my $production_name = $params->{'META'}{'SPECIES.PRODUCTION_NAME'};
+my $exportdir = 'exported';
+
 foreach my $subsection (sort keys %{$params->{'FILES'}}){
   if ($subsection eq 'CEGMA' || $subsection eq 'BUSCO'){
 	  ($infiles{$subsection}{'name'},$infiles{$subsection}{'type'}) = fetch_file($params->{'FILES'}{$subsection});
