@@ -1907,7 +1907,7 @@ data=read.delim(args[1],header=F,col.names=c("type","region","source","len"))
 distrib=aggregate(data$len, by=list(data$region,data$type), FUN=length);
 x = c(1,2,3,4,5)
 j = 6
-names(x) = c("gene","transcript","CDS")
+names(x) = c("gene","mRNA","CDS","exon")
 cols = c(rgb(31/255,120/255,180/255),rgb(166/255,206/255,227/255),rgb(51/255,160/255,44/255),
 rgb(251/255,154/255,153/255),rgb(178/255,223/255,138/255),rgb(227/255,26/255,28/255),
 rgb(253/255,191/255,111/255),rgb(255/255,127/255,0/255),rgb(202/255,178/255,214/255))
@@ -1927,9 +1927,9 @@ for (i in 1:length(alltypes)){
 		}
 	}
 }
-types <- c("gene","transcript","CDS")
+types <- c("gene","mRNA","CDS","exon")
 
-height=150+150*length(types)
+height=75+150*length(types)
 png(paste(args[1],"dist","png",sep="."),900,height,res=200)
 distrib[distrib[,3]<1,3] <- 0.9
 par(las=1,mai=c(0,0,0.1,0),oma=c(4,4,1,1),cex.axis=0.8,cex.lab=1,mfrow=c(4,1))
