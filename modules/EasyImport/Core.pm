@@ -1333,9 +1333,11 @@ sub _bin_seqs {
             $len += length($str) - $ns;
             $ns /= length($str);
             $ns = sprintf "%.3f",$ns*100;
+            $ns *= 1;
             $sum_ns += $ns;
             $gcs /= (length($str) - $ns);
             $gcs = sprintf "%.3f",$gcs*100;
+            $gc *= 1;
             $sum_gcs += $gcs;
             $min_ns = $ns if $ns < $min_ns;
             $min_gcs = $gcs if $gcs < $min_gcs;
@@ -1885,10 +1887,10 @@ sub cegma_file_summary {
 	while (<CEGMA>){
 		chomp;
 		if (m/^\s*Complete\s+\S+\s+(\S+)\s/){
-			$return_stats{'cegma_complete'} = $1;
+			$return_stats{'cegma_complete'} = $1*1;
 		}
 		elsif (m/^\s*Partial\s+\S+\s+(\S+)\s/){
-			$return_stats{'cegma_partial'} = $1;
+			$return_stats{'cegma_partial'} = $1*1;
 		}
 	}
 	close CEGMA;
