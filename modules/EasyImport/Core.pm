@@ -1337,7 +1337,7 @@ sub _bin_seqs {
             $sum_ns += $ns;
             $gcs /= (length($str) - $ns);
             $gcs = sprintf "%.3f",$gcs*100;
-            $gc *= 1;
+            $gcs *= 1;
             $sum_gcs += $gcs;
             $min_ns = $ns if $ns < $min_ns;
             $min_gcs = $gcs if $gcs < $min_gcs;
