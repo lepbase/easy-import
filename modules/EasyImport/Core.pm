@@ -1332,10 +1332,10 @@ sub _bin_seqs {
             my $gcs = () = $str =~ /[gc]/gi;
             $len += length($str) - $ns;
             $ns /= length($str);
-            $ns *= 100;
+            $ns = sprintf "%.3f",$ns*100;
             $sum_ns += $ns;
             $gcs /= (length($str) - $ns);
-            $gcs *= 100;
+            $gcs = sprintf "%.3f",$gcs*100;
             $sum_gcs += $gcs;
             $min_ns = $ns if $ns < $min_ns;
             $min_gcs = $gcs if $gcs < $min_gcs;
