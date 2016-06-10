@@ -53,21 +53,7 @@ foreach my $subsection (sort keys %{$params->{'FILES'}}){
 }
 
 
-my $production_name = $params->{'META'}{'SPECIES.PRODUCTION_NAME'};
-my $exportdir = 'exported';
-my $filename = "$exportdir/$production_name.gff";
-print STDERR "Calculating summary statistics on $filename\n";
-my $tmp_stats;
-($tmp_stats,$features) = prepared_gff_feature_summary($params,$filename,$features);
-foreach my $key (keys %{$tmp_stats}){
-  $stats{$key} = $tmp_stats->{$key};
-}
-
-
-# 1.1: define species jpg in ini for resizing to use on web?
-
-
-## generate summaries of fasta, agp, gff files
+## generate summaries of CEGMA files
 my $cegma;
 foreach my $file (keys %infiles){
 	# 1.1: Read CEGMA scores from completness_report
@@ -78,10 +64,6 @@ foreach my $file (keys %infiles){
 		}
 	}
 }
-
-#$infiles{'SCAFFOLD'}->{'name'} = $params->{'META'}{'SPECIES.DISPLAY_NAME'}.'_-_scaffolds.fa';
-#$infiles{'SCAFFOLD'}->{'type'} = 'fas';
-#$infiles{'SCAFFOLD'}->{'name'} =~ s/\s/_/g;
 
 
 $infiles{'SCAFFOLD'}->{'name'} = "$exportdir/$production_name"."_-_scaffolds.fa";
@@ -111,7 +93,7 @@ stats_page($params,\%stats);
 ## generate production_name_assembly.html page with assembly visualisation (and description)
 # 1.1: Added GC wiggle to assembly badge
 # 1.1: Added gff feature histogram to html
-assembly_page($params,\%stats);
+assembly_page($params,\%stats,$cegma);
 
 # 1.1: Generate ini file for lepbase-ensembl
 web_ini_file($params,\%stats);
