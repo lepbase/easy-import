@@ -58,7 +58,7 @@ my $cegma;
 foreach my $file (keys %infiles){
 	# 1.1: Read CEGMA scores from completness_report
 	if ($file =~ m/^CEGMA$/ && $infiles{$file}{'type'} eq 'txt'){
-		my $cegma = cegma_file_summary($infiles{$file}->{'name'});
+		$cegma = cegma_file_summary($infiles{$file}->{'name'});
 		foreach my $key (keys %{$cegma}){
 			$stats{$key} = $cegma->{$key};
 		}
@@ -93,7 +93,7 @@ stats_page($params,\%stats);
 ## generate production_name_assembly.html page with assembly visualisation (and description)
 # 1.1: Added GC wiggle to assembly badge
 # 1.1: Added gff feature histogram to html
-assembly_page($params,\%stats,$cegma);
+assembly_page($params,\%stats);
 
 # 1.1: Generate ini file for lepbase-ensembl
 web_ini_file($params,\%stats);
