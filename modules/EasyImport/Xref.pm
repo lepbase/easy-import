@@ -183,9 +183,11 @@ sub update_description {
       my $sth = $dbh->prepare("SELECT g.gene_id,g.description FROM gene AS g JOIN transcript AS t ON g.gene_id = t.gene_id WHERE t.stable_id LIKE ".$dbh->quote($tsc_stable_id));
       $sth->execute();
       return undef if $sth->rows == 0;
+      $values = $sth->fetchrow_arrayref();
+  } else {
+      $values = $sth->fetchrow_arrayref();
   }
 
-  $values = $sth->fetchrow_arrayref();
 
   my $gene_id = $values->[0];
   my $description = $values->[1] || 'NULL';
