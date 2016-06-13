@@ -184,7 +184,10 @@ sub update_description {
       $sth->execute();
       return undef if $sth->rows == 0;
       $values = $sth->fetchrow_arrayref();
+  } else {
+      $values = $sth->fetchrow_arrayref();
   }
+
 
   my $gene_id = $values->[0];
   my $description = $values->[1] || 'NULL';
