@@ -5,13 +5,9 @@ use DBI;
 use Bio::SeqIO;
 use File::Basename;
 
-{
-my %core_dbs;
-my %genes;
-
 # fill in/select from
 sub load_sequences {
-	my ($dbh,$params,$fullname) = @_;
+	my ($dbh,$params,$core_dbs,$fullname) = @_;
   my ($file,$path) = fileparse($fullname);
 	my %seqs;
 
@@ -41,12 +37,12 @@ sub load_sequences {
   				($sp_name,$taxon_id) = @$value;
   				# TODO: can't ignore these forever...
   			}
-  			elsif (!$core_dbs{$sp}) {
-  				fetch_meta_from_core_db($dbh,$sp,$value,$params);
+  			elsif (!$core_dbs->{$sp}) {
+  				fetch_meta_from_core_db($dbh,$core_dbs,$sp,$value,$params);
   			}
   		}
-  		if ($core_dbs{$sp}) {
-  			$seq_member_id = fetch_gene_from_core_db($dbh,$sp,$tsl_stable_id,$seqstr,$length);
+  		if ($core_dbs->{$sp}) {
+  			$seq_member_id = fetch_gene_from_core_db($dbh,$core_dbs,$sp,$tsl_stable_id,$seqstr,$length);
   		}
   		if ($seq_member_id){
   			# load seqs from from fna and faa.bounded files
@@ -264,8 +260,8 @@ sub add_other_member_sequence {
 }
 
 sub fetch_gene_from_core_db {
-	my ($dbh,$sp,$tsl_stable_id,$seqstr,$length) = @_;
-	my $sth = $dbh->prepare("SELECT seq_member_id,gene_member_id FROM seq_member WHERE genome_db_id = $core_dbs{$sp}{'genome_db_id'} AND stable_id = ".$dbh->quote($tsl_stable_id));
+	my ($dbh,$core_dbs,$sp,$tsl_stable_id,$seqstr,$length) = @_;
+	my $sth = $dbh->prepare("SELECT seq_member_id,gene_member_id FROM seq_member WHERE genome_db_id = $core_dbs->{$sp}{'genome_db_id'} AND stable_id = ".$dbh->quote($tsl_stable_id));
 	$sth->execute();
 	if ($sth->rows > 0){
 		my @arr = $sth->fetchrow_array();
@@ -273,7 +269,7 @@ sub fetch_gene_from_core_db {
 	}
 	#$dbh->do("INSERT INTO sequence (length, sequence) VALUES ($length,".$dbh->quote($seqstr).")");
 	#$dbh->do("INSERT INTO seq_member (length, sequence) VALUES ($length,".$dbh->quote($seqstr).")");
-	my $cdbh = $core_dbs{$sp}{'db_handle'};
+	my $cdbh = $core_dbs->{$sp}{'db_handle'};
 	# TODO: change this to translation.stable_id
 	my $csth = $cdbh->prepare("SELECT cs.name cs_name, sr.name sr_name, sr.length sr_length,
 	                                  tsc.transcript_id, tsc.seq_region_start tsc_sr_start, tsc.seq_region_end tsc_sr_end, tsc.seq_region_strand tsc_sr_strand, tsc.description tsc_description, tsc.display_xref_id tsc_xref_id,
@@ -292,10 +288,10 @@ sub fetch_gene_from_core_db {
 	$csth->execute();
 	#print $tsl_stable_id,"!\n";
 	if (my $ref = $csth->fetchrow_hashref()){
-		my $dnafrag_id = add_dnafrag($dbh,$core_dbs{$sp}{'genome_db_id'},$ref->{'cs_name'},$ref->{'sr_name'},$ref->{'sr_length'});
+		my $dnafrag_id = add_dnafrag($dbh,$core_dbs->{$sp}{'genome_db_id'},$ref->{'cs_name'},$ref->{'sr_name'},$ref->{'sr_length'});
 		#print $dnafrag_id,"\t",$ref->{'tsl_stable_id'},"\n";
 		my $display_label = 'NULL'; #TODO: look for a display label (display_xref...)
-		my $gene_member_id = add_gene_member($dbh,$sp,$core_dbs{$sp}{'genome_db_id'},$ref->{'g_stable_id'},'ENSEMBLGENE',$core_dbs{$sp}{'taxon_id'},$ref->{'g_description'},$dnafrag_id,$ref->{'g_sr_start'},$ref->{'g_sr_end'},$ref->{'g_sr_strand'},$ref->{'gene_id'},$ref->{'g_xref_id'},$display_label);
+		my $gene_member_id = add_gene_member($dbh,$core_dbs,$sp,$core_dbs->{$sp}{'genome_db_id'},$ref->{'g_stable_id'},'ENSEMBLGENE',$core_dbs->{$sp}{'taxon_id'},$ref->{'g_description'},$dnafrag_id,$ref->{'g_sr_start'},$ref->{'g_sr_end'},$ref->{'g_sr_strand'},$ref->{'gene_id'},$ref->{'g_xref_id'},$display_label);
 		#print $gene_member_id,"\t",$ref->{'g_stable_id'},"\n";
 		my $sequence_id = add_sequence($dbh,$seqstr,$length);
 		#print $sequence_id," = seq_id\n";
@@ -308,7 +304,7 @@ sub fetch_gene_from_core_db {
 			$sr_start = $ref->{'ee_sr_end'} - $ref->{'tsl_seq_start'} + 1;
 			$sr_end = $ref->{'se_sr_end'} - $ref->{'tsl_seq_end'} + 1;
 		}
-		my $seq_member_id = add_seq_member($dbh,$sp,$core_dbs{$sp}{'genome_db_id'},$ref->{'tsl_stable_id'},'ENSEMBLPEP',$core_dbs{$sp}{'taxon_id'},$sequence_id,$gene_member_id,$ref->{'g_description'},$dnafrag_id,$sr_start,$sr_end,$ref->{'tsc_sr_strand'},$ref->{'transcript_id'},$ref->{'tsc_xref_id'},$display_label);
+		my $seq_member_id = add_seq_member($dbh,$core_dbs,$sp,$core_dbs->{$sp}{'genome_db_id'},$ref->{'tsl_stable_id'},'ENSEMBLPEP',$core_dbs->{$sp}{'taxon_id'},$sequence_id,$gene_member_id,$ref->{'g_description'},$dnafrag_id,$sr_start,$sr_end,$ref->{'tsc_sr_strand'},$ref->{'transcript_id'},$ref->{'tsc_xref_id'},$display_label);
 		#print $seq_member_id,"\t",$ref->{'g_stable_id'},"\n";
 		if ($ref->{'canonical_transcript_id'} == $ref->{'transcript_id'} ){
 			simple_update($dbh,'gene_member',{'canonical_member_id' => $seq_member_id},{'gene_member_id' => $gene_member_id});
@@ -318,7 +314,7 @@ sub fetch_gene_from_core_db {
 }
 
 sub add_seq_member {
-	my ($dbh,$sp,$genome_db_id,$stable_id,$source_name,$taxon_id,$sequence_id,$gene_member_id,$description,$dnafrag_id,$dnafrag_start,$dnafrag_end,$dnafrag_strand,$transcript_id,$display_xref_id,$display_label) = @_;
+	my ($dbh,$core_dbs,$sp,$genome_db_id,$stable_id,$source_name,$taxon_id,$sequence_id,$gene_member_id,$description,$dnafrag_id,$dnafrag_start,$dnafrag_end,$dnafrag_strand,$transcript_id,$display_xref_id,$display_label) = @_;
 	my $sth = $dbh->prepare("SELECT seq_member_id from seq_member WHERE genome_db_id = $genome_db_id AND stable_id = ".$dbh->quote($stable_id));
 	$sth->execute();
 	if ($sth->rows() > 0){
@@ -345,7 +341,7 @@ sub add_seq_member {
 	if ($sth->rows() > 0){
 		$seq_member_id = $sth->fetchrow_arrayref()->[0];
 
-		my $cdbh = $core_dbs{$sp}{'db_handle'};
+		my $cdbh = $core_dbs->{$sp}{'db_handle'};
 		my $csth = $cdbh->prepare("SELECT x.xref_id, x.display_label
 		                    		FROM xref x
 		                    		JOIN object_xref o ON o.xref_id = x.xref_id
@@ -373,7 +369,7 @@ sub add_sequence {
 }
 
 sub add_gene_member {
-	my ($dbh,$sp,$genome_db_id,$stable_id,$source_name,$taxon_id,$description,$dnafrag_id,$dnafrag_start,$dnafrag_end,$dnafrag_strand,$gene_id,$display_xref_id,$display_label) = @_;
+	my ($dbh,$core_dbs,$sp,$genome_db_id,$stable_id,$source_name,$taxon_id,$description,$dnafrag_id,$dnafrag_start,$dnafrag_end,$dnafrag_strand,$gene_id,$display_xref_id,$display_label) = @_;
 	my $sth = $dbh->prepare("SELECT gene_member_id from gene_member WHERE genome_db_id = $genome_db_id AND stable_id = ".$dbh->quote($stable_id));
 	$sth->execute();
 	if ($sth->rows() > 0){
@@ -403,7 +399,7 @@ sub add_gene_member {
 		$gene_member_id = $sth->fetchrow_arrayref()->[0];
 		# TODO: fetch an xref and fill in display_xref if the gene has a display_xref_id
 
-		my $cdbh = $core_dbs{$sp}{'db_handle'};
+		my $cdbh = $core_dbs->{$sp}{'db_handle'};
 		my $csth = $cdbh->prepare("SELECT x.xref_id, x.dbprimary_acc, x.display_label,
 		                                  e.db_name db_name, e.db_release, e.status, e.priority, e.db_display_name, e.type, e.secondary_db_name,e.secondary_db_table, e.description e_desc
 		                    		FROM xref x
@@ -497,83 +493,83 @@ sub fetch_genome_db_id {
 }
 
 sub fetch_meta_from_core_db {
-	my ($dbh,$sp,$db_name,$params) = @_;
-	$core_dbs{$sp}{'db_name'} = $db_name;
+	my ($dbh,$core_dbs,$sp,$db_name,$params) = @_;
+	$core_dbs->{$sp}{'db_name'} = $db_name;
 	my $cdbh = core_db_connect($db_name,$params);
-	$core_dbs{$sp}{'db_handle'} = $cdbh;
+	$core_dbs->{$sp}{'db_handle'} = $cdbh;
 	my $csth = $cdbh->prepare("SELECT meta_value FROM meta WHERE meta_key LIKE ?");
 	$csth->execute('species.taxonomy_id');
 	if ($csth->rows > 0){
-		$core_dbs{$sp}{'taxon_id'} = $csth->fetchrow_arrayref()->[0];
+		$core_dbs->{$sp}{'taxon_id'} = $csth->fetchrow_arrayref()->[0];
 	}
 	else {
 		return;
 	}
-	my $sth = $dbh->prepare("SELECT genome_db_id,name,assembly,genebuild FROM genome_db WHERE taxon_id = $core_dbs{$sp}{'taxon_id'}");
+	my $sth = $dbh->prepare("SELECT genome_db_id,name,assembly,genebuild FROM genome_db WHERE taxon_id = $core_dbs->{$sp}{'taxon_id'}");
 	$sth->execute();
 	if ($sth->rows > 0){
 		my $ref = $sth->fetchrow_arrayref();
-		$core_dbs{$sp}{'genome_db_id'} = $ref->[0];
-		$core_dbs{$sp}{'name'} = $ref->[1];
-		$core_dbs{$sp}{'assembly'} = $ref->[2];
-		$core_dbs{$sp}{'genebuild'} = $ref->[3];
-		return $core_dbs{$sp}{'genome_db_id'};
+		$core_dbs->{$sp}{'genome_db_id'} = $ref->[0];
+		$core_dbs->{$sp}{'name'} = $ref->[1];
+		$core_dbs->{$sp}{'assembly'} = $ref->[2];
+		$core_dbs->{$sp}{'genebuild'} = $ref->[3];
+		return $core_dbs->{$sp}{'genome_db_id'};
 	}
 	$csth->execute('species.production_name');
 	if ($csth->rows > 0){
-		$core_dbs{$sp}{'name'} = $csth->fetchrow_arrayref()->[0];
+		$core_dbs->{$sp}{'name'} = $csth->fetchrow_arrayref()->[0];
 	}
 	else {
 		return;
 	}
 	$csth->execute('assembly.default');
 	if ($csth->rows > 0){
-		$core_dbs{$sp}{'assembly'} = $csth->fetchrow_arrayref()->[0];
+		$core_dbs->{$sp}{'assembly'} = $csth->fetchrow_arrayref()->[0];
 	}
 	else {
 		return;
 	}
 	$csth->execute('genebuild.start_date');
 	if ($csth->rows > 0){
-		$core_dbs{$sp}{'genebuild'} = $csth->fetchrow_arrayref()->[0];
+		$core_dbs->{$sp}{'genebuild'} = $csth->fetchrow_arrayref()->[0];
 	}
 	else {
 		return;
 	}
-	$core_dbs{$sp}{'genome_db_id'} = fetch_genome_db_id($core_dbs{$sp}{'name'},$core_dbs{$sp}{'assembly'},$params);
-	if ($core_dbs{$sp}{'genome_db_id'}){
+	$core_dbs->{$sp}{'genome_db_id'} = fetch_genome_db_id($core_dbs->{$sp}{'name'},$core_dbs->{$sp}{'assembly'},$params);
+	if ($core_dbs->{$sp}{'genome_db_id'}){
 		$dbh->do("INSERT INTO genome_db (genome_db_id,taxon_id,name,assembly,genebuild) "
-				."VALUES ( 	".$core_dbs{$sp}{'genome_db_id'}
-							.",".$core_dbs{$sp}{'taxon_id'}
-							.",".$dbh->quote($core_dbs{$sp}{'name'})
-							.",".$dbh->quote($core_dbs{$sp}{'assembly'})
-							.",".$dbh->quote($core_dbs{$sp}{'genebuild'})
+				."VALUES ( 	".$core_dbs->{$sp}{'genome_db_id'}
+							.",".$core_dbs->{$sp}{'taxon_id'}
+							.",".$dbh->quote($core_dbs->{$sp}{'name'})
+							.",".$dbh->quote($core_dbs->{$sp}{'assembly'})
+							.",".$dbh->quote($core_dbs->{$sp}{'genebuild'})
 							.")");
 	}
 	else {
 		$dbh->do("INSERT INTO genome_db (taxon_id,name,assembly,genebuild) "
-				."VALUES ( 	".$core_dbs{$sp}{'taxon_id'}
-							.",".$dbh->quote($core_dbs{$sp}{'name'})
-							.",".$dbh->quote($core_dbs{$sp}{'assembly'})
-							.",".$dbh->quote($core_dbs{$sp}{'genebuild'})
+				."VALUES ( 	".$core_dbs->{$sp}{'taxon_id'}
+							.",".$dbh->quote($core_dbs->{$sp}{'name'})
+							.",".$dbh->quote($core_dbs->{$sp}{'assembly'})
+							.",".$dbh->quote($core_dbs->{$sp}{'genebuild'})
 							.")");
 	}
 	$sth->execute();
 	if ($sth->rows > 0){
 		my $ref = $sth->fetchrow_arrayref();
-		$core_dbs{$sp}{'genome_db_id'} = $ref->[0];
-		$core_dbs{$sp}{'name'} = $ref->[1];
-		$core_dbs{$sp}{'assembly'} = $ref->[2];
-		$core_dbs{$sp}{'genebuild'} = $ref->[3];
-		add_to_species_set($dbh,$sp);
-		return $core_dbs{$sp}{'genome_db_id'};
+		$core_dbs->{$sp}{'genome_db_id'} = $ref->[0];
+		$core_dbs->{$sp}{'name'} = $ref->[1];
+		$core_dbs->{$sp}{'assembly'} = $ref->[2];
+		$core_dbs->{$sp}{'genebuild'} = $ref->[3];
+		add_to_species_set($dbh,$core_dbs,$sp);
+		return $core_dbs->{$sp}{'genome_db_id'};
 	}
 	return;
 
 }
 
 sub add_to_species_set {
-	my ($dbh,$sp) = @_;
+	my ($dbh,$core_dbs,$sp) = @_;
 	my $msth = $dbh->prepare("SELECT max(species_set_id) FROM species_set");
 	$msth->execute();
 	my $ss_id;
@@ -591,17 +587,17 @@ sub add_to_species_set {
 	}
 	$dbh->do("INSERT INTO species_set (species_set_id,genome_db_id) "
 				."VALUES ( 	".1
-							.",".$core_dbs{$sp}{'genome_db_id'}
+							.",".$core_dbs->{$sp}{'genome_db_id'}
 							.")");
 	$ss_id++;
 	# add single sequence and pairwise sequence sets
-	my $sth = $dbh->prepare("SELECT genome_db_id FROM genome_db WHERE genome_db_id != ".$core_dbs{$sp}{'genome_db_id'});
+	my $sth = $dbh->prepare("SELECT genome_db_id FROM genome_db WHERE genome_db_id != ".$core_dbs->{$sp}{'genome_db_id'});
 	$sth->execute();
 	while (my $ref = $sth->fetchrow_arrayref()){
 		my $db_id = $ref->[0];
 		$dbh->do("INSERT INTO species_set (species_set_id,genome_db_id) "
 				."VALUES ( 	".$ss_id
-							.",".$core_dbs{$sp}{'genome_db_id'}
+							.",".$core_dbs->{$sp}{'genome_db_id'}
 							.")");
 		$dbh->do("INSERT INTO species_set (species_set_id,genome_db_id) "
 				."VALUES ( 	".$ss_id
@@ -611,11 +607,9 @@ sub add_to_species_set {
 	}
 	$dbh->do("INSERT INTO species_set (species_set_id,genome_db_id) "
 				."VALUES ( 	".$ss_id
-							.",".$core_dbs{$sp}{'genome_db_id'}
+							.",".$core_dbs->{$sp}{'genome_db_id'}
 							.")");
 	return $ss_id;
-
-}
 
 }
 

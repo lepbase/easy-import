@@ -69,12 +69,13 @@ $params->{'ORTHOGROUP'}{'TAXA'} = $taxlist;
 #use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
 #use Bio::EnsEMBL::Compara::Graph::NewickParser;
 
+my %core_dbs
 find({wanted => sub {
   my $file = $File::Find::name;
   if (!-d $file){
     if ($file =~ m/$prefix\w+$/){
-      warn "importing $file\n"; 
-      load_sequences($dbh,$params,$file);
+      warn "importing $file\n";
+      load_sequences($dbh,$params,\%core_dbs,$file);
     }
   }
 },
