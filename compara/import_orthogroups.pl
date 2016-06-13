@@ -69,7 +69,7 @@ $params->{'ORTHOGROUP'}{'TAXA'} = $taxlist;
 #use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
 #use Bio::EnsEMBL::Compara::Graph::NewickParser;
 
-my %core_dbs
+my %core_dbs;
 find({wanted => sub {
   my $file = $File::Find::name;
   if (!-d $file){
