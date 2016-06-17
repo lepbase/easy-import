@@ -105,10 +105,20 @@ foreach my $slice (@{$supercontigs}) {
   }
 last;
 }
-$features{'Scaffolds'}->{'base_count'}[0] = $features{'Scaffolds'}->{'base_count'}[0] + $features{'Scaffolds'}->{'base_count'}[3]
-$features{'Scaffolds'}->{'base_count'}[1] = $features{'Scaffolds'}->{'base_count'}[1] + $features{'Scaffolds'}->{'base_count'}[2]
-$features{'Scaffolds'}->{'base_count'}[2] = $features{'Scaffolds'}->{'base_count'}[1]
-$features{'Scaffolds'}->{'base_count'}[3] = $features{'Scaffolds'}->{'base_count'}[0]
+$features{'Scaffolds'}->{'base_count'}[0] = $features{'Scaffolds'}->{'base_count'}[0] + $features{'Scaffolds'}->{'base_count'}[3];
+$features{'Scaffolds'}->{'base_count'}[1] = $features{'Scaffolds'}->{'base_count'}[1] + $features{'Scaffolds'}->{'base_count'}[2];
+$features{'Scaffolds'}->{'base_count'}[2] = $features{'Scaffolds'}->{'base_count'}[1];
+$features{'Scaffolds'}->{'base_count'}[3] = $features{'Scaffolds'}->{'base_count'}[0];
+
+my $assembly_stats = scaffold_summary($params,\@scaffolds,'SCAFFOLD');#,$cegma);
+my $json = JSON->new;
+$json->pretty(1);
+
+open JS,">web/$production_name.assembly-stats.json";
+print JS $json->encode($assembly_stats),"\n";
+close JS;
+
+
 
 foreach my $key (keys %features){
   #my $sdls = Statistics::Descriptive::LogScale->new ();
@@ -136,7 +146,7 @@ foreach my $key (keys %features){
   print 10**$maxbin,"\n";
 }
 
-my $json = JSON->new;
+$json = JSON->new;
 $json->pretty(1);
 
 open JS,">web/$display_name.codon-usage.json";
