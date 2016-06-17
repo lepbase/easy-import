@@ -93,17 +93,15 @@ foreach my $slice (@{$supercontigs}) {
     $features{'Genes'}->{'base_count'} = base_composition($gene->seq(),$features{'Genes'}->{'base_count'});
     my $transcripts = $gene->get_all_Transcripts();
     while ( my $transcript = shift @{$transcripts} ) {
-      my $translateable_seq;
+      my $translateable_seq = $transcript->translateable_seq();
       push @{$features{'Transcripts'}->{'lengths'}},$transcript->length();
       $features{'Transcripts'}->{'base_count'} = base_composition($transcript->seq->seq(),$features{'Transcripts'}->{'base_count'});
-      $features{'codon_count'} = codon_count($transcript->translateable_seq(),$features{'codon_count'});
+      $features{'codon_count'} = codon_count($translateable_seq,$features{'codon_count'});
+      push @{$features{'CDS'}->{'lengths'}},length($translateable_seq);
+      $features{'CDS'}->{'base_count'} = base_composition($translateable_seq,$features{'CDS'}->{'base_count'});
       foreach my $exon ( @{ $transcript->get_all_Exons() } ) {
         push @{$features{'Exons'}->{'lengths'}},$exon->length();
         $features{'Exons'}->{'base_count'} = base_composition($exon->seq->seq(),$features{'Exons'}->{'base_count'});
-      }
-      foreach my $cds ( @{ $transcript->get_all_CDS() } ) {
-        push @{$features{'CDS'}->{'lengths'}},$cds->length();
-        $features{'CDS'}->{'base_count'} = base_composition($cds->seq(),$features{'CDS'}->{'base_count'});
       }
     }
   }
