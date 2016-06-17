@@ -92,10 +92,10 @@ foreach my $slice (@{$supercontigs}) {
     while ( my $transcript = shift @{$transcripts} ) {
       # TODO - find codons from translateable_seq
       push @{$features{'Transcripts'}->{'lengths'}},$transcript->length();
-      $features{'Transcripts'}->{'base_count'} = base_composition($transcript->seq(),$features{'Transcripts'}->{'base_count'});
+      $features{'Transcripts'}->{'base_count'} = base_composition($transcript->seq->seq(),$features{'Transcripts'}->{'base_count'});
       foreach my $exon ( @{ $transcript->get_all_Exons() } ) {
         push @{$features{'Exons'}->{'lengths'}},$exon->length();
-        $features{'Exons'}->{'base_count'} = base_composition($exon->seq(),$features{'Exons'}->{'base_count'});
+        $features{'Exons'}->{'base_count'} = base_composition($exon->seq->seq(),$features{'Exons'}->{'base_count'});
       }
       foreach my $cds ( @{ $transcript->get_all_CDS() } ) {
         push @{$features{'CDS'}->{'lengths'}},$cds->length();
