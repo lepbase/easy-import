@@ -123,7 +123,7 @@ foreach my $key (keys %features){
   }
   while (my $l = shift @{$features{$key}->{'lengths'}}){
     my $bin = ceil(log10($l));
-    $features{$key}->{'binned'}[$bins{$b}]++;
+    $features{$key}->{'binned'}[$bins{$bin}]++;
   }
   delete $features{$key}->{'lengths'};
 
