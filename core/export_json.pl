@@ -105,6 +105,7 @@ foreach my $slice (@{$supercontigs}) {
       }
     }
   }
+  last;
 }
 $features{'Scaffolds'}->{'base_count'}->{'A'} = $features{'Scaffolds'}->{'base_count'}->{'A'} + $features{'Scaffolds'}->{'base_count'}->{'T'};
 $features{'Scaffolds'}->{'base_count'}->{'C'} = $features{'Scaffolds'}->{'base_count'}->{'C'} + $features{'Scaffolds'}->{'base_count'}->{'G'};
@@ -127,17 +128,20 @@ foreach my $key (keys %features){
   print $key,"\n";
   print $max,"\n";
   my $maxbin = ceil(log10($max));
-  my $binsize = $maxbin <= 7 ? $maxbin <= 4 ? 1/3 : 1/2 : 1;
+  my $binres = $maxbin <= 7 ? $maxbin <= 4 ? 3 : 2 : 1;
+  my $binsize = 1 / $binres;
   my %bins;
   my $i = 0;
   for (my $b = $binsize; $b <= $maxbin; $b += $binsize){
-    push @{$features{$key}->{'bins'}},10**$b;
+    my $r = sprintf "%.2f",$b;
+    push @{$features{$key}->{'bins'}},10**$c;
     $features{$key}->{'binned'}[$i] = 0;
-    $bins{$b} = $i;
+    $bins{$c} = $i;
     $i++;
   }
   while (my $l = shift @{$features{$key}->{'lengths'}}){
-    my $bin = ceil(log10($l));
+    my $bin = ceil($binres*log10($l))/$binres;
+    $bin= sprintf "%.2f",$bin;
     $features{$key}->{'binned'}[$bins{$bin}]++;
   }
   delete $features{$key}->{'lengths'};
