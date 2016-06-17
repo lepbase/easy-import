@@ -5,6 +5,7 @@ use Cwd 'abs_path';
 use File::Basename;
 use List::Util qw(max);
 use POSIX qw(ceil);
+use JSON;
 use Module::Load;
 
 ## find the full path to the directory that this script is executing in
@@ -81,24 +82,24 @@ my %features;
 
 foreach my $slice (@{$supercontigs}) {
   push @scaffolds,$slice->seq();
-  push @{$features{'Scaffolds'}{'lengths'}},$slice->end();
-  $features{'Scaffolds'}{'base_count'} = base_composition($slice->seq(),$features{'Scaffolds'}{'base_count'});
+  push @{$features{'Scaffolds'}->{'lengths'}},$slice->end();
+  $features{'Scaffolds'}->{'base_count'} = base_composition($slice->seq(),$features{'Scaffolds'}->{'base_count'});
   my $genes = $slice->get_all_Genes;
   while ( my $gene = shift @{$genes} ) {
-    push @{$features{'Genes'}{'lengths'}},$gene->length();
-    $features{'Genes'}{'base_count'} = base_composition($gene->seq(),$features{'Genes'}{'base_count'});
+    push @{$features{'Genes'}->{'lengths'}},$gene->length();
+    $features{'Genes'}->{'base_count'} = base_composition($gene->seq(),$features{'Genes'}->{'base_count'});
     my $transcripts = $gene->get_all_Transcripts();
     while ( my $transcript = shift @{$transcripts} ) {
       # TODO - find codons from translateable_seq
-      push @{$features{'Transcripts'}{'lengths'}},$transcript->length();
-      $features{'Transcripts'}{'base_count'} = base_composition($transcript->seq(),$features{'Transcripts'}{'base_count'});
+      push @{$features{'Transcripts'}->{'lengths'}},$transcript->length();
+      $features{'Transcripts'}->{'base_count'} = base_composition($transcript->seq(),$features{'Transcripts'}->{'base_count'});
       foreach my $exon ( @{ $transcript->get_all_Exons() } ) {
-        push @{$features{'Exons'}{'lengths'}},$exon->length();
-        $features{'Exons'}{'base_count'} = base_composition($exon->seq(),$features{'Exons'}{'base_count'});
+        push @{$features{'Exons'}->{'lengths'}},$exon->length();
+        $features{'Exons'}->{'base_count'} = base_composition($exon->seq(),$features{'Exons'}->{'base_count'});
       }
       foreach my $cds ( @{ $transcript->get_all_CDS() } ) {
-        push @{$features{'CDS'}{'lengths'}},$cds->length();
-        $features{'CDS'}{'base_count'} = base_composition($cds->seq(),$features{'CDS'}{'base_count'});
+        push @{$features{'CDS'}->{'lengths'}},$cds->length();
+        $features{'CDS'}->{'base_count'} = base_composition($cds->seq(),$features{'CDS'}->{'base_count'});
       }
     }
   }
@@ -108,13 +109,34 @@ last;
 foreach my $key (keys %features){
   #my $sdls = Statistics::Descriptive::LogScale->new ();
   #$sdls->add_data(@{$features{$key}{'lengths'}});
-  my $max = max(@{$features{$key}{'lengths'}});
+  my $max = max(@{$features{$key}->{'lengths'}});
   print $key,"\n";
   print $max,"\n";
-  my $maxbin = ceil(2*log10($max))/2;
+  my $maxbin = ceil(log10($max));
+  my $binsize = $maxbin <= 7 ? $maxbin <= 4 ? 1/3 : 1/2 : 1;
+  my %bins;
+  my $i = 0;
+  for (my $b = $binsize; $b <= $maxbin; $b += $binsize){
+    push @{$features{$key}->{'bins'},10**$b;
+    $bins{$b} = $i;
+    $i++;
+  }
+  while (my $l = shift @{$features{$key}->{'lengths'}}){
+    my $bin = ceil(log10($l));
+    $features{$key}->{'binned'}[$bins{$b}]++;
+  }
+  delete $features{$key}->{'lengths'};
+
   print $maxbin,"\n";
   print 10**$maxbin,"\n";
 }
+
+my $json = JSON->new;
+$json->pretty(1);
+
+open JS,">web/$production_name.codon-usage.json";
+print JS $json->encode(\%features),"\n";
+close JS;
 
 sub log10 {
   my $n = shift;
@@ -123,11 +145,11 @@ sub log10 {
 
 sub base_composition {
   my $str = shift;
-  my @bases = @_;
-  $bases[0] += () = $str =~ /a/gi;
-  $bases[1] += () = $str =~ /c/gi;
-  $bases[2] += () = $str =~ /g/gi;
-  $bases[3] += () = $str =~ /t/gi;
+  my $bases = shift || [];
+  $bases->[0] += () = $str =~ /a/gi;
+  $bases->[1] += () = $str =~ /c/gi;
+  $bases->[2] += () = $str =~ /g/gi;
+  $bases->[3] += () = $str =~ /t/gi;
   return @bases;
 }
 
