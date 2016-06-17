@@ -102,6 +102,7 @@ foreach my $slice (@{$supercontigs}) {
       }
     }
   }
+last;
 }
 
 foreach my $key (keys %features){
