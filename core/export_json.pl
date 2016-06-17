@@ -105,6 +105,10 @@ foreach my $slice (@{$supercontigs}) {
   }
 last;
 }
+$features{'Scaffolds'}->{'base_count'}[0] = $features{'Scaffolds'}->{'base_count'}[0] + $features{'Scaffolds'}->{'base_count'}[3]
+$features{'Scaffolds'}->{'base_count'}[1] = $features{'Scaffolds'}->{'base_count'}[1] + $features{'Scaffolds'}->{'base_count'}[2]
+$features{'Scaffolds'}->{'base_count'}[2] = $features{'Scaffolds'}->{'base_count'}[1]
+$features{'Scaffolds'}->{'base_count'}[3] = $features{'Scaffolds'}->{'base_count'}[0]
 
 foreach my $key (keys %features){
   #my $sdls = Statistics::Descriptive::LogScale->new ();
@@ -118,6 +122,7 @@ foreach my $key (keys %features){
   my $i = 0;
   for (my $b = $binsize; $b <= $maxbin; $b += $binsize){
     push @{$features{$key}->{'bins'}},10**$b;
+    $features{$key}->{'binned'}[$i}] = 0;
     $bins{$b} = $i;
     $i++;
   }
