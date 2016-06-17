@@ -134,9 +134,9 @@ foreach my $key (keys %features){
   my $i = 0;
   for (my $b = $binsize; $b <= $maxbin; $b += $binsize){
     my $r = sprintf "%.2f",$b;
-    push @{$features{$key}->{'bins'}},10**$c;
+    push @{$features{$key}->{'bins'}},10**$r;
     $features{$key}->{'binned'}[$i] = 0;
-    $bins{$c} = $i;
+    $bins{$r} = $i;
     $i++;
   }
   while (my $l = shift @{$features{$key}->{'lengths'}}){
