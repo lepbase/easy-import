@@ -117,7 +117,8 @@ foreach my $key (keys %features){
 }
 
 sub log10 {
-  return log($_)/log(10);
+  my $n = shift;
+  return log($n)/log(10);
 }
 
 sub base_composition {
