@@ -137,12 +137,12 @@ foreach my $key (keys %features){
     my $bin = FormatSigFigs(10**$b,1);
     push @{$features{$key}->{'bins'}},$bin;
     $features{$key}->{'binned'}[$i] = 0;
-    $bins{$r} = $i;
+    $bins{$bin} = $i;
     $i++;
   }
   while (my $l = shift @{$features{$key}->{'lengths'}}){
     my $bin = ceil($binres*log10($l))/$binres;
-    my $bin = FormatSigFigs(10**$bin,1);
+    $bin = FormatSigFigs(10**$bin,1);
     $features{$key}->{'binned'}[$bins{$bin}]++;
   }
   delete $features{$key}->{'lengths'};
