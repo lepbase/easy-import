@@ -6,6 +6,7 @@ use File::Basename;
 use List::Util qw(max);
 use POSIX qw(ceil);
 use JSON;
+use Math::SigFigs;
 use Module::Load;
 
 ## find the full path to the directory that this script is executing in
@@ -133,16 +134,15 @@ foreach my $key (keys %features){
   my %bins;
   my $i = 0;
   for (my $b = $binsize; $b <= $maxbin; $b += $binsize){
-    my $r = sprintf "%.2f",$b;
-    my $bin = sprintf "%.2f",10**$b;
-    push @{$features{$key}->{'bins'}},10**$r;
+    my $bin = FormatSigFigs(10**$b,1);
+    push @{$features{$key}->{'bins'}},$bin;
     $features{$key}->{'binned'}[$i] = 0;
     $bins{$r} = $i;
     $i++;
   }
   while (my $l = shift @{$features{$key}->{'lengths'}}){
     my $bin = ceil($binres*log10($l))/$binres;
-    $bin= sprintf "%.2f",$bin;
+    my $bin = FormatSigFigs(10**$bin,1);
     $features{$key}->{'binned'}[$bins{$bin}]++;
   }
   delete $features{$key}->{'lengths'};
