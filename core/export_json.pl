@@ -121,6 +121,7 @@ print JS $json->encode($assembly_stats),"\n";
 close JS;
 
 foreach my $key (keys %features){
+  next if $key eq 'codon_count';
   #my $sdls = Statistics::Descriptive::LogScale->new ();
   #$sdls->add_data(@{$features{$key}{'lengths'}});
   my $max = max(@{$features{$key}->{'lengths'}});
@@ -174,7 +175,7 @@ sub codon_count {
   while ($str =~ s/^(\w{3})//){
     $codons->{$1}++;
   }
-  return %$codons;
+  return $codons;
 }
 
 __END__
