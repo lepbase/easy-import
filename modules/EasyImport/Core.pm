@@ -1234,26 +1234,33 @@ sub fa_sequence_count {
 
 
 sub fasta_file_summary {
-	my ($params,$infile,$type,$more) = @_;
+  my ($params,$infile,$type,$more) = @_;
+  my $i = -1;
+  my @scafs;
+  open FAS,$infile->{'name'};
+  while (<FAS>){
+    chomp;
+    if(/^>/){
+      $i++;
+    }
+    $scafs[$i] .= $_;
+  }
+  my $output = scaffold_summary($params,\@scafs,$type,$more)
+  return $output;
+}
+
+sub scaffold_summary {
+	my ($params,$seqs,$type,$more) = @_;
 
   my $break = 10; # number of consecutive Ns to break scaffolds into contigs
   my $bins = 1000; # number of bins to place sequences into
 
   # read scaffolds from file and split into contigs
-  my $i = -1;
-  my @scafs;
+  my @scafs = @$seqs;
   my @ctgs = ();
-  open FAS,$infile->{'name'};
-  while (<FAS>){
-    chomp;
-    if(/^>/){
-      push @ctgs,_split_scaf($scafs[$i],$break) if $scafs[$i];
-      $i++;
-      next;
-    }
-    $scafs[$i] .= $_;
+  for (my $i = 0; $i < @scafs; $i++){}
+    push @ctgs,_split_scaf($scafs[$i],$break);
   }
-  push @ctgs,_split_scaf($scafs[$i],$break);
 
   my $output = _bin_seqs(\@scafs,$bins,1);
   my $extra = _bin_seqs(\@ctgs,$bins);
@@ -1268,7 +1275,7 @@ sub fasta_file_summary {
     }
   }
 
-  $output;
+  return $output;
 
 }
 
