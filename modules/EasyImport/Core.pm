@@ -1258,7 +1258,7 @@ sub scaffold_summary {
   # read scaffolds from file and split into contigs
   my @scafs = @$seqs;
   my @ctgs = ();
-  for (my $i = 0; $i < @scafs; $i++){}
+  for (my $i = 0; $i < @scafs; $i++){
     push @ctgs,_split_scaf($scafs[$i],$break);
   }
 
