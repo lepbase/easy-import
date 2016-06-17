@@ -79,6 +79,8 @@ my $slice_adaptor    = $dba->get_adaptor("Slice");
 my $supercontigs     = $slice_adaptor->fetch_all('toplevel');
 my @scaffolds;
 my %features;
+$features{'codon_count'} = {};
+
 
 foreach my $slice (@{$supercontigs}) {
   push @scaffolds,$slice->seq();
@@ -92,7 +94,7 @@ foreach my $slice (@{$supercontigs}) {
     while ( my $transcript = shift @{$transcripts} ) {
       my $translateable_seq;
       push @{$features{'Transcripts'}->{'lengths'}},$transcript->length();
-      $features{'codon_count'} = codon_count($transcript->translateable_seq(),{$features{'codon_count'}});
+      $features{'codon_count'} = codon_count($transcript->translateable_seq(),$features{'codon_count'});
       foreach my $exon ( @{ $transcript->get_all_Exons() } ) {
         push @{$features{'Exons'}->{'lengths'}},$exon->length();
         $features{'Exons'}->{'base_count'} = base_composition($exon->seq->seq(),$features{'Exons'}->{'base_count'});
