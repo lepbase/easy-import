@@ -170,7 +170,7 @@ sub codon_count {
   my $str = shift;
   my $codons = shift;
   while ($str =~ s/^(\w{3})//){
-    $codons{$1}++;
+    $codons->{$1}++;
   }
   return %$codons;
 }
