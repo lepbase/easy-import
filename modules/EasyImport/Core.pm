@@ -1245,7 +1245,7 @@ sub fasta_file_summary {
     }
     $scafs[$i] .= $_;
   }
-  my $output = scaffold_summary($params,\@scafs,$type,$more)
+  my $output = scaffold_summary($params,\@scafs,$type,$more);
   return $output;
 }
 
