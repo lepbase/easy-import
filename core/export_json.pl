@@ -134,7 +134,7 @@ foreach my $key (keys %features){
 my $json = JSON->new;
 $json->pretty(1);
 
-open JS,">web/$production_name.codon-usage.json";
+open JS,">web/$display_name.codon-usage.json";
 print JS $json->encode(\%features),"\n";
 close JS;
 
@@ -150,7 +150,7 @@ sub base_composition {
   $bases->[1] += () = $str =~ /c/gi;
   $bases->[2] += () = $str =~ /g/gi;
   $bases->[3] += () = $str =~ /t/gi;
-  return @bases;
+  return $bases;
 }
 
 __END__
