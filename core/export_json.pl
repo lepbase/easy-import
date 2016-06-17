@@ -105,7 +105,6 @@ foreach my $slice (@{$supercontigs}) {
       }
     }
   }
-last;
 }
 $features{'Scaffolds'}->{'base_count'}->{'A'} = $features{'Scaffolds'}->{'base_count'}->{'A'} + $features{'Scaffolds'}->{'base_count'}->{'T'};
 $features{'Scaffolds'}->{'base_count'}->{'C'} = $features{'Scaffolds'}->{'base_count'}->{'C'} + $features{'Scaffolds'}->{'base_count'}->{'G'};
