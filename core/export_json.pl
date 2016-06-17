@@ -90,7 +90,7 @@ foreach my $slice (@{$supercontigs}) {
     $features{'Genes'}->{'base_count'} = base_composition($gene->seq(),$features{'Genes'}->{'base_count'});
     my $transcripts = $gene->get_all_Transcripts();
     while ( my $transcript = shift @{$transcripts} ) {
-      my $translateable_seq
+      my $translateable_seq;
       push @{$features{'Transcripts'}->{'lengths'}},$transcript->length();
       $features{'codon_count'} = codon_count($transcript->translateable_seq(),{$features{'codon_count'}});
       foreach my $exon ( @{ $transcript->get_all_Exons() } ) {
@@ -172,7 +172,7 @@ sub codon_count {
   while ($str =~ s/^(\w{3})//){
     $codons{$1}++;
   }
-  return %$codon_count;
+  return %$codons;
 }
 
 __END__
