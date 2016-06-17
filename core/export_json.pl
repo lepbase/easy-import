@@ -90,9 +90,9 @@ foreach my $slice (@{$supercontigs}) {
     $features{'Genes'}->{'base_count'} = base_composition($gene->seq(),$features{'Genes'}->{'base_count'});
     my $transcripts = $gene->get_all_Transcripts();
     while ( my $transcript = shift @{$transcripts} ) {
-      # TODO - find codons from translateable_seq
+      my $translateable_seq
       push @{$features{'Transcripts'}->{'lengths'}},$transcript->length();
-      $features{'Transcripts'}->{'base_count'} = base_composition($transcript->seq->seq(),$features{'Transcripts'}->{'base_count'});
+      $features{'codon_count'} = codon_count($transcript->translateable_seq(),{$features{'codon_count'}});
       foreach my $exon ( @{ $transcript->get_all_Exons() } ) {
         push @{$features{'Exons'}->{'lengths'}},$exon->length();
         $features{'Exons'}->{'base_count'} = base_composition($exon->seq->seq(),$features{'Exons'}->{'base_count'});
@@ -117,8 +117,6 @@ $json->pretty(1);
 open JS,">web/$display_name.assembly-stats.json";
 print JS $json->encode($assembly_stats),"\n";
 close JS;
-
-
 
 foreach my $key (keys %features){
   #my $sdls = Statistics::Descriptive::LogScale->new ();
@@ -166,6 +164,15 @@ sub base_composition {
   $bases->[2] += () = $str =~ /g/gi;
   $bases->[3] += () = $str =~ /t/gi;
   return $bases;
+}
+
+sub codon_count {
+  my $str = shift;
+  my $codons = shift;
+  while ($str =~ s/^(\w{3})//){
+    $codons{$1}++;
+  }
+  return %$codon_count;
 }
 
 __END__
