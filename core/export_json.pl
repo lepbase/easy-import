@@ -132,7 +132,7 @@ foreach my $key (keys %features){
   my $i = 0;
   for (my $b = $binsize; $b <= $maxbin; $b += $binsize){
     push @{$features{$key}->{'bins'}},10**$b;
-    $features{$key}->{'binned'}[$i}] = 0;
+    $features{$key}->{'binned'}[$i] = 0;
     $bins{$b} = $i;
     $i++;
   }
