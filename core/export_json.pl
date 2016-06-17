@@ -114,7 +114,7 @@ my $assembly_stats = scaffold_summary($params,\@scaffolds,'SCAFFOLD');#,$cegma);
 my $json = JSON->new;
 $json->pretty(1);
 
-open JS,">web/$production_name.assembly-stats.json";
+open JS,">web/$display_name.assembly-stats.json";
 print JS $json->encode($assembly_stats),"\n";
 close JS;
 
