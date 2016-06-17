@@ -105,7 +105,6 @@ foreach my $slice (@{$supercontigs}) {
       }
     }
   }
-  last;
 }
 $features{'Scaffolds'}->{'base_count'}->{'A'} = $features{'Scaffolds'}->{'base_count'}->{'A'} + $features{'Scaffolds'}->{'base_count'}->{'T'};
 $features{'Scaffolds'}->{'base_count'}->{'C'} = $features{'Scaffolds'}->{'base_count'}->{'C'} + $features{'Scaffolds'}->{'base_count'}->{'G'};
@@ -134,6 +133,7 @@ foreach my $key (keys %features){
   my $i = 0;
   for (my $b = $binsize; $b <= $maxbin; $b += $binsize){
     my $r = sprintf "%.2f",$b;
+    my $bin = sprintf "%.2f",10**$b;
     push @{$features{$key}->{'bins'}},10**$r;
     $features{$key}->{'binned'}[$i] = 0;
     $bins{$r} = $i;
