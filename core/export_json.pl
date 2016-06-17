@@ -3,7 +3,8 @@
 use strict;
 use Cwd 'abs_path';
 use File::Basename;
-use Statistics::Discrete;
+use List::Util qw(max);
+use POSIX qw(ceil);
 use Module::Load;
 
 ## find the full path to the directory that this script is executing in
@@ -104,14 +105,18 @@ foreach my $slice (@{$supercontigs}) {
 }
 
 foreach my $key (keys %features){
-  my $sd = Statistics::Discrete->new();
-  $sd->add_data($features{$key}{'lengths'});
-  $sd->set_binning_type(Statistics::Discrete:LOG_BINNING);
-  $sd->set_optimal_binning();
-  my $bins = $sd->bins();
-  use Data::Dumper;
-  print $key;
-  print Dumper $bins;
+  #my $sdls = Statistics::Descriptive::LogScale->new ();
+  #$sdls->add_data(@{$features{$key}{'lengths'}});
+  my $max = max(@{$features{$key}{'lengths'}});
+  my $maxbin = ceil(2*log10($max))/2;
+  print $key,"\n";
+  print $max,"\n";
+  print $maxbin,"\n";
+  print 10**$maxbin,"\n";
+}
+
+sub log10 {
+  return log($_)/log(10);
 }
 
 sub base_composition {
