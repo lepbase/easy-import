@@ -107,10 +107,10 @@ foreach my $slice (@{$supercontigs}) {
   }
 last;
 }
-$features{'Scaffolds'}->{'base_count'}[0] = $features{'Scaffolds'}->{'base_count'}[0] + $features{'Scaffolds'}->{'base_count'}[3];
-$features{'Scaffolds'}->{'base_count'}[1] = $features{'Scaffolds'}->{'base_count'}[1] + $features{'Scaffolds'}->{'base_count'}[2];
-$features{'Scaffolds'}->{'base_count'}[2] = $features{'Scaffolds'}->{'base_count'}[1];
-$features{'Scaffolds'}->{'base_count'}[3] = $features{'Scaffolds'}->{'base_count'}[0];
+$features{'Scaffolds'}->{'base_count'}->{'A'} = $features{'Scaffolds'}->{'base_count'}->{'A'} + $features{'Scaffolds'}->{'base_count'}->{'T'};
+$features{'Scaffolds'}->{'base_count'}->{'C'} = $features{'Scaffolds'}->{'base_count'}->{'C'} + $features{'Scaffolds'}->{'base_count'}->{'G'};
+$features{'Scaffolds'}->{'base_count'}->{'G'} = $features{'Scaffolds'}->{'base_count'}->{'C'};
+$features{'Scaffolds'}->{'base_count'}->{'T'} = $features{'Scaffolds'}->{'base_count'}->{'A'};
 
 my $assembly_stats = scaffold_summary($params,\@scaffolds,'SCAFFOLD');#,$cegma);
 my $json = JSON->new;
@@ -161,18 +161,19 @@ sub log10 {
 
 sub base_composition {
   my $str = shift;
-  my $bases = shift || [];
-  $bases->[0] += () = $str =~ /a/gi;
-  $bases->[1] += () = $str =~ /c/gi;
-  $bases->[2] += () = $str =~ /g/gi;
-  $bases->[3] += () = $str =~ /t/gi;
+  my $bases = shift || {};
+  $bases->{'A'} += () = $str =~ /a/gi;
+  $bases->{'C'} += () = $str =~ /c/gi;
+  $bases->{'G'} += () = $str =~ /g/gi;
+  $bases->{'T'} += () = $str =~ /t/gi;
   return $bases;
 }
 
 sub codon_count {
   my $str = shift;
   my $codons = shift;
-  while ($str =~ s/^(\w{3})//){
+  $str =~ s/T/U/ig;
+  while ($str =~ s/^([ACGU]{3})//i){
     $codons->{$1}++;
   }
   return $codons;
