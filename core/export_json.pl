@@ -94,6 +94,7 @@ foreach my $slice (@{$supercontigs}) {
     while ( my $transcript = shift @{$transcripts} ) {
       my $translateable_seq;
       push @{$features{'Transcripts'}->{'lengths'}},$transcript->length();
+      $features{'Transcripts'}->{'base_count'} = base_composition($transcript->seq->seq(),$features{'Transcripts'}->{'base_count'});
       $features{'codon_count'} = codon_count($transcript->translateable_seq(),$features{'codon_count'});
       foreach my $exon ( @{ $transcript->get_all_Exons() } ) {
         push @{$features{'Exons'}->{'lengths'}},$exon->length();
@@ -106,10 +107,10 @@ foreach my $slice (@{$supercontigs}) {
     }
   }
 }
-$features{'Scaffolds'}->{'base_count'}->{'A'} = $features{'Scaffolds'}->{'base_count'}->{'A'} + $features{'Scaffolds'}->{'base_count'}->{'T'};
+$features{'Scaffolds'}->{'base_count'}->{'A'} = $features{'Scaffolds'}->{'base_count'}->{'A'} + $features{'Scaffolds'}->{'base_count'}->{'U'};
 $features{'Scaffolds'}->{'base_count'}->{'C'} = $features{'Scaffolds'}->{'base_count'}->{'C'} + $features{'Scaffolds'}->{'base_count'}->{'G'};
 $features{'Scaffolds'}->{'base_count'}->{'G'} = $features{'Scaffolds'}->{'base_count'}->{'C'};
-$features{'Scaffolds'}->{'base_count'}->{'T'} = $features{'Scaffolds'}->{'base_count'}->{'A'};
+$features{'Scaffolds'}->{'base_count'}->{'U'} = $features{'Scaffolds'}->{'base_count'}->{'A'};
 
 my $assembly_stats = scaffold_summary($params,\@scaffolds,'SCAFFOLD');#,$cegma);
 my $json = JSON->new;
@@ -168,7 +169,7 @@ sub base_composition {
   $bases->{'A'} += () = $str =~ /a/gi;
   $bases->{'C'} += () = $str =~ /c/gi;
   $bases->{'G'} += () = $str =~ /g/gi;
-  $bases->{'T'} += () = $str =~ /t/gi;
+  $bases->{'U'} += () = $str =~ /[ut]/gi;
   return $bases;
 }
 
