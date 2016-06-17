@@ -109,9 +109,9 @@ foreach my $key (keys %features){
   #my $sdls = Statistics::Descriptive::LogScale->new ();
   #$sdls->add_data(@{$features{$key}{'lengths'}});
   my $max = max(@{$features{$key}{'lengths'}});
-  my $maxbin = ceil(2*log10($max))/2;
   print $key,"\n";
   print $max,"\n";
+  my $maxbin = ceil(2*log10($max))/2;
   print $maxbin,"\n";
   print 10**$maxbin,"\n";
 }
