@@ -43,11 +43,11 @@ foreach my $subsection (sort keys %{$params->{'FILES'}}){
   if ($subsection =~ m/^(CEGMA|BUSCO)$/){
     ($infiles{$subsection}{'name'},$infiles{$subsection}{'type'}) = fetch_file($params->{'FILES'}{$subsection});
     if ($subsection eq 'CEGMA'){
-      my $cegma = cegma_file_summary($infiles{$file}->{'name'});
+      my $cegma = cegma_file_summary($infiles{'CEGMA'}->{'name'});
       update_meta($dbh,$cegma);
     }
     if ($subsection eq 'BUSCO'){
-      my $busco = busco_file_summary($infiles{$file}->{'name'});
+      my $busco = busco_file_summary($infiles{'BUSCO'}->{'name'});
       update_meta($dbh,$busco);
     }
   }
