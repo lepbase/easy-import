@@ -93,12 +93,14 @@ foreach my $slice (@{$supercontigs}) {
     $features{'Genes'}->{'base_count'} = base_composition($gene->seq(),$features{'Genes'}->{'base_count'});
     my $transcripts = $gene->get_all_Transcripts();
     while ( my $transcript = shift @{$transcripts} ) {
-      my $translateable_seq = $transcript->translateable_seq();
       push @{$features{'Transcripts'}->{'lengths'}},$transcript->length();
       $features{'Transcripts'}->{'base_count'} = base_composition($transcript->seq->seq(),$features{'Transcripts'}->{'base_count'});
-      $features{'codon_count'} = codon_count($translateable_seq,$features{'codon_count'});
-      push @{$features{'CDS'}->{'lengths'}},length($translateable_seq);
-      $features{'CDS'}->{'base_count'} = base_composition($translateable_seq,$features{'CDS'}->{'base_count'});
+      my $translateable_seq;
+      if ($translateable_seq = $transcript->translateable_seq()){
+        $features{'codon_count'} = codon_count($translateable_seq,$features{'codon_count'});
+        push @{$features{'CDS'}->{'lengths'}},length($translateable_seq);
+        $features{'CDS'}->{'base_count'} = base_composition($translateable_seq,$features{'CDS'}->{'base_count'});
+      }
       foreach my $exon ( @{ $transcript->get_all_Exons() } ) {
         push @{$features{'Exons'}->{'lengths'}},$exon->length();
         $features{'Exons'}->{'base_count'} = base_composition($exon->seq->seq(),$features{'Exons'}->{'base_count'});
@@ -110,6 +112,10 @@ $features{'Scaffolds'}->{'base_count'}->{'A'} = $features{'Scaffolds'}->{'base_c
 $features{'Scaffolds'}->{'base_count'}->{'C'} = $features{'Scaffolds'}->{'base_count'}->{'C'} + $features{'Scaffolds'}->{'base_count'}->{'G'};
 $features{'Scaffolds'}->{'base_count'}->{'G'} = $features{'Scaffolds'}->{'base_count'}->{'C'};
 $features{'Scaffolds'}->{'base_count'}->{'U'} = $features{'Scaffolds'}->{'base_count'}->{'A'};
+
+my $transcript_adaptor = $dba->get_TranscriptAdaptor();
+my @transcripts        = @{$transcript_adaptor->fetch_all_by_biotype('protein_coding')};
+
 
 my $assembly_stats = scaffold_summary($params,\@scaffolds,'SCAFFOLD');#,$cegma);
 my $json = JSON->new;
