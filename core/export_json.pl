@@ -113,7 +113,16 @@ $features{'Scaffolds'}->{'base_count'}->{'C'} = $features{'Scaffolds'}->{'base_c
 $features{'Scaffolds'}->{'base_count'}->{'G'} = $features{'Scaffolds'}->{'base_count'}->{'C'};
 $features{'Scaffolds'}->{'base_count'}->{'U'} = $features{'Scaffolds'}->{'base_count'}->{'A'};
 
-my $assembly_stats = scaffold_summary($params,\@scaffolds,'SCAFFOLD');#,$cegma);
+my %cegma_busco;
+if ($meta_container->single_value_by_key('assembly.busco_complete')){
+
+}
+elsif ($meta_container->single_value_by_key('assembly.cegma_complete')){
+  $cegma_busco{'cegma_complete'} = $meta_container->single_value_by_key('assembly.cegma_complete');
+  $cegma_busco{'cegma_partial'} = $meta_container->single_value_by_key('assembly.cegma_partial');
+}
+my $assembly_stats = scaffold_summary($params,\@scaffolds,'SCAFFOLD',$cegma_busco);
+
 my $json = JSON->new;
 $json->pretty(1);
 
