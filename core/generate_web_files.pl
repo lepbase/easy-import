@@ -29,7 +29,7 @@ my %stats;
 mkdir "web";
 @ARGV = ();
 while (my $ini_file = shift @inis){
-	load_ini($params,$ini_file,\%sections);
+	load_ini($params,$ini_file,\%sections,scalar(@ARGV));
 	## download/obtain files using methods suggested by file paths and extensions
   foreach my $subsection (sort keys %{$params->{'FILES'}}){
     if ($subsection eq 'GFF' || $subsection eq 'CEGMA' || $subsection eq 'BUSCO'){
