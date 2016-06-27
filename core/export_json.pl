@@ -140,9 +140,10 @@ close JS;
 
 # add some assembly stats to meta table
 $meta_container->store_key_value('assembly.span',$assembly_stats->{'assembly'});
-$meta_container->store_key_value('assembly.gc',$assembly_stats->{'GC'});
+$meta_container->store_key_value('assembly.gc_percent',$assembly_stats->{'GC'});
+$meta_container->store_key_value('assembly.atgc',$assembly_stats->{'ATGC'});
 $meta_container->store_key_value('assembly.n',$assembly_stats->{'N'});
-$meta_container->store_key_value('assembly.scaffolds',scalar @scaffolds);
+$meta_container->store_key_value('assembly.scaffold_count',scalar @scaffolds);
 
 foreach my $key (keys %features){
   next if $key eq 'codon_count';
@@ -183,6 +184,12 @@ open JS,">web/$display_name.codon-usage.json";
 print JS $json->encode(\%features),"\n";
 close JS;
 
+
+$meta_container->store_key_value('genebuild.gene_count',sum @{$features{'Gene'}->{'binned'}});
+$meta_container->store_key_value('genebuild.transcript_count',sum @{$features{'Transcripts'}->{'binned'}});
+$meta_container->store_key_value('genebuild.cds_count',sum @{$features{'CDS'}->{'binned'}});
+$meta_container->store_key_value('genebuild.exon_count',sum @{$features{'Exon'}->{'binned'}});
+
 my %meta;
 
 $meta{'provider'}->{'name'} = $meta_container->single_value_by_key('provider.name');
@@ -195,9 +202,10 @@ $meta{'assembly'}->{'accession'} = $meta_container->single_value_by_key('assembl
 $meta{'assembly'}->{'date'} = $meta_container->single_value_by_key('assembly.date');
 $meta{'assembly'}->{'name'} = $meta_container->single_value_by_key('assembly.name');
 $meta{'assembly'}->{'span'} = $meta_container->single_value_by_key('assembly.span');
-$meta{'assembly'}->{'gc'} = $meta_container->single_value_by_key('assembly.gc');
+$meta{'assembly'}->{'gc_percent'} = $meta_container->single_value_by_key('assembly.gc_percent');
 $meta{'assembly'}->{'n'} = $meta_container->single_value_by_key('assembly.n');
-$meta{'assembly'}->{'scaffolds'} = $meta_container->single_value_by_key('assembly.scaffolds');
+$meta{'assembly'}->{'atgc'} = $meta_container->single_value_by_key('assembly.atgc');
+$meta{'assembly'}->{'scaffold_count'} = $meta_container->single_value_by_key('assembly.scaffold_count');
 if ($meta_container->single_value_by_key('assembly.cegma_complete')){
   $meta{'assembly'}->{'cegma_complete'} = $meta_container->single_value_by_key('assembly.cegma_complete');
   $meta{'assembly'}->{'cegma_partial'} = $meta_container->single_value_by_key('assembly.cegma_partial');
@@ -212,6 +220,10 @@ if ($meta_container->single_value_by_key('assembly.busco_complete')){
 $meta{'genebuild'}->{'method'} = $meta_container->single_value_by_key('genebuild.method');
 $meta{'genebuild'}->{'start_date'} = $meta_container->single_value_by_key('genebuild.start_date');
 $meta{'genebuild'}->{'version'} = $meta_container->single_value_by_key('genebuild.version');
+$meta{'genebuild'}->{'gene_count'} = $meta_container->single_value_by_key('genebuild.gene_count');
+$meta{'genebuild'}->{'transcript_count'} = $meta_container->single_value_by_key('genebuild.transcript_count');
+$meta{'genebuild'}->{'cds_count'} = $meta_container->single_value_by_key('genebuild.cds_count');
+$meta{'genebuild'}->{'exon_count'} = $meta_container->single_value_by_key('genebuild.exon_count');
 
 $json = JSON->new;
 $json->pretty(1);
