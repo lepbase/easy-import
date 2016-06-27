@@ -115,7 +115,13 @@ $features{'Scaffolds'}->{'base_count'}->{'U'} = $features{'Scaffolds'}->{'base_c
 
 my %cegma_busco;
 if ($meta_container->single_value_by_key('assembly.busco_complete')){
-
+  my $busco;
+  $busco->{'C'} = $meta_container->single_value_by_key('assembly.busco_complete');
+  $busco->{'D'} = $meta_container->single_value_by_key('assembly.busco_duplicated');
+  $busco->{'F'} = $meta_container->single_value_by_key('assembly.busco_fragmented');
+  $busco->{'M'} = $meta_container->single_value_by_key('assembly.busco_missing');
+  $busco->{'n'} = $meta_container->single_value_by_key('assembly.busco_number');
+  $cegma_busco{'busco'} = $busco;
 }
 elsif ($meta_container->single_value_by_key('assembly.cegma_complete')){
   $cegma_busco{'cegma_complete'} = $meta_container->single_value_by_key('assembly.cegma_complete');
