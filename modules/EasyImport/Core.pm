@@ -1894,17 +1894,51 @@ sub cegma_file_summary {
 	while (<CEGMA>){
 		chomp;
 		if (m/^\s*Complete\s+\S+\s+(\S+)\s/){
-			$return_stats{'cegma_complete'} = $1*1;
+			$return_stats{'assembly.cegma_complete'} = $1*1;
 		}
 		elsif (m/^\s*Partial\s+\S+\s+(\S+)\s/){
-			$return_stats{'cegma_partial'} = $1*1;
+			$return_stats{'assembly.cegma_partial'} = $1*1;
 		}
 	}
+
 	close CEGMA;
 	return (\%return_stats);
 }
 
+sub busco_file_summary {
+	my ($infile) = @_;
+	my %return_stats;
+	open BUSCO,"$infile";
+	while (<BUSCO>){
+		chomp;
+		if (m/^\s*C:([\d\.]+)\%\[D:([\d\.]+)\%\],F:([\d\.]+)\%,M:([\d\.]+)\%,n:([\d\.]+)/){
+			$return_stats{'assembly.busco_complete'} = $1*1;
+  		$return_stats{'assembly.busco_duplicated'} = $2*1;
+    	$return_stats{'assembly.busco_fragmented'} = $3*1;
+      $return_stats{'assembly.busco_missing'} = $4*1;
+      $return_stats{'assembly.busco_number'} = $5*1;
+		}
+	}
+	close BUSCO;
+	return (\%return_stats);
+}
 
+sub update_meta {
+  my $dbh = shift;
+  my $meta = shift;
+  foreach my $key (keys %{$meta}){
+    my $value = $meta->{$key};
+    my $sth = $dbh->prepare('SELECT meta_id FROM meta WHERE meta_key = '.$dbh->quote($key));
+    $sth->execute;
+		if ($sth->rows > 0){
+			my $id = $sth->fetchrow_arrayref()->[0];
+			$dbh->do('UPDATE meta SET meta_value = '.$dbh->quote($value).' WHERE meta_id = '.$id);
+		}
+    else {
+      $dbh->do('INSERT INTO meta (meta_key,meta_value) VALUES ('.$dbh->quote($key).','.$dbh->quote($value).')');
+    }
+  }
+}
 
 sub make_feature_plot {
 
