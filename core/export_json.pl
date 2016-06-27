@@ -60,7 +60,8 @@ $registry->load_registry_from_db(
 my $dbname = $params->{'DATABASE_CORE'}{'NAME'};
 
 my $dba = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
-    -user   => $params->{'DATABASE_CORE'}{'RO_USER'},
+    -user   => $params->{'DATABASE_CORE'}{'RW_USER'},
+    -pass   => $params->{'DATABASE_CORE'}{'RW_PASS'},
     -dbname => $dbname,
     -host   => $params->{'DATABASE_CORE'}{'HOST'},
     -port   => $params->{'DATABASE_CORE'}{'PORT'},
@@ -208,6 +209,9 @@ if ($meta_container->single_value_by_key('assembly.busco_complete')){
   $meta{'assembly'}->{'busco_missing'} = $meta_container->single_value_by_key('assembly.busco_missing');
   $meta{'assembly'}->{'busco_number'} = $meta_container->single_value_by_key('assembly.busco_number');
 }
+$meta{'genebuild'}->{'method'} = $meta_container->single_value_by_key('genebuild.method');
+$meta{'genebuild'}->{'start_date'} = $meta_container->single_value_by_key('genebuild.start_date');
+$meta{'genebuild'}->{'version'} = $meta_container->single_value_by_key('genebuild.version');
 
 $json = JSON->new;
 $json->pretty(1);
