@@ -92,7 +92,16 @@ foreach my $slice (@{$supercontigs}) {
     push @{$features{'Genes'}->{'lengths'}},$gene->length();
     $features{'Genes'}->{'base_count'} = base_composition($gene->seq(),$features{'Genes'}->{'base_count'});
     my $transcripts = $gene->get_all_Transcripts();
-    while ( my $transcript = shift @{$transcripts} ) {
+  }
+}
+$features{'Scaffolds'}->{'base_count'}->{'A'} = $features{'Scaffolds'}->{'base_count'}->{'A'} + $features{'Scaffolds'}->{'base_count'}->{'U'};
+$features{'Scaffolds'}->{'base_count'}->{'C'} = $features{'Scaffolds'}->{'base_count'}->{'C'} + $features{'Scaffolds'}->{'base_count'}->{'G'};
+$features{'Scaffolds'}->{'base_count'}->{'G'} = $features{'Scaffolds'}->{'base_count'}->{'C'};
+$features{'Scaffolds'}->{'base_count'}->{'U'} = $features{'Scaffolds'}->{'base_count'}->{'A'};
+
+my $transcript_adaptor = $dba->get_TranscriptAdaptor();
+my @transcripts        = @{$transcript_adaptor->fetch_all()};
+    while ( my $transcript = shift @transcripts ) {
       push @{$features{'Transcripts'}->{'lengths'}},$transcript->length();
       $features{'Transcripts'}->{'base_count'} = base_composition($transcript->seq->seq(),$features{'Transcripts'}->{'base_count'});
       my $translateable_seq;
@@ -106,16 +115,6 @@ foreach my $slice (@{$supercontigs}) {
         $features{'Exons'}->{'base_count'} = base_composition($exon->seq->seq(),$features{'Exons'}->{'base_count'});
       }
     }
-  }
-}
-$features{'Scaffolds'}->{'base_count'}->{'A'} = $features{'Scaffolds'}->{'base_count'}->{'A'} + $features{'Scaffolds'}->{'base_count'}->{'U'};
-$features{'Scaffolds'}->{'base_count'}->{'C'} = $features{'Scaffolds'}->{'base_count'}->{'C'} + $features{'Scaffolds'}->{'base_count'}->{'G'};
-$features{'Scaffolds'}->{'base_count'}->{'G'} = $features{'Scaffolds'}->{'base_count'}->{'C'};
-$features{'Scaffolds'}->{'base_count'}->{'U'} = $features{'Scaffolds'}->{'base_count'}->{'A'};
-
-my $transcript_adaptor = $dba->get_TranscriptAdaptor();
-my @transcripts        = @{$transcript_adaptor->fetch_all_by_biotype('protein_coding')};
-
 
 my $assembly_stats = scaffold_summary($params,\@scaffolds,'SCAFFOLD');#,$cegma);
 my $json = JSON->new;
