@@ -116,16 +116,16 @@ $features{'Scaffolds'}->{'base_count'}->{'U'} = $features{'Scaffolds'}->{'base_c
 my %cegma_busco;
 if ($meta_container->single_value_by_key('assembly.busco_complete')){
   my $busco;
-  $busco->{'C'} = $meta_container->single_value_by_key('assembly.busco_complete');
-  $busco->{'D'} = $meta_container->single_value_by_key('assembly.busco_duplicated');
-  $busco->{'F'} = $meta_container->single_value_by_key('assembly.busco_fragmented');
-  $busco->{'M'} = $meta_container->single_value_by_key('assembly.busco_missing');
-  $busco->{'n'} = $meta_container->single_value_by_key('assembly.busco_number');
+  $busco->{'C'} = $meta_container->single_value_by_key('assembly.busco_complete')*1;
+  $busco->{'D'} = $meta_container->single_value_by_key('assembly.busco_duplicated')*1;
+  $busco->{'F'} = $meta_container->single_value_by_key('assembly.busco_fragmented')*1;
+  $busco->{'M'} = $meta_container->single_value_by_key('assembly.busco_missing')*1;
+  $busco->{'n'} = $meta_container->single_value_by_key('assembly.busco_number')*1;
   $cegma_busco{'busco'} = $busco;
 }
 elsif ($meta_container->single_value_by_key('assembly.cegma_complete')){
-  $cegma_busco{'cegma_complete'} = $meta_container->single_value_by_key('assembly.cegma_complete');
-  $cegma_busco{'cegma_partial'} = $meta_container->single_value_by_key('assembly.cegma_partial');
+  $cegma_busco{'cegma_complete'} = $meta_container->single_value_by_key('assembly.cegma_complete')*1;
+  $cegma_busco{'cegma_partial'} = $meta_container->single_value_by_key('assembly.cegma_partial')*1;
 }
 my $assembly_stats = scaffold_summary($params,\@scaffolds,'SCAFFOLD',\%cegma_busco);
 
@@ -136,6 +136,12 @@ mkdir 'web';
 open JS,">web/$display_name.assembly-stats.json";
 print JS $json->encode($assembly_stats),"\n";
 close JS;
+
+# add some assembly stats to meta table
+$meta_container->store_key_value('assembly.span',$assembly_stats->{'assembly'});
+$meta_container->store_key_value('assembly.gc',$assembly_stats->{'GC'});
+$meta_container->store_key_value('assembly.n',$assembly_stats->{'N'});
+$meta_container->store_key_value('assembly.scaffolds',scalar @scaffolds);
 
 foreach my $key (keys %features){
   next if $key eq 'codon_count';
@@ -174,6 +180,40 @@ $json->pretty(1);
 
 open JS,">web/$display_name.codon-usage.json";
 print JS $json->encode(\%features),"\n";
+close JS;
+
+my %meta;
+
+$meta{'provider'}->{'name'} = $meta_container->single_value_by_key('provider.name');
+$meta{'provider'}->{'url'} = $meta_container->single_value_by_key('provider.url');
+$meta{'species'}->{'common_name'} = $meta_container->single_value_by_key('species.common_name');
+$meta{'species'}->{'display_name'} = $meta_container->single_value_by_key('species.display_name');
+$meta{'species'}->{'scientific_name'} = $meta_container->single_value_by_key('species.scientific_name');
+$meta{'species'}->{'taxonomy_id'} = $meta_container->single_value_by_key('species.taxonomy_id');
+$meta{'assembly'}->{'accession'} = $meta_container->single_value_by_key('assembly.accession');
+$meta{'assembly'}->{'date'} = $meta_container->single_value_by_key('assembly.date');
+$meta{'assembly'}->{'name'} = $meta_container->single_value_by_key('assembly.name');
+$meta{'assembly'}->{'span'} = $meta_container->single_value_by_key('assembly.span');
+$meta{'assembly'}->{'gc'} = $meta_container->single_value_by_key('assembly.gc');
+$meta{'assembly'}->{'n'} = $meta_container->single_value_by_key('assembly.n');
+$meta{'assembly'}->{'scaffolds'} = $meta_container->single_value_by_key('assembly.scaffolds');
+if ($meta_container->single_value_by_key('assembly.cegma_complete')){
+  $meta{'assembly'}->{'cegma_complete'} = $meta_container->single_value_by_key('assembly.cegma_complete');
+  $meta{'assembly'}->{'cegma_partial'} = $meta_container->single_value_by_key('assembly.cegma_partial');
+}
+if ($meta_container->single_value_by_key('assembly.busco_complete')){
+  $meta{'assembly'}->{'busco_complete'} = $meta_container->single_value_by_key('assembly.busco_complete');
+  $meta{'assembly'}->{'busco_duplicated'} = $meta_container->single_value_by_key('assembly.busco_duplicated');
+  $meta{'assembly'}->{'busco_fragmented'} = $meta_container->single_value_by_key('assembly.busco_fragmented');
+  $meta{'assembly'}->{'busco_missing'} = $meta_container->single_value_by_key('assembly.busco_missing');
+  $meta{'assembly'}->{'busco_number'} = $meta_container->single_value_by_key('assembly.busco_number');
+}
+
+$json = JSON->new;
+$json->pretty(1);
+
+open JS,">web/$display_name.meta.json";
+print JS $json->encode(\%meta),"\n";
 close JS;
 
 sub log10 {
