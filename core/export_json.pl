@@ -121,7 +121,7 @@ elsif ($meta_container->single_value_by_key('assembly.cegma_complete')){
   $cegma_busco{'cegma_complete'} = $meta_container->single_value_by_key('assembly.cegma_complete');
   $cegma_busco{'cegma_partial'} = $meta_container->single_value_by_key('assembly.cegma_partial');
 }
-my $assembly_stats = scaffold_summary($params,\@scaffolds,'SCAFFOLD',$cegma_busco);
+my $assembly_stats = scaffold_summary($params,\@scaffolds,'SCAFFOLD',\%cegma_busco);
 
 my $json = JSON->new;
 $json->pretty(1);
