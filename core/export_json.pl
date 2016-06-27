@@ -185,10 +185,10 @@ print JS $json->encode(\%features),"\n";
 close JS;
 
 
-$meta_container->store_key_value('genebuild.gene_count',sum @{$features{'Gene'}->{'binned'}});
+$meta_container->store_key_value('genebuild.gene_count',sum @{$features{'Genes'}->{'binned'}});
 $meta_container->store_key_value('genebuild.transcript_count',sum @{$features{'Transcripts'}->{'binned'}});
 $meta_container->store_key_value('genebuild.cds_count',sum @{$features{'CDS'}->{'binned'}});
-$meta_container->store_key_value('genebuild.exon_count',sum @{$features{'Exon'}->{'binned'}});
+$meta_container->store_key_value('genebuild.exon_count',sum @{$features{'Exons'}->{'binned'}});
 
 my %meta;
 
