@@ -118,7 +118,7 @@ sub add_gene_tree {
 			$node->name($node_name);
 			my $seqm = $seqma->fetch_by_stable_id($2);
 			$node = bless $node, 'Bio::EnsEMBL::Compara::GeneTreeMember';
-			$node->seq_member_id($seqm->seq_member_id);
+			$node->seq_member_id($seqm->seq_member_id) if $seqm;
 		} else {
 			if (defined $node->get_tagvalue("Duplication")) {
 				my $is_dup = $node->get_tagvalue("Duplication");

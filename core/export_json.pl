@@ -165,8 +165,8 @@ foreach my $key (keys %features){
     $bins{$bin} = $i;
     $i++;
   }
-  while (my $l = shift @{$features{$key}->{'lengths'}}){
-    my $bin = ceil($binres*log10($l))/$binres;
+  for my $l (@{$features{$key}->{'lengths'}}) {
+    my $bin = ceil($binres*log10($l > 0 ? $l : 1))/$binres;
     $bin = FormatSigFigs(10**$bin,1);
     $bin =~ s/\.$//;
     $features{$key}->{'binned'}[$bins{$bin}]++;
