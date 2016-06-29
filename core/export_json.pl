@@ -232,6 +232,33 @@ open JS,">web/$display_name.meta.json";
 print JS $json->encode(\%meta),"\n";
 close JS;
 
+# interpro top 500 hits
+my $dbh = core_db_connect($params);
+my $sth = $dbh->prepare('SELECT COUNT(*) AS count, ipr.name, ipr.description
+                         FROM (
+                           SELECT DISTINCT t.gene_id AS gene_id, x.dbprimary_acc AS name, x.description AS description
+                           FROM transcript AS t
+                           JOIN object_xref AS ox ON ox.ensembl_id = t.transcript_id
+                           JOIN xref AS x ON ox.xref_id = x.xref_id
+                           WHERE x.dbprimary_acc LIKE \'IPR%\'
+                         ) AS ipr
+                         GROUP BY ipr.name
+                         ORDER BY count DESC
+                         LIMIT 500');
+$sth->execute();
+if ($sth->rows > 0){
+  my @ipr;
+  while (my $row = $sth->fetchrow_arrayref()){
+    push @ipr,{count => $row->[0]*1,name => $row->[1],description => $row->[2]};
+  }
+  $json = JSON->new;
+  $json->pretty(1);
+
+  open JS,">web/$display_name.IPtop500.json";
+  print JS $json->encode(\@ipr),"\n";
+  close JS;
+}
+
 sub log10 {
   my $n = shift;
   return log($n)/log(10);
