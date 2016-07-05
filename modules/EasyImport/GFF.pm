@@ -16,13 +16,13 @@ sub add_analysis {
     $sth->execute;
     my $analysis_id = $sth->fetchrow_arrayref()->[0];
 	$dbh->do("INSERT INTO analysis_description (analysis_id,description,display_label,web_data) VALUES ($analysis_id,".$dbh->quote("Gene predictions from <a href=\"".$provider_url."\">".$provider_name."</a>").",".$dbh->quote($analysis).",".$dbh->quote('{"caption" => "Genes","colour_key" => "[biotype]","default" => {"MultiBottom" => "collapsed_label","MultiTop" => "gene_label","alignsliceviewbottom" => "as_collapsed_label","contigviewbottom" => "transcript_label","contigviewtop" => "gene_label","cytoview" => "gene_label"},"key" => "'.$analysis_id.'_genes","label_key" => "[biotype]","name" => "Genes"}').")");
-    
+
     # also add a version of this analysis for ncRNA
     $dbh->do("INSERT INTO analysis (logic_name) VALUES (".$dbh->quote($analysis."_ncRNA").")");
     $sth->execute;
     my $nc_id = $analysis_id + 1;
 	$dbh->do("INSERT INTO analysis_description (analysis_id,description,display_label,web_data) VALUES ($nc_id,".$dbh->quote("Gene predictions from <a href=\"".$provider_url."\">".$provider_name."</a>").",".$dbh->quote($analysis).",".$dbh->quote('{"caption" => "ncRNA genes","colour_key" => "[biotype]","default" => {"MultiBottom" => "collapsed_label","MultiTop" => "gene_label","alignsliceviewbottom" => "as_collapsed_label","contigviewbottom" => "transcript_label","contigviewtop" => "gene_label","cytoview" => "gene_label"},"key" => "'.$analysis_id.'_ncgenes","label_key" => "[biotype]","name" => "ncRNA genes"}').")");
-    
+
     return $analysis_id;
 }
 
@@ -42,11 +42,11 @@ sub get_seq_region_id {
 	my $sth = $dbh->prepare("SELECT seq_region_id FROM seq_region WHERE name = '$seq_name'");
     $sth->execute;
     return $sth->fetchrow_arrayref()->[0] if $sth->rows > 0;
-	
+
 	$sth = $dbh->prepare("SELECT seq_region_id FROM seq_region_synonym WHERE synonym = '$seq_name'");
     $sth->execute;
     return $sth->fetchrow_arrayref()->[0] if $sth->rows > 0;
-	
+
 	return 0;
 }
 
@@ -115,7 +115,7 @@ sub add_exon {
     $sth->execute;
     my $exon_id = $sth->fetchrow_arrayref()->[0];
 	return $exon_id;
-	
+
 #	mysql> describe exon;
 #+-------------------+----------------------+------+-----+---------------------+----------------+
 #| Field             | Type                 | Null | Key | Default             | Extra          |
@@ -149,7 +149,7 @@ sub exon_transcript {
   					 		.",".$rank
   					 		.")");
     #$sth->execute;
-    
+
 	#return 1;
 }
 
@@ -182,7 +182,7 @@ sub add_translation {
     $sth->execute;
     my $translation_id = $sth->fetchrow_hashref()->{'translation_id'};
 	return $translation_id;
-	
+
 #	mysql> describe translation;
 #+----------------+----------------------+------+-----+---------------------+----------------+
 #| Field          | Type                 | Null | Key | Default             | Extra          |
@@ -200,20 +200,20 @@ sub add_translation {
 #+----------------+----------------------+------+-----+---------------------+----------------+
 #10 rows in set (0.01 sec)
 
-	
+
 }
 
 sub add_transcript {
 	my ($dbh,$gene,$mrna) = @_;
-	my %biotypes = ('mRNA' => 'protein_coding',
-					'piRNA' => 'piRNA',
-					'tRNA' => 'tRNA',
-					'rRNA' => 'rRNA',
-					'lncRNA' => 'lncRNA',
-					'misc_RNA' => 'misc_RNA');
-	my $biotype = $gene->{attributes}->{gene_biotype} || $gene->{attributes}->{biotype} || $biotypes{$mrna->{attributes}->{_type}} || 'misc_RNA';
+	my %biotypes = ('mrna' => 'protein_coding',
+					'pirna' => 'piRNA',
+					'trna' => 'tRNA',
+					'rrna' => 'rRNA',
+					'lncrna' => 'lncRNA',
+					'misc_rna' => 'misc_RNA');
+	my $biotype = $gene->{attributes}->{gene_biotype} || $gene->{attributes}->{biotype} || $biotypes{lc($mrna->{attributes}->{_type})} || 'misc_RNA';
 print $biotype . " " . $mrna->{attributes}->{stable_id} . "\n";
-	$biotype = 'pseudogene' if $gene->{attributes}->{pseudo} && $gene->{attributes}->{pseudo} eq 'true';				
+	$biotype = 'pseudogene' if $gene->{attributes}->{pseudo} && $gene->{attributes}->{pseudo} eq 'true';
 	my $sth = $dbh->prepare("SELECT transcript_id FROM transcript WHERE seq_region_id = ".$gene->attributes->{_seq_region_id}." AND seq_region_start = ".$mrna->attributes->{_start}." AND seq_region_end = ".$mrna->attributes->{_end}." AND seq_region_strand = ".$mrna->attributes->{_strand}." AND stable_id LIKE ".$dbh->quote($mrna->{attributes}->{stable_id}));
     $sth->execute;
     if ($sth->rows > 0){
@@ -240,32 +240,32 @@ print $biotype . " " . $mrna->{attributes}->{stable_id} . "\n";
 
 sub display_xrefs {
 	# lookup any gene names/ids in the xrefs table
-	# if no matches, insert 
+	# if no matches, insert
 	# if matches, insert new names and manage hierarchy
 	# also possibly demote current BGI names to xrefs
 	# select from xref where display_label like gene name...
 	# if there is a match, link to gene id via dependent_xref and object_xref tables
 	# otherwise create a new xref entry for this gene
 	my ($dbh,$xrefs,$table,$ensembl_id,$analysis_id,$externals,$display_name,$external_synonym) = @_;
-	
+
 	my @xrefs;
-	
+
 	if (ref $xrefs eq 'ARRAY'){
 		@xrefs = @$xrefs;
 	}
 	else {
 		$xrefs[0] = $xrefs;
 	}
-	
+
 	my $display_xref_id;
 	my $xref_id;
 	my $name;
 	#####################################################
 	# TODO: load synonyms differently to multiple xrefs #
 	#####################################################
-	
+
 	for (my $i = 0; $i < @xrefs; $i++){
-		my $object_xref_id; 
+		my $object_xref_id;
 		my ($disp,$acc,$external_db_id);
 		if ($externals){
 			for (my $e = 0; $e < @$externals; $e++){
@@ -278,7 +278,7 @@ sub display_xrefs {
 					}
 					else {
 						$disp = $acc;
-					}	
+					}
 					$external_db_id = $externals->[$e]{'dbid'};
 					last;
 				}
@@ -287,8 +287,8 @@ sub display_xrefs {
 		if (!$external_db_id){
 			warn "WARNING: No rule to handle xrefs like $xrefs[$i]\n";
 			next;
-		}	
-		
+		}
+
 		if ((!$display_name && !$external_synonym) || (!$display_name && $external_synonym && $i == 0) || ($display_name && $xrefs[$i] eq $display_name)){
 			# obtain an xref id for this Dbxref
 			my $sth_xref = $dbh->prepare("SELECT xref_id FROM xref WHERE dbprimary_acc LIKE ".$dbh->quote($acc)." AND external_db_id = ".$external_db_id);
@@ -296,7 +296,7 @@ sub display_xrefs {
 	    	$sth_xref->execute;
 	    	if ($sth_xref->rows > 0){
 	    		$xref_id = $sth_xref->fetchrow_arrayref()->[0];
-	    		
+
 	    		# test to see if this feature already has an object_xref
 				$sth_oxref->execute($xref_id);
 	    		if ($sth_oxref->rows > 0){
@@ -330,7 +330,7 @@ sub display_xrefs {
 	}
 	for (my $i = 0; $i < @xrefs; $i++){
 	   	if ($external_synonym){
-	   		## insert display_names into external_synonym 
+	   		## insert display_names into external_synonym
 	   		my $disp;
 	   		if ($externals){
 				for (my $e = 0; $e < @$externals; $e++){
@@ -343,7 +343,7 @@ sub display_xrefs {
 						}
 						else {
 							$disp = $acc;
-						}	
+						}
 						last;
 					}
 				}
@@ -376,9 +376,9 @@ sub identity_xref {
 	elsif ($target_name =~ m/^XR/){ $external_db_id = 1825; }
 	elsif ($target_name =~ m/^NG/){ $external_db_id = 1830; }
 	else { die "ERROR: No rule to handle xrefs like ".$target_name."\n" }
-	
-	
-	
+
+
+
 	# obtain an xref id for this Dbxref
 	my $xref_id;
 	my $sth_xref = $dbh->prepare("SELECT max(xref_id) FROM xref WHERE display_label LIKE ".$dbh->quote($target_name)." AND external_db_id = ".$external_db_id);
@@ -401,13 +401,13 @@ sub identity_xref {
 		$sth_tsc = $dbh->prepare("SELECT analysis_id FROM transcript WHERE transcript_id = ".$transcript->{attributes}->{_transcript_id});
 	}
 	else {
-		$sth_tsc = $dbh->prepare("SELECT analysis_id FROM gene WHERE gene_id = ".$transcript->{attributes}->{_gene_id});	
+		$sth_tsc = $dbh->prepare("SELECT analysis_id FROM gene WHERE gene_id = ".$transcript->{attributes}->{_gene_id});
 	}
 	$sth_tsc->execute;
 	if ($sth_tsc->rows > 0){
 		$analysis_id = $sth_tsc->fetchrow_arrayref()->[0];
 	}
-	
+
 	# test to see if this feature already has an object_xref
 	my $object_xref_id;
 	my $sth_oxref;
@@ -427,15 +427,15 @@ sub identity_xref {
 		warn "WARNING: could not find an object_xref_id for $target_name\n";
 		return;
 	}
-	
+
 	# test to see if this object_xref already has an identity_xref
 	my $sth_idxref = $dbh->prepare("SELECT object_xref_id FROM identity_xref WHERE object_xref_id = $object_xref_id");
 	$sth_idxref->execute;
 	return if $sth_idxref->rows > 0;
-	
+
 	# update the xref info_type to SEQUENCE_MATCH
 	simple_update($dbh,'xref',{'info_type' => $dbh->quote('SEQUENCE_MATCH')},{'xref_id' => $xref_id});
-	
+
 	# calculate xref_start, xref_end, ensembl_start, ensembl_end, score and cigar_line
 	my ($xref_start, $xref_end, $ensembl_start, $ensembl_end, $score, $cigar_line);
 	if ($match->{attributes}->{Target_array}){
@@ -459,10 +459,10 @@ sub identity_xref {
 		$xref_end = $2;
 		$score = $match->{attributes}->{_score}  if $match->{attributes}->{_score} =~ m/\d/;
 	}
-	
+
 	$score = 'NULL' unless $score;
-	
-	
+
+
 	# fetch the exons for the transcript to help with ensembl_start and ensembl_end
 	my (@start_array,@end_array);
 	push @start_array,$match->{attributes}->{_start} unless $match->{attributes}->{_start_array};
@@ -476,7 +476,7 @@ sub identity_xref {
 		elsif ($match->{attributes}->{Gap_array} && $match->{attributes}->{Gap_array}[$i]){
 			$cigar_line .= $match->{attributes}->{Gap_array}[$i];
 		}
-		
+
 		else {
 			$cigar_line .= 'M'.($end_array[$i] - $start_array[$i] + 1);
 		}
@@ -500,7 +500,7 @@ sub identity_xref {
 	$cigar_line =~ s/\s$//;
 	my $length = 0;
 	while (my $exon = $transcript->next_feature('exon')){
-		if ($exon->{attributes}->{_strand} eq $match->{attributes}->{_strand}){ 
+		if ($exon->{attributes}->{_strand} eq $match->{attributes}->{_strand}){
 			if ($exon->{attributes}->{_strand} eq '+1'){
 				for (my $i = 0; $i < @start_array; $i++){
 					if ($exon->{attributes}->{_start} <= $start_array[$i] && $exon->{attributes}->{_end} >= $end_array[$i]){
@@ -540,7 +540,7 @@ sub identity_xref {
 			# can't handle this type of alignment yet but it should be very rare
 		}
 	}
-	
+
 	my ($xref_identity,$ensembl_identity);
 	$xref_identity = int($match->{attributes}->{identity} * 100 + 0.5) if $match->{attributes}->{identity};
 	$xref_identity = int($match->{attributes}->{pct_identity_ungap} + 0.5) if $match->{attributes}->{pct_identity_ungap} && !$xref_identity;
@@ -548,7 +548,7 @@ sub identity_xref {
 	$ensembl_identity = int($match->{attributes}->{exon_identity} * 100 + 0.5) if $match->{attributes}->{exon_identity};
 	$ensembl_identity = int($match->{attributes}->{pct_identity_ungap} + 0.5) if $match->{attributes}->{pct_identity_ungap} && !$ensembl_identity;
 	$ensembl_identity = 'NULL' unless $ensembl_identity;
-	
+
 	# insert values into identity_xref table
 	$dbh->do("INSERT INTO identity_xref (object_xref_id,xref_identity,ensembl_identity,xref_start,xref_end,ensembl_start,ensembl_end,cigar_line,score)
   					 VALUES (".$object_xref_id
@@ -565,7 +565,7 @@ sub identity_xref {
   	if ($match->{attributes}->{e_value}){
   		simple_update($dbh,'xref',{'e_value' => $match->{attributes}->{e_value}},{'xref_id' => $xref_id});
   	}
-  	
+
 }
 
 sub generate_stable_id {
@@ -599,7 +599,7 @@ sub generate_stable_id {
   	$stable_gene_id = $stable_id;
 	$stable_gene_id =~ s/0/G0/;
 	$dbh->do("UPDATE gene SET stable_id = '$stable_gene_id' WHERE gene_id = ".$gene->{attributes}->{_gene_id});
-  	
+
   	return ($stable_id);
 }
 
@@ -615,8 +615,8 @@ sub simple_update {
 		$where .= "$field = $conditions->{$field} AND ";
 	}
 	$where =~ s/\sAND\s$//;
-	$dbh->do("UPDATE $table $values $where"); 
-	
+	$dbh->do("UPDATE $table $values $where");
+
 }
 
 sub update_unless {
@@ -634,8 +634,7 @@ sub update_unless {
     if ($sth->rows == 0){
     	simple_update($dbh,$table,$update,$conditions);
     }
-	
+
 }
 
 1;
-
