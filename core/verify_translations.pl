@@ -27,7 +27,7 @@ my %sections = (
               'RW_USER' => 1,
               'RW_PASS' => 1,
               'RO_USER' => 1
-            }
+            },
   'FILES' =>	{ 	'PROTEIN' => 1
           }
   );
