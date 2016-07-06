@@ -227,9 +227,9 @@ sub gff_to_ensembl {
             }
             my $len = sum @lengths;
             my $l = 0;
-            if ($len % 3 != 0){
-              # assume first exon has been phased correctly
-              $l = $phases[$p];
+            if ($len % 3 != 0 || $phases[0] != 0){
+              # assume first cds has been phased correctly
+              $l = $phases[0];
               if (!$params->{'MODIFY'}{'INVERT_PHASE'}){
                 $l = $adjust[$l];
               }
