@@ -91,7 +91,7 @@ while ( my $seq = $providerin->next_seq) {
 my $outdir = 'summary';
 mkdir $outdir;
 
-open  LOG, ">$outdir/verofy_translations.log" or die $!;
+open  LOG, ">$outdir/verify_translations.log" or die $!;
 
 print LOG "Num of unique     seq IDs in Provider file: " . scalar (keys %providerhash) . "\n";
 print LOG "Num of duplicated seq IDs in Provider file: " . scalar (@providerdups) . "\n";
@@ -138,7 +138,7 @@ if (scalar @exporteddups > 0) {
 #print LOG "\n----\nChecking for extra seq IDs in $file1\n----\n";
 
 my $extraprovidercount = 0;
-open EXTRA1, ">$outdir/$provider.extra.ids" or die $!;
+open EXTRA1, ">$outdir/Provider.extra.ids" or die $!;
 for my $id (sort keys %providerhash) {
     if (not exists $exportedhash{$id}) {
         print EXTRA1 "$id\n";
