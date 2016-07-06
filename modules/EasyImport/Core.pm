@@ -219,13 +219,23 @@ sub gff_to_ensembl {
 					my @exon = $mrna->by_type('exon');
 					my ($first,$last) = (-1,-1);
 					my @starts;
-					my @adjust = (0,1,2);
 					if ($params->{'MODIFY'}{'INVERT_PHASE'}){
-						@adjust = (0,2,1);
-					}
-					for (my $p = 0; $p < @phases; $p++){
-						$phases[$p] = $adjust[$phases[$p]];
-					}
+						my @adjust = (0,2,1);
+            for (my $p = 0; $p < @phases; $p++){
+  						$phases[$p] = $adjust[$phases[$p]];
+  					}
+          }
+          elsif ($params->{'MODIFY'}{'AUTO_PHASE'}){
+            my @lengths;
+            for (my $s = 0; $s < @startarr; $s++){
+						  push @lengths, $ends[$s]-$startarr[$s]+1;
+            }
+            my $len = sum @lengths;
+            print $len,"\n";
+            for (my $p = 0; $p < @phases; $p++){
+  						$phases[$p] = $adjust[$phases[$p]];
+  					}
+          }
 					my $prot_stable_id = $mrna->attributes->{translation_stable_id} if $cds;
 					for (my $e = 0; $e < @exon; $e++){
 						$exon[$e]->attributes->{_phase} = -1;
