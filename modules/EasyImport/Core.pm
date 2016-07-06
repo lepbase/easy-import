@@ -233,7 +233,7 @@ sub gff_to_ensembl {
             my $len = sum @lengths;
             print $len,"\n";
             for (my $p = 0; $p < @phases; $p++){
-  						$phases[$p] = $adjust[$phases[$p]];
+  						
   					}
           }
 					my $prot_stable_id = $mrna->attributes->{translation_stable_id} if $cds;
