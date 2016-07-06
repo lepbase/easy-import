@@ -220,7 +220,7 @@ sub gff_to_ensembl {
 					my ($first,$last) = (-1,-1);
 					my @starts;
 					my @adjust = (0,2,1);
-          if ($params->{'MODIFY'}{'AUTO_PHASE'}){
+          if ($cds && $params->{'MODIFY'}{'AUTO_PHASE'}){
             my @lengths;
             for (my $s = 0; $s < @startarr; $s++){
 						  push @lengths, $ends[$s]-$startarr[$s]+1;
@@ -237,10 +237,10 @@ sub gff_to_ensembl {
             for (my $p = 0; $p < @phases; $p++){
   						my $phase = $l % 3;
               $phases[$p] = $adjust[$phase];
-              $l += $lengths[0];
+              $l += $lengths[$p];
   					}
           }
-          elsif ($params->{'MODIFY'}{'INVERT_PHASE'}){
+          elsif ($cds && $params->{'MODIFY'}{'INVERT_PHASE'}){
 						for (my $p = 0; $p < @phases; $p++){
   						$phases[$p] = $adjust[$phases[$p]];
   					}
