@@ -228,14 +228,14 @@ sub gff_to_ensembl {
             my $len = sum @lengths;
             my $l = 0;
             my $strand = $mrna->attributes->{_strand};
-            if ($len % 3 != 0 || ($strand == 0 && $phases[0] != 0) || ($strand != 0 && $phases[-1] != 0)){
+            if ($len % 3 != 0 || ($strand > 0 && $phases[0] != 0) || ($strand < 0 && $phases[-1] != 0)){
               # assume first cds has been phased correctly
               $l = $strand == 0 ? $phases[0] : $phases[-1];
               if (!$params->{'MODIFY'}{'INVERT_PHASE'}){
                 $l = $adjust[$l];
               }
             }
-            if ($mrna->attributes->{_strand} == 0){
+            if ($mrna->attributes->{_strand} > 0){
               for (my $p = 0; $p < @phases; $p++){
   					  	my $phase = $l % 3;
                 $phases[$p] = $adjust[$phase];
