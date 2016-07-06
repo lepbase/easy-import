@@ -220,12 +220,7 @@ sub gff_to_ensembl {
 					my ($first,$last) = (-1,-1);
 					my @starts;
 					my @adjust = (0,2,1);
-          if ($params->{'MODIFY'}{'INVERT_PHASE'}){
-						for (my $p = 0; $p < @phases; $p++){
-  						$phases[$p] = $adjust[$phases[$p]];
-  					}
-          }
-          elsif ($params->{'MODIFY'}{'AUTO_PHASE'}){
+          if ($params->{'MODIFY'}{'AUTO_PHASE'}){
             my @lengths;
             for (my $s = 0; $s < @startarr; $s++){
 						  push @lengths, $ends[$s]-$startarr[$s]+1;
@@ -243,6 +238,11 @@ sub gff_to_ensembl {
   						my $phase = $l % 3;
               $phases[$p] = $adjust[$phase];
               $l += $lengths[0];
+  					}
+          }
+          elsif ($params->{'MODIFY'}{'INVERT_PHASE'}){
+						for (my $p = 0; $p < @phases; $p++){
+  						$phases[$p] = $adjust[$phases[$p]];
   					}
           }
 					my $prot_stable_id = $mrna->attributes->{translation_stable_id} if $cds;
