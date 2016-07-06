@@ -19,10 +19,17 @@ use EasyImport::Core;
 
 ## load parameters from an INI-style config file
 my %sections = (
-  'FILES' =>	{ 	'PROTEIN' => 1
+  'ENSEMBL' =>	{ 	'LOCAL' => 1
           },
-  'META' =>	{ 	'SPECIES.DISPLAY_NAME' => 1
+  'DATABASE_CORE' =>	{ 	'NAME' => 1,
+              'HOST' => 1,
+              'PORT' => 1,
+              'RW_USER' => 1,
+              'RW_PASS' => 1,
+              'RO_USER' => 1
             }
+  'FILES' =>	{ 	'PROTEIN' => 1
+          }
   );
 ## check that all required parameters have been defined in the config file
 die "ERROR: you must specify at least one ini file\n",usage(),"\n" unless $ARGV[0];
@@ -32,15 +39,28 @@ while (my $ini_file = shift @ARGV){
 	load_ini($params,$ini_file,\%sections,scalar(@ARGV));
 }
 
+my $lib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl/modules';
+push @INC, $lib;
+load Bio::EnsEMBL::DBSQL::DBAdaptor;
+
+my $dba = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
+    -user   => $params->{'DATABASE_CORE'}{'RW_USER'},
+    -pass   => $params->{'DATABASE_CORE'}{'RW_PASS'},
+    -dbname => $dbname,
+    -host   => $params->{'DATABASE_CORE'}{'HOST'},
+    -port   => $params->{'DATABASE_CORE'}{'PORT'},
+    -driver => 'mysql'
+);
+
+my $meta_container = $dba->get_adaptor("MetaContainer");
+
+my $display_name    = $meta_container->get_display_name();
+$display_name =~ s/ /_/g;
+
 ## download/obtain files using methods suggested by file paths and extensions
 my %infiles;
 ($infiles{'PROTEIN'}{'name'},$infiles{'PROTEIN'}{'type'}) = fetch_file($params->{'FILES'}{'PROTEIN'});
 
-
-my $display_name = $params->{'META'}{'SPECIES.DISPLAY_NAME'};
-$display_name =~ s/ /_/g;
-
-my $exported = $display_name.'_-_proteins.fa';
 my $provider = $infiles{'PROTEIN'}{'name'};
 
 ####
@@ -68,11 +88,10 @@ while ( my $seq = $providerin->next_seq) {
     }
 }
 
-my $exportdir = 'exported';
 my $outdir = 'summary';
 mkdir $outdir;
 
-open  LOG, ">$outdir/$exported.log" or die $!;
+open  LOG, ">$outdir/$display_name"."_-_proteins.log" or die $!;
 
 print LOG "Num of unique     seq IDs in $provider: " . scalar (keys %providerhash) . "\n";
 print LOG "Num of duplicated seq IDs in $provider: " . scalar (@providerdups) . "\n";
@@ -86,32 +105,31 @@ if (scalar @providerdups > 0) {
 
 #print LOG "\n----\nChecking for duplicates in $exported\n----\n";
 
-my $exportedin = Bio::SeqIO->new(
-                            -file   => "<$exportdir/$exported",
-                            -format => "FASTA",
-                            );
-
 my %exportedhash;
 my @exporteddups;
 
-while ( my $seq = $exportedin->next_seq) {
-    my $id  = $seq->display_id;
-    my $seqstr = $seq->seq;
+my $transcript_adaptor = $dba->get_TranscriptAdaptor();
+my @transcripts        = @{$transcript_adaptor->fetch_all_by_biotype('protein_coding')};
+foreach my $transcript (@transcripts) {
+  if (defined $transcript->translate() ) {
+    my $id = $transcript->translation()->stable_id();
+    my $seqstr = $transcript->translate()->seq;
     $seqstr =~ s/\W*$//;
     if (exists $exportedhash{$id}) {
-        print LOG "DUPLICATE $id\n";
-        push  @exporteddups, $id;
+      print LOG "DUPLICATE $id\n";
+      push  @exporteddups, $id;
     }
     else {
-        $exportedhash{$id} = $seqstr;
+      $exportedhash{$id} = $seqstr;
     }
+  }
 }
 
-print LOG "Num of unique     seq IDs in $exported: " . scalar (keys %exportedhash) . "\n";
-print LOG "Num of duplicated seq IDs in $exported: " . scalar (@exporteddups) . "\n";
+print LOG "Num of unique     seq IDs in database: " . scalar (keys %exportedhash) . "\n";
+print LOG "Num of duplicated seq IDs in database: " . scalar (@exporteddups) . "\n";
 
 if (scalar @exporteddups > 0) {
-    open  DUP2, ">$outdir/$exported.dups.ids" or die $!;
+    open  DUP2, ">$outdir/database.dups.ids" or die $!;
     print DUP2  join("\n",@exporteddups)  . "\n";
 }
 
@@ -143,11 +161,11 @@ for my $id (sort keys %exportedhash) {
     }
 }
 close EXTRA2;
-print LOG "Num of extra      seq IDs in $exported: " . $extraexportedcount . "\n";
+print LOG "Num of extra      seq IDs in database: " . $extraexportedcount . "\n";
 
 ####
 
-print LOG "Checking sequences with same ID in $provider and $exported\n";
+print LOG "Checking sequences with same ID in $provider and database\n";
 
 my @identical;
 my @substrproviderofexported;
@@ -184,15 +202,19 @@ for my $id (sort keys %providerhash) {
 }
 
 print LOG "Identical: " . scalar(@identical) . "\n";
-print LOG "Sequence in $exported is substr of sequence in $provider: $substrexportedofprovidertostop (" . scalar(@substrexportedofprovider) . ")\n";
-print LOG "Sequence in $provider is substr of sequence in $exported: $substrproviderofexportedtostop (" . scalar(@substrproviderofexported) . ")\n";
+print LOG "Sequence in database is substr of sequence in $provider: $substrexportedofprovidertostop (" . scalar(@substrexportedofprovider) . ")\n";
+print LOG "Sequence in $provider is substr of sequence in database: $substrproviderofexportedtostop (" . scalar(@substrproviderofexported) . ")\n";
 print LOG "Different: " . scalar(@different) . "\n";
 
 open  OUT, ">$outdir/identical.ids" or die $!;
 print OUT  join("\n",@identical)  . "\n" if scalar @identical > 0;
-open  OUT, ">$outdir/substrexportedofprovider.ids" or die $!;
+close OUT;
+open  OUT, ">$outdir/substrdatabaseofprovider.ids" or die $!;
 print OUT  join("\n",@substrexportedofprovider) . "\n" if scalar @substrexportedofprovider > 0;
-open  OUT, ">$outdir/substrproviderofexported.ids" or die $!;
+close OUT;
+open  OUT, ">$outdir/substrproviderofdatabase.ids" or die $!;
 print OUT  join("\n",@substrproviderofexported) . "\n" if scalar @substrproviderofexported > 0;
+close OUT;
 open  OUT, ">$outdir/different.ids" or die $!;
 print OUT  join("\n",@different) . "\n" if scalar @different > 0;
+close OUT;
