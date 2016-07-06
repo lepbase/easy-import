@@ -91,10 +91,10 @@ while ( my $seq = $providerin->next_seq) {
 my $outdir = 'summary';
 mkdir $outdir;
 
-open  LOG, ">$outdir/$display_name"."_-_proteins.log" or die $!;
+open  LOG, ">$outdir/verofy_translations.log" or die $!;
 
-print LOG "Num of unique     seq IDs in $provider: " . scalar (keys %providerhash) . "\n";
-print LOG "Num of duplicated seq IDs in $provider: " . scalar (@providerdups) . "\n";
+print LOG "Num of unique     seq IDs in Provider file: " . scalar (keys %providerhash) . "\n";
+print LOG "Num of duplicated seq IDs in Provider file: " . scalar (@providerdups) . "\n";
 
 if (scalar @providerdups > 0) {
     open  DUP1, ">$outdir/$provider.dups.ids" or die $!;
@@ -125,11 +125,11 @@ foreach my $transcript (@transcripts) {
   }
 }
 
-print LOG "Num of unique     seq IDs in database: " . scalar (keys %exportedhash) . "\n";
-print LOG "Num of duplicated seq IDs in database: " . scalar (@exporteddups) . "\n";
+print LOG "Num of unique     seq IDs in Database: " . scalar (keys %exportedhash) . "\n";
+print LOG "Num of duplicated seq IDs in Database: " . scalar (@exporteddups) . "\n";
 
 if (scalar @exporteddups > 0) {
-    open  DUP2, ">$outdir/database.dups.ids" or die $!;
+    open  DUP2, ">$outdir/Database.dups.ids" or die $!;
     print DUP2  join("\n",@exporteddups)  . "\n";
 }
 
@@ -146,14 +146,14 @@ for my $id (sort keys %providerhash) {
     }
 }
 close EXTRA1;
-print LOG "Num of extra      seq IDs in $provider: " . $extraprovidercount . "\n";
+print LOG "Num of extra      seq IDs in Provider file: " . $extraprovidercount . "\n";
 
 ####
 
 #print LOG "\n----\nChecking for extra seq IDs in $file2\n----\n";
 
 my $extraexportedcount = 0;
-open EXTRA2, ">$outdir/database.extra.ids" or die $!;
+open EXTRA2, ">$outdir/Database.extra.ids" or die $!;
 for my $id (sort keys %exportedhash) {
     if (not exists $providerhash{$id}) {
         print EXTRA2 "$id\n";
@@ -161,11 +161,11 @@ for my $id (sort keys %exportedhash) {
     }
 }
 close EXTRA2;
-print LOG "Num of extra      seq IDs in database: " . $extraexportedcount . "\n";
+print LOG "Num of extra      seq IDs in Database: " . $extraexportedcount . "\n";
 
 ####
 
-print LOG "Checking sequences with same ID in $provider and database\n";
+print LOG "Checking sequences with same ID in Provider file and Database\n";
 
 my @identical;
 my @substrproviderofexported;
@@ -202,17 +202,17 @@ for my $id (sort keys %providerhash) {
 }
 
 print LOG "Identical: " . scalar(@identical) . "\n";
-print LOG "Sequence in database is substr of sequence in $provider: $substrexportedofprovidertostop (" . scalar(@substrexportedofprovider) . ")\n";
-print LOG "Sequence in $provider is substr of sequence in database: $substrproviderofexportedtostop (" . scalar(@substrproviderofexported) . ")\n";
+print LOG "Sequence in Database is substr of sequence in Provider file: $substrexportedofprovidertostop (" . scalar(@substrexportedofprovider) . ")\n";
+print LOG "Sequence in Provider file is substr of sequence in Database: $substrproviderofexportedtostop (" . scalar(@substrproviderofexported) . ")\n";
 print LOG "Different: " . scalar(@different) . "\n";
 
 open  OUT, ">$outdir/identical.ids" or die $!;
 print OUT  join("\n",@identical)  . "\n" if scalar @identical > 0;
 close OUT;
-open  OUT, ">$outdir/substrdatabaseofprovider.ids" or die $!;
+open  OUT, ">$outdir/substrDatabaseofProvider.ids" or die $!;
 print OUT  join("\n",@substrexportedofprovider) . "\n" if scalar @substrexportedofprovider > 0;
 close OUT;
-open  OUT, ">$outdir/substrproviderofdatabase.ids" or die $!;
+open  OUT, ">$outdir/substrProviderofDatabase.ids" or die $!;
 print OUT  join("\n",@substrproviderofexported) . "\n" if scalar @substrproviderofexported > 0;
 close OUT;
 open  OUT, ">$outdir/different.ids" or die $!;
