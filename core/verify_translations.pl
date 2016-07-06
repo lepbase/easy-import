@@ -46,7 +46,7 @@ load Bio::EnsEMBL::DBSQL::DBAdaptor;
 my $dba = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
     -user   => $params->{'DATABASE_CORE'}{'RW_USER'},
     -pass   => $params->{'DATABASE_CORE'}{'RW_PASS'},
-    -dbname => $dbname,
+    -dbname => $params->{'DATABASE_CORE'}{'NAME'},
     -host   => $params->{'DATABASE_CORE'}{'HOST'},
     -port   => $params->{'DATABASE_CORE'}{'PORT'},
     -driver => 'mysql'
@@ -153,7 +153,7 @@ print LOG "Num of extra      seq IDs in $provider: " . $extraprovidercount . "\n
 #print LOG "\n----\nChecking for extra seq IDs in $file2\n----\n";
 
 my $extraexportedcount = 0;
-open EXTRA2, ">$outdir/$exported.extra.ids" or die $!;
+open EXTRA2, ">$outdir/database.extra.ids" or die $!;
 for my $id (sort keys %exportedhash) {
     if (not exists $providerhash{$id}) {
         print EXTRA2 "$id\n";
