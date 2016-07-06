@@ -231,18 +231,19 @@ sub gff_to_ensembl {
 						  push @lengths, $ends[$s]-$startarr[$s]+1;
             }
             my $len = sum @lengths;
-            if ($len % 3 == 0){
-              my $l = 0;
-              for (my $p = 0; $p < @phases; $p++){
-    						my $phase = $l % 3;
-                $phases[$p] = $adjust[$phase];
-                $l += $lengths[0];
-    					}
+            my $l = 0;
+            if ($len % 3 != 0){
+              # assume first exon has been phased correctly
+              $l = $phases[$p];
+              if (!$params->{'MODIFY'}{'INVERT_PHASE'}){
+                $l = $adjust[$l];
+              }
             }
-            else {
-              warn "WARNING: ".$mrna->attributes->{translation_stable_id}." ($len): no rule to handle CDS lengths not divisible by three\n"
-            }
-
+            for (my $p = 0; $p < @phases; $p++){
+  						my $phase = $l % 3;
+              $phases[$p] = $adjust[$phase];
+              $l += $lengths[0];
+  					}
           }
 					my $prot_stable_id = $mrna->attributes->{translation_stable_id} if $cds;
 					for (my $e = 0; $e < @exon; $e++){
