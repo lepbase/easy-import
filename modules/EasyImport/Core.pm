@@ -219,9 +219,9 @@ sub gff_to_ensembl {
 					my @exon = $mrna->by_type('exon');
 					my ($first,$last) = (-1,-1);
 					my @starts;
-					if ($params->{'MODIFY'}{'INVERT_PHASE'}){
-						my @adjust = (0,2,1);
-            for (my $p = 0; $p < @phases; $p++){
+					my @adjust = (0,2,1);
+          if ($params->{'MODIFY'}{'INVERT_PHASE'}){
+						for (my $p = 0; $p < @phases; $p++){
   						$phases[$p] = $adjust[$phases[$p]];
   					}
           }
@@ -231,10 +231,18 @@ sub gff_to_ensembl {
 						  push @lengths, $ends[$s]-$startarr[$s]+1;
             }
             my $len = sum @lengths;
-            print $len,"\n";
-            for (my $p = 0; $p < @phases; $p++){
-  						
-  					}
+            if ($len % 3 == 0){
+              my $l = 0;
+              for (my $p = 0; $p < @phases; $p++){
+    						my $phase = $l % 3;
+                $phases[$p] = $adjust[$phase];
+                $l += $lengths[0];
+    					}
+            }
+            else {
+              warn "WARNING: ".$mrna->attributes->{translation_stable_id}." ($len): no rule to handle CDS lengths not divisible by three\n"
+            }
+
           }
 					my $prot_stable_id = $mrna->attributes->{translation_stable_id} if $cds;
 					for (my $e = 0; $e < @exon; $e++){
