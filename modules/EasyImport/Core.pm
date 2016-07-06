@@ -231,7 +231,7 @@ sub gff_to_ensembl {
             if ($len % 3 != 0 || ($strand > 0 && $phases[0] != 0) || ($strand < 0 && $phases[-1] != 0)){
               # assume first cds has been phased correctly
               $l = $strand > 0 ? $phases[0] : $phases[-1];
-              if (!$params->{'MODIFY'}{'INVERT_PHASE'}){
+              if ($params->{'MODIFY'}{'INVERT_PHASE'}){
                 $l = $adjust[$l];
               }
             }
