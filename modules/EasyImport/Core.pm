@@ -721,6 +721,9 @@ sub rewrite_gff {
 		}
 	}
 
+	close OUT;
+	close EXC;
+
 	if (-z $filename.".exception.gff.tmp"){
     unlink $filename.".exception.gff.tmp"
   }

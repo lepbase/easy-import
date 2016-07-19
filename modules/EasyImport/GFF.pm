@@ -213,7 +213,7 @@ sub add_transcript {
 					'misc_rna' => 'misc_RNA');
 	my $biotype = $gene->{attributes}->{gene_biotype} || $gene->{attributes}->{biotype} || $biotypes{lc($mrna->{attributes}->{_type})} || 'misc_RNA';
 	$biotype = 'pseudogene' if $gene->{attributes}->{pseudo} && $gene->{attributes}->{pseudo} eq 'true';
-	my $sth = $dbh->prepare("SELECT transcript_id FROM transcript WHERE seq_region_id = ".$gene->attributes->{_seq_region_id}." AND seq_region_start = ".$mrna->attributes->{_start}." AND seq_region_end = ".$mrna->attributes->{_end}." AND seq_region_strand = ".$mrna->attributes->{_strand}." AND stable_id LIKE ".$dbh->quote($mrna->{attributes}->{stable_id}));
+	my $sth = $dbh->prepare("SELECT transcript_id FROM transcript WHERE seq_region_id = ".$gene->attributes->{_seq_region_id}." AND seq_region_start = ".$mrna->attributes->{_start}." AND seq_region_end = ".$mrna->attributes->{_end}." AND seq_region_strand = ".$mrna->attributes->{_strand}." AND stable_id = ".$dbh->quote($mrna->{attributes}->{stable_id}));
     $sth->execute;
     if ($sth->rows > 0){
     	return $sth->fetchrow_arrayref()->[0];
