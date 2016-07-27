@@ -62,5 +62,6 @@ $search_dbh->do("DELETE FROM multi_255 WHERE production_name = ".$search_dbh->qu
 $search_dbh->do("CREATE TABLE $production_name LIKE multi");
 $search_dbh->do("CREATE TABLE $production_name"."_32 LIKE multi_32");
 $search_dbh->do("CREATE TABLE $production_name"."_255 LIKE multi_255");
+index_meta($core_dbh,$search_dbh,$production_name);
 index_seq_regions($core_dbh,$search_dbh,$production_name);
 index_genes($core_dbh,$search_dbh,$production_name);

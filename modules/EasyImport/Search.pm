@@ -20,6 +20,18 @@ use DBI;
   	}
   }
 
+  sub index_meta {
+  	my ($core_dbh,$search_dbh,$production_name) = @_;
+  	my $sth1 = $core_dbh->prepare("SELECT meta_key,meta_value FROM meta WHERE meta_key LIKE 'species%' OR meta_key LIKE 'assembly%'");
+  	$sth1->execute();
+  	while (my ($key,$value) = $sth1->fetchrow_array()){
+      next if $key =~ m/(date|mapping|biomart)/;
+  		%strings = ();
+  		my $detail = "$sr_name:$g_start-$g_end";
+  		add_search_term($search_dbh,'species',0,$value,"meta.$key",$production_name);
+  	}
+  }
+
   sub index_genes {
   	my ($core_dbh,$search_dbh,$production_name) = @_;
   	my $sth1 = $core_dbh->prepare("SELECT g.gene_id,g.stable_id,g.description,g.seq_region_start,g.seq_region_end,sr.name,g.display_xref_id FROM gene as g "
