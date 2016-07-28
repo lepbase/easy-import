@@ -9,7 +9,7 @@ use DBI;
 sub add_analysis {
 	# analysis_id - fill in analysis and analysis_description tables
 	my ($dbh,$analysis,$provider_name,$provider_url) = @_;
-	my $sth = $dbh->prepare("SELECT analysis_id FROM analysis WHERE logic_name LIKE '$analysis'");
+	my $sth = $dbh->prepare("SELECT analysis_id FROM analysis WHERE logic_name = '$analysis'");
     $sth->execute;
     return $sth->fetchrow_arrayref()->[0] if $sth->rows > 0;
   	$dbh->do("INSERT INTO analysis (logic_name) VALUES (".$dbh->quote($analysis).")");
@@ -52,7 +52,7 @@ sub get_seq_region_id {
 
 sub add_gene {
 	my ($dbh,$gene) = @_;
-	my $sth = $dbh->prepare("SELECT gene_id FROM gene WHERE seq_region_id = ".$gene->attributes->{_seq_region_id}." AND seq_region_start = ".$gene->attributes->{_start}." AND seq_region_end = ".$gene->attributes->{_end}." AND seq_region_strand = ".$gene->attributes->{_strand}." AND stable_id LIKE ".$dbh->quote($gene->{attributes}->{stable_id}));
+	my $sth = $dbh->prepare("SELECT gene_id FROM gene WHERE seq_region_id = ".$gene->attributes->{_seq_region_id}." AND seq_region_start = ".$gene->attributes->{_start}." AND seq_region_end = ".$gene->attributes->{_end}." AND seq_region_strand = ".$gene->attributes->{_strand}." AND stable_id = ".$dbh->quote($gene->{attributes}->{stable_id}));
     $sth->execute;
     return $sth->fetchrow_arrayref()->[0] if $sth->rows > 0;
     my $description = $gene->attributes->{description} ? $dbh->quote($gene->attributes->{description}) : 'NULL';
@@ -101,7 +101,7 @@ sub canonical_transcript {
 
 sub add_exon {
 	my ($dbh,$gene,$exon) = @_;
-	my $sth = $dbh->prepare("SELECT exon_id FROM exon WHERE seq_region_id = ".$gene->attributes->{_seq_region_id}." AND seq_region_start = ".$exon->attributes->{_start}." AND seq_region_end = ".$exon->attributes->{_end}." AND seq_region_strand = ".$exon->attributes->{_strand}." AND (stable_id IS NULL OR stable_id LIKE ".$dbh->quote($exon->mother()->attributes->{stable_id}."%").")");
+	my $sth = $dbh->prepare("SELECT exon_id FROM exon WHERE seq_region_id = ".$gene->attributes->{_seq_region_id}." AND seq_region_start = ".$exon->attributes->{_start}." AND seq_region_end = ".$exon->attributes->{_end}." AND seq_region_strand = ".$exon->attributes->{_strand}." AND (stable_id IS NULL OR stable_id LIKE ".$dbh->quote($exon->mother()->attributes->{stable_id}."-E%").")");
     $sth->execute;
     return $sth->fetchrow_arrayref()->[0] if $sth->rows > 0;
      $dbh->do("INSERT INTO exon (seq_region_id,seq_region_start,seq_region_end,seq_region_strand,phase,end_phase)
@@ -165,7 +165,7 @@ sub add_translation {
 																	." AND end_exon_id = ".$end_exon->attributes->{exon_id}
 																	." AND seq_start = ".$seq_start
 																	." AND seq_end = ".$seq_end
-																	." AND stable_id like ".$dbh->quote($prot_stable_id));
+																	." AND stable_id = ".$dbh->quote($prot_stable_id));
     $sth->execute;
     if ($sth->rows > 0){
     	my $retvals = $sth->fetchrow_hashref();
@@ -290,7 +290,7 @@ sub display_xrefs {
 
 		if ((!$display_name && !$external_synonym) || (!$display_name && $external_synonym && $i == 0) || ($display_name && $xrefs[$i] eq $display_name)){
 			# obtain an xref id for this Dbxref
-			my $sth_xref = $dbh->prepare("SELECT xref_id FROM xref WHERE dbprimary_acc LIKE ".$dbh->quote($acc)." AND external_db_id = ".$external_db_id);
+			my $sth_xref = $dbh->prepare("SELECT xref_id FROM xref WHERE dbprimary_acc = ".$dbh->quote($acc)." AND external_db_id = ".$external_db_id);
 	   		my $sth_oxref = $dbh->prepare("SELECT object_xref_id FROM object_xref WHERE ensembl_id = ".$ensembl_id." AND ensembl_object_type = ".$dbh->quote($table)." AND analysis_id = ".$analysis_id." AND xref_id = ?");
 	    	$sth_xref->execute;
 	    	if ($sth_xref->rows > 0){
@@ -348,7 +348,7 @@ sub display_xrefs {
 				}
 			}
 			if ($disp ne $name){
-				my $sth_syn = $dbh->prepare("SELECT xref_id,synonym FROM external_synonym WHERE xref_id = $xref_id AND synonym LIKE ".$dbh->quote($disp));
+				my $sth_syn = $dbh->prepare("SELECT xref_id,synonym FROM external_synonym WHERE xref_id = $xref_id AND synonym = ".$dbh->quote($disp));
 				$sth_syn->execute;
 				if ($sth_syn->rows > 0){
 					#
@@ -380,7 +380,7 @@ sub identity_xref {
 
 	# obtain an xref id for this Dbxref
 	my $xref_id;
-	my $sth_xref = $dbh->prepare("SELECT max(xref_id) FROM xref WHERE display_label LIKE ".$dbh->quote($target_name)." AND external_db_id = ".$external_db_id);
+	my $sth_xref = $dbh->prepare("SELECT max(xref_id) FROM xref WHERE display_label = ".$dbh->quote($target_name)." AND external_db_id = ".$external_db_id);
 	$sth_xref->execute;
 	if ($sth_xref->rows > 0){
 		$xref_id = $sth_xref->fetchrow_arrayref()->[0];
@@ -411,10 +411,10 @@ sub identity_xref {
 	my $object_xref_id;
 	my $sth_oxref;
 	if ($transcript->{attributes}->{_transcript_id}){
-		$sth_oxref = $dbh->prepare("SELECT object_xref_id FROM object_xref WHERE ensembl_id = ".$transcript->{attributes}->{_transcript_id}." AND ensembl_object_type LIKE ".$dbh->quote('Transcript')." AND analysis_id = ".$analysis_id." AND xref_id = ".$xref_id);
+		$sth_oxref = $dbh->prepare("SELECT object_xref_id FROM object_xref WHERE ensembl_id = ".$transcript->{attributes}->{_transcript_id}." AND ensembl_object_type = ".$dbh->quote('Transcript')." AND analysis_id = ".$analysis_id." AND xref_id = ".$xref_id);
 	}
 	else {
-		$sth_oxref = $dbh->prepare("SELECT object_xref_id FROM object_xref WHERE ensembl_id = ".$transcript->{attributes}->{_gene_id}." AND ensembl_object_type LIKE ".$dbh->quote('Gene')." AND analysis_id = ".$analysis_id." AND xref_id = ".$xref_id);
+		$sth_oxref = $dbh->prepare("SELECT object_xref_id FROM object_xref WHERE ensembl_id = ".$transcript->{attributes}->{_gene_id}." AND ensembl_object_type = ".$dbh->quote('Gene')." AND analysis_id = ".$analysis_id." AND xref_id = ".$xref_id);
 	}
 	$sth_oxref->execute;
 	if ($sth_oxref->rows > 0){
