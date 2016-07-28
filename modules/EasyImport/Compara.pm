@@ -56,10 +56,96 @@ sub load_sequences {
   my $species_set_id = get_species_set_id($dbh,'lepidoptera');
   my $method_link_id = 401;
   my $mlss_id = add_method_link_species_set($dbh,$method_link_id,$species_set_id,'protein_tree_lepbase_v1','lepbase');
-  add_gene_tree ($params,$path.'/'.$file.''.$params->{'ORTHOGROUP'}{'TREE'}, 'protein', 'tree', 'default', $mlss_id, $gene_align_id, $cluster_id, 1);
+  my $genetree = add_gene_tree ($params,$path.'/'.$file.''.$params->{'ORTHOGROUP'}{'TREE'}, 'protein', 'tree', 'default', $mlss_id, $gene_align_id, $cluster_id, 1);
+  my $st_nodes = fetch_species_tree_nodes ($params);
 
+  add_homology ($genetree,$st_nodes,$path.'/'.$file.''.$params->{'ORTHOGROUP'}{'HOMOLOG'});
 
   return 1;
+}
+
+sub add_homology {
+  my ($genetree_ref, $st_nodes, $notung_homolog_filename) = @_;
+  my $cdba = new Bio::EnsEMBL::Compara::DBSQL::DBAdaptor(
+    -host => $params->{'DATABASE_COMPARA'}{'HOST'},
+    -user => $params->{'DATABASE_COMPARA'}{'RW_USER'},
+    -pass => $params->{'DATABASE_COMPARA'}{'RW_PASS'},
+    -port => $params->{'DATABASE_COMPARA'}{'PORT'},
+    -dbname => $params->{'DATABASE_COMPARA'}{'NAME'},
+  );
+  my $ha   = $cdba->get_adaptor("Homology");
+  my $homology = new Bio::EnsEMBL::Compara::Homology();
+
+  my $homology_pair = parse_notung_homolog ($notung_homolog_filename, 6, 6); #6=tax_prefix_size,6=ignore_lines
+
+  for my $seq1 (sort keys %{$homology_pair}) {
+    for my $seq2 (sort keys %{$homology_pair->{$seq1}}) {
+      print "$seq1\t$seq2\t" . $homology_pair->{$seq1}{$seq2}{description} . "\n";
+    }
+  }
+die 1;
+
+
+  $ha->store($homology);
+  
+
+}
+
+sub parse_notung_homolog {
+  my ($notung_homolog_filename,$tax_prefix_size,$ignore_lines) = @_;
+  my %tax_count;
+  my %homology_pair;
+  my @seq_members;
+
+  use List::Util qw(min max);
+
+  open NOTUNG_HOMOLOG, "<$notung_homolog_filename" or die $!;
+
+  for (1..$ignore_lines) {
+    <NOTUNG_HOMOLOG>
+  };
+
+  my $all_seqs = <NOTUNG_HOMOLOG>;
+
+  while ($all_seqs =~ /\b(\w{$tax_prefix_size})_(\S+)/g) {
+    $tax_count{$1}++;
+    push @seq_members, "$1_$2";
+  }
+
+  while (<NOTUNG_HOMOLOG>) {
+    chomp;
+    my @row  = split("\t");
+    my @seq_members_local = @seq_members;
+    my $seq1 = shift @row;
+    my ($tax1, $seqm1) = ($1, $2) if $seq1 =~ /(\w{$tax_prefix_size})_(\S+)/;
+    while (my $homolog_value = shift @row) {
+      my $seq2 = shift @seq_members_local;
+      my ($tax2, $seqm2) = ($1, $2) if $seq2 =~ /(\w{$tax_prefix_size})_(\S+)/;
+      next if $seq1 eq $seq2;
+
+      if ($homolog_value eq "O") {
+        if ($tax_count{$tax1} == 1 and $tax_count{$tax2} == 1) {
+          $homology_pair {$seq1}{$seq2}{description} = "ortholog_one2one";
+        } elsif ( min($tax_count{$tax1},$tax_count{$tax2}) == 1 and max($tax_count{$tax1},$tax_count{$tax2}) > 1) {
+          $homology_pair {$seq1}{$seq2}{description} = "ortholog_one2many";
+        } elsif ( min($tax_count{$tax1},$tax_count{$tax2})  > 1 and max($tax_count{$tax1},$tax_count{$tax2}) > 1 ) {
+          $homology_pair {$seq1}{$seq2}{description} = "ortholog_many2many";
+        }
+      } elsif ($homolog_value eq "P") {
+        $homology_pair {$seq1}{$seq2}{description} = ($tax1 eq $tax2) ? "within_species_paralog" : "other_species_paralog";
+      }
+    }
+  }
+
+  return \%homology_pair;
+
+  # test hash by printing:
+  #   for my $seq1 (sort keys %homology_pair) {
+  #     for my $seq2 (sort keys %{$homology_pair{$seq1}}) {
+  #       print "$seq1\t$seq2\t$homology_pair{$seq1}{$seq2}{description}\n";
+  #     }
+  #   }
+
 }
 
 sub read_seqs_to_hash {
@@ -100,7 +186,7 @@ sub fetch_species_tree_nodes {
       $st_nodes{$sp2->name()}{$sp1->name()} = $node_id;
     }
   }
-  return %st_nodes;
+  return \%st_nodes;
 }
 
 sub add_species_tree {
@@ -214,6 +300,7 @@ sub add_gene_tree {
 
   my $all_nodes = $newtree->get_all_nodes;
   $gtna->_store_all_tags($all_nodes);
+  return $newtree;
 }
 
 sub add_gene_tree_root {
