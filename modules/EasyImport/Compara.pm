@@ -59,13 +59,13 @@ sub load_sequences {
   my $genetree = add_gene_tree ($params,$path.'/'.$file.''.$params->{'ORTHOGROUP'}{'TREE'}, 'protein', 'tree', 'default', $mlss_id, $gene_align_id, $cluster_id, 1);
   my $st_nodes = fetch_species_tree_nodes ($params);
 
-  add_homology ($genetree,$st_nodes,$path.'/'.$file.''.$params->{'ORTHOGROUP'}{'HOMOLOG'});
+  add_homology ($params,$genetree,$st_nodes,$path.'/'.$file.''.$params->{'ORTHOGROUP'}{'HOMOLOG'});
 
   return 1;
 }
 
 sub add_homology {
-  my ($genetree_ref, $st_nodes, $notung_homolog_filename) = @_;
+  my ($params,$genetree_ref, $st_nodes, $notung_homolog_filename) = @_;
   my $cdba = new Bio::EnsEMBL::Compara::DBSQL::DBAdaptor(
     -host => $params->{'DATABASE_COMPARA'}{'HOST'},
     -user => $params->{'DATABASE_COMPARA'}{'RW_USER'},
