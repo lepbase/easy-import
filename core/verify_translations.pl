@@ -172,6 +172,7 @@ my @substrproviderofexported;
 my @substrexportedofprovider;
 my $substrproviderofexportedtostop = 0;
 my $substrexportedofprovidertostop = 0;
+my $differenttostop = 0;
 my @different;
 
 for my $id (sort keys %providerhash) {
@@ -196,7 +197,12 @@ for my $id (sort keys %providerhash) {
             $substrproviderofexportedtostop++ if (index($exportedtostop,$providertostop));
         }
         else {
-            push @different,  $id . "\t" . distance($providerhash{$id},$exportedhash{$id});
+            my $providertostop = $providerhash{$id};
+            $providertostop =~ s/\*.*//;
+            my $exportedtostop = $exportedhash{$id};
+            $exportedtostop =~ s/\*.*//;
+            push @different,  $id . "\t" . distance($providerhash{$id},$exportedhash{$id}) . "\t" . (($exportedtostop ne $providertostop) ? "diff_to_stop_codon" : "same_to_stop_codon") . "\t" . distance($providertostop,$exportedtostop);
+            $differenttostop++ if ($exportedtostop ne $providertostop);
         }
     }
 }
@@ -204,7 +210,7 @@ for my $id (sort keys %providerhash) {
 print LOG "Identical: " . scalar(@identical) . "\n";
 print LOG "Sequence in Database is substr of sequence in Provider file: $substrexportedofprovidertostop (" . scalar(@substrexportedofprovider) . ")\n";
 print LOG "Sequence in Provider file is substr of sequence in Database: $substrproviderofexportedtostop (" . scalar(@substrproviderofexported) . ")\n";
-print LOG "Different: " . scalar(@different) . "\n";
+print LOG "Different: $differenttostop (" . scalar(@different) . ")\n";
 
 open  OUT, ">$outdir/identical.ids" or die $!;
 print OUT  join("\n",@identical)  . "\n" if scalar @identical > 0;

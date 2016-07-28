@@ -4,6 +4,7 @@ use strict;
 use strict;
 use Cwd 'abs_path';
 use File::Basename;
+use Module::Load;
 
 ## find the full path to the directory that this script is executing in
 our $dirname;
@@ -38,12 +39,21 @@ while (my $ini_file = shift @ARGV){
 	load_ini($params,$ini_file,\%sections);
 }
 
+my $lib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl/modules';
+my $comparalib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-compara/modules';
+push @INC, $lib;
+push @INC, $comparalib;
+load Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
+load Bio::EnsEMBL::Compara::Graph::NewickParser;
+load Bio::EnsEMBL::Compara::SpeciesTreeNode;
+load Bio::EnsEMBL::Compara::SpeciesTree;
 
 # create the compara database from a template
 # populate ncbi_taxa_node and ncbi_taxa_tree tables
-setup_compara_db($params);
 
+#setup_compara_db($params);
 
+add_species_tree($params);
 
 sub usage {
 	return "USAGE: perl setup_database.pl ini_file";

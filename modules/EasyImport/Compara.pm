@@ -76,6 +76,56 @@ sub read_seqs_to_hash {
   return $len;
 }
 
+sub add_species_tree {
+	my ($params,$newick_treefile, $mlss_id) = @_;
+	my $cdba = new Bio::EnsEMBL::Compara::DBSQL::DBAdaptor(
+		-host => $params->{'DATABASE_COMPARA'}{'HOST'},
+		-user => $params->{'DATABASE_COMPARA'}{'RW_USER'},
+		-pass => $params->{'DATABASE_COMPARA'}{'RW_PASS'},
+		-port => $params->{'DATABASE_COMPARA'}{'PORT'},
+		-dbname => $params->{'DATABASE_COMPARA'}{'NAME'},
+	);
+	my $sta   = $cdba->get_adaptor("SpeciesTree");
+	my $stna  = $cdba->get_adaptor("SpeciesTreeNode");
+
+	#open TREEFILE, "<$newick_treefile" or die "Could not open newick treefile $newick_treefile\n";
+	#chomp(my $newick_tree = <TREEFILE>);
+
+	# TO DO load newick_tree from newick_treefile
+#	my $newick_tree = "(((45351,669202)6073,((((((6282,6279,7209)6296,(6239,31234,6238,135651,281687)6237,54126)119089,6334)6231,((((6669,72036)6657,(((7029,13249)7524,121224)33342,(((((7159,7176)43817,(7165,43151)7164)7157,315563)43786,((((7244,7230)32281,(((7238,7245,7227,7240,7220)32351,7217)32346,(7234,46245)32358,7260)32341,7222)7215,7375)43738,36166)480117)7147,(((7460,132113)7458,(12957,13686)34695)7434,7425)7400,(77166,7070)41088,((34740,113334,13037)33415,7091)104431)33392,136037)33340)197562,126957)197563,(((32264,52283)6946,6945)6933,407821)6854)6656)1206794,((283909,6412)6340,(225164,29159,37653)6447,7574)1206795)33317,6183,7668)33213,27923)6072,10228,400682)33208;";
+
+#	my $newroot = Bio::EnsEMBL::Compara::Graph::NewickParser::parse_newick_into_tree($newick_tree, "Bio::EnsEMBL::Compara::SpeciesTreeNode");
+#	$newroot->newick_format($newick_tree);
+	my $speciestree = $sta->fetch_by_root_id(1000);
+	my $speciestree_root = $speciestree->root();
+	$speciestree_root->get_all_nodes();
+	$speciestree_root->build_leftright_indexing;
+	$speciestree->{'_root'} = $speciestree_root;
+	$sta->store($speciestree);
+exit;
+#	$speciestree->method_link_species_set_id(1);
+#	$speciestree->label("speciestree");
+#	$speciestree->root($newroot);
+
+#	$speciestree->species_tree($newroot->newick_format());
+
+#	$sta->store($speciestree);
+
+
+#	$root->build_leftright_indexing;
+#exit;
+#warn "after buildleftright";
+#	$newroot->node_id($speciestree->root_id());
+#warn $speciestree->root_id();
+#	$newroot->distance_to_parent($speciestree->root->distance_to_parent);
+#warn "after distance_to_parent";
+#	$newroot->adaptor($speciestree->root->adaptor);
+#	$newroot->tree($speciestree);
+#	$speciestree->{'_root'} = $newroot;
+
+#	$sta->store($speciestree);
+
+}
 
 sub add_gene_tree {
 	my ($params,$newick_treefile, $member_type, $tree_type, $clusterset_id, $mlss_id, $gene_align_id, $stable_id, $version) = @_;
