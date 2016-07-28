@@ -54,6 +54,8 @@ load Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
 load Bio::EnsEMBL::Compara::Graph::NewickParser;
 load Bio::EnsEMBL::Compara::GeneTreeNode;
 load Bio::EnsEMBL::Compara::GeneTreeMember;
+load Bio::EnsEMBL::Compara::SpeciesTreeNode;
+load Bio::EnsEMBL::Compara::SpeciesTree;
 
 my $dbh = compara_db_connect($params);
 
@@ -68,6 +70,8 @@ $params->{'ORTHOGROUP'}{'TAXA'} = $taxlist;
 
 #use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
 #use Bio::EnsEMBL::Compara::Graph::NewickParser;
+
+my %st_nodes = fetch_species_tree_nodes($dbh,$params);
 
 my %core_dbs;
 find({wanted => sub {

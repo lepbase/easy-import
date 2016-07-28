@@ -76,6 +76,23 @@ sub read_seqs_to_hash {
   return $len;
 }
 
+sub fetch_species_tree_nodes {
+  my ($params,$dbh) = @_;
+  my %st_nodes;
+  my $sta   = $cdba->get_adaptor("SpeciesTree");
+  my $speciestree = $sta->fetch_by_root_id(1000);
+  my @leaves = $speciestree->get_all_leaves();
+  while (my $sp1 = shift @leaves){
+    $st_nodes{$sp1->name()}{$sp1->name()} = $sp1->node_id();
+    foreach my $sp2 (@leaves){
+      my $node_id = $sp1->find_first_shared_ancestor($sp2)->node_id();
+      $st_nodes{$sp1->name()}{$sp2->name()} = $node_id;
+      $st_nodes{$sp2->name()}{$sp1->name()} = $node_id;
+    }
+  }
+  return $st_nodes;
+}
+
 sub add_species_tree {
 	my ($params,$newick_treefile, $mlss_id) = @_;
 	my $cdba = new Bio::EnsEMBL::Compara::DBSQL::DBAdaptor(
