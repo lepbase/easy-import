@@ -77,9 +77,16 @@ sub read_seqs_to_hash {
 }
 
 sub fetch_species_tree_nodes {
-  my ($params,$dbh) = @_;
+  my ($params) = @_;
   my %st_nodes;
-  my $sta   = $cdba->get_adaptor("SpeciesTree");
+  my $cdba = new Bio::EnsEMBL::Compara::DBSQL::DBAdaptor(
+		-host => $params->{'DATABASE_COMPARA'}{'HOST'},
+		-user => $params->{'DATABASE_COMPARA'}{'RW_USER'},
+		-pass => $params->{'DATABASE_COMPARA'}{'RW_PASS'},
+		-port => $params->{'DATABASE_COMPARA'}{'PORT'},
+		-dbname => $params->{'DATABASE_COMPARA'}{'NAME'},
+	);
+  my $sta = $cdba->get_adaptor("SpeciesTree");
   my $speciestree = $sta->fetch_by_root_id(1000);
   my @leaves = $speciestree->get_all_leaves();
   while (my $sp1 = shift @leaves){
@@ -90,7 +97,7 @@ sub fetch_species_tree_nodes {
       $st_nodes{$sp2->name()}{$sp1->name()} = $node_id;
     }
   }
-  return $st_nodes;
+  return %st_nodes;
 }
 
 sub add_species_tree {
