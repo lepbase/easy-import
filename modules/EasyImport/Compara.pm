@@ -77,17 +77,28 @@ sub add_homology {
   my $homology = new Bio::EnsEMBL::Compara::Homology();
 
   my $homology_pair = parse_notung_homolog ($notung_homolog_filename, 6, 6); #6=tax_prefix_size,6=ignore_lines
-
+warn "-------------parsed";
   for my $seq1 (sort keys %{$homology_pair}) {
     for my $seq2 (sort keys %{$homology_pair->{$seq1}}) {
+      $homology->description($homology_pair->{$seq1}{$seq2}{description});
       print "$seq1\t$seq2\t" . $homology_pair->{$seq1}{$seq2}{description} . "\n";
     }
   }
-die 1;
-
-
   $ha->store($homology);
-  
+
+# for each pair,
+#   set description
+#   calculate genetree node, set it
+#   calculate speciestree node, set it
+#   set genetree node -> speciestreenode property
+#   get gene member 1, get cigar align attach
+#   get gene member 2, get cigar align attach
+#   
+
+
+
+
+die 2; 
 
 }
 

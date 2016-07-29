@@ -68,9 +68,6 @@ foreach my $key (keys %{$params->{'TAXA'}}){
 chop $taxlist;
 $params->{'ORTHOGROUP'}{'TAXA'} = $taxlist;
 
-#use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
-#use Bio::EnsEMBL::Compara::Graph::NewickParser;
-
 my $st_nodes = fetch_species_tree_nodes($params);
 
 my %core_dbs;
