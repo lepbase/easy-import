@@ -4,6 +4,7 @@ use strict;
 use DBI;
 use Bio::SeqIO;
 use File::Basename;
+use Data::Dumper;
 
 # fill in/select from
 sub load_sequences {
@@ -59,13 +60,13 @@ sub load_sequences {
   my $genetree = add_gene_tree ($params,$path.'/'.$file.''.$params->{'ORTHOGROUP'}{'TREE'}, 'protein', 'tree', 'default', $mlss_id, $gene_align_id, $cluster_id, 1);
   my $st_nodes = fetch_species_tree_nodes ($params);
 
-  add_homology ($params,$genetree,$st_nodes,$path.'/'.$file.''.$params->{'ORTHOGROUP'}{'HOMOLOG'});
+  add_homology ($dbh,$params,$genetree,$st_nodes,$path.'/'.$file.''.$params->{'ORTHOGROUP'}{'HOMOLOG'});
 
   return 1;
 }
 
 sub add_homology {
-  my ($params,$genetree_ref, $st_nodes, $notung_homolog_filename) = @_;
+  my ($dbh,$params,$genetree, $st_nodes, $notung_homolog_filename) = @_;
   my $cdba = new Bio::EnsEMBL::Compara::DBSQL::DBAdaptor(
     -host => $params->{'DATABASE_COMPARA'}{'HOST'},
     -user => $params->{'DATABASE_COMPARA'}{'RW_USER'},
@@ -73,37 +74,129 @@ sub add_homology {
     -port => $params->{'DATABASE_COMPARA'}{'PORT'},
     -dbname => $params->{'DATABASE_COMPARA'}{'NAME'},
   );
-  my $ha   = $cdba->get_adaptor("Homology");
-  my $homology = new Bio::EnsEMBL::Compara::Homology();
+  my $gtna   = $cdba->get_adaptor("GeneTreeNode");
 
-  my $homology_pair = parse_notung_homolog ($notung_homolog_filename, 6, 6); #6=tax_prefix_size,6=ignore_lines
-warn "-------------parsed";
-  for my $seq1 (sort keys %{$homology_pair}) {
-    for my $seq2 (sort keys %{$homology_pair->{$seq1}}) {
-      $homology->description($homology_pair->{$seq1}{$seq2}{description});
-      print "$seq1\t$seq2\t" . $homology_pair->{$seq1}{$seq2}{description} . "\n";
+  my $homology_pair = parse_notung_homolog ($params,$notung_homolog_filename, 6); #6=ignore_lines
+
+  $genetree = bless $genetree, 'Bio::EnsEMBL::Compara::GeneTree';
+  my $gene_tree_root_id = $genetree->root_id();
+  my $mlss_id = $genetree->method_link_species_set_id();
+  my $description = "";
+  my $species_tree_node_id;
+  my $gene_tree_node_id;
+
+  # get all pairwise gene tree node ancestors and store in hash
+  my %gt_nodes;
+  
+  my $leaves = $genetree->get_all_sorted_leaves();
+  foreach my $g1 (@{$leaves}){
+    $g1 = bless $g1, 'Bio::EnsEMBL::Compara::GeneTreeNode';
+    $gt_nodes{$g1->name()}{$g1->name()} = $g1->node_id();
+    foreach my $g2 (@{$leaves}){
+      $g2 = bless $g2, 'Bio::EnsEMBL::Compara::GeneTreeNode';
+      my $node_id = $g1->find_first_shared_ancestor($g2)->node_id();
+      $gt_nodes{$g1->name()}{$g2->name()} = $node_id;
+      $gt_nodes{$g2->name()}{$g2->name()} = $node_id;
     }
   }
-  $ha->store($homology);
+  
+  my $taxa = $params->{'ORTHOGROUP'}{'TAXA'};
 
-# for each pair,
-#   set description
-#   calculate genetree node, set it
-#   calculate speciestree node, set it
-#   set genetree node -> speciestreenode property
-#   get gene member 1, get cigar align attach
-#   get gene member 2, get cigar align attach
-#   
+  for my $seq1 (sort keys %{$homology_pair}) {
+    for my $seq2 (sort keys %{$homology_pair->{$seq1}}) {
 
+      my ($tax1,$seqm1) = ($1,$2) if $seq1 =~ /^($taxa).(\S+)$/;
+      my ($tax2,$seqm2) = ($1,$2) if $seq2 =~ /^($taxa).(\S+)$/;
+      my ($gtn1_id,$gtn2_id);
 
+      $description = $homology_pair->{$seq1}{$seq2}{description};
 
+      # get gene_tree_node id
+      $gene_tree_node_id = $gt_nodes{$seq1}{$seq2};
+
+      # get species_tree_node id
+      $species_tree_node_id = $st_nodes->{$tax1}{$tax2};
+
+      #insert into homology table
+      $dbh->do("INSERT INTO homology (method_link_species_set_id,description,is_tree_compliant,species_tree_node_id,gene_tree_node_id,gene_tree_root_id)"
+              ." VALUES (".$mlss_id
+              .",".$dbh->quote($description)
+              .","."1"
+              .",".$species_tree_node_id
+              .",".$gene_tree_node_id
+              .",".$gene_tree_root_id
+              .")");
+      my $homology_id = $dbh->last_insert_id(undef,undef,undef,undef);
+
+      add_homology_members($dbh,$params,$homology_id,$seqm1,$seqm2);
+
+    }
+  }
 
 die 2; 
 
 }
 
+sub add_homology_members {
+  my ($dbh,$params,$homology_id,$seqm1,$seqm2) = @_;
+  my $cdba = new Bio::EnsEMBL::Compara::DBSQL::DBAdaptor(
+    -host => $params->{'DATABASE_COMPARA'}{'HOST'},
+    -user => $params->{'DATABASE_COMPARA'}{'RW_USER'},
+    -pass => $params->{'DATABASE_COMPARA'}{'RW_PASS'},
+    -port => $params->{'DATABASE_COMPARA'}{'PORT'},
+    -dbname => $params->{'DATABASE_COMPARA'}{'NAME'},
+  );
+  my $seqma = $cdba->get_adaptor("SeqMember");
+  
+  my $sm1 = $seqma->fetch_by_stable_id($seqm1);
+  my $gm1 = $sm1->gene_member();
+  my $seq_member_id_1  = $sm1->dbID();
+  my $gene_member_id_1 = $gm1->dbID();
+  my $cigar1 = "";
+  if ($seq_member_id_1) {
+    my $sth = $dbh->prepare("SELECT cigar_line FROM gene_align_member WHERE seq_member_id = $seq_member_id_1");
+    $sth->execute();
+    if ($sth->rows > 0){
+      $cigar1 = $sth->fetchrow_arrayref()->[0]
+    } else {
+      die "Could not find SeqMember $seqm1 with dbID $seq_member_id_1 in gene_align_member";
+    }
+  }
+  
+  my $sm2 = $seqma->fetch_by_stable_id($seqm2);
+  my $gm2 = $sm2->gene_member();
+  my $seq_member_id_2  = $sm2->dbID();
+  my $gene_member_id_2 = $gm2->dbID();
+  my $cigar2 = "";
+  if ($seq_member_id_2) {
+    my $sth = $dbh->prepare("SELECT cigar_line FROM gene_align_member WHERE seq_member_id = $seq_member_id_2");
+    $sth->execute();
+    if ($sth->rows > 0){
+      $cigar2 = $sth->fetchrow_arrayref()->[0]
+    } else {
+      die "Could not find SeqMember $seqm2 with dbID $seq_member_id_2 in gene_align_member";
+    }
+  }
+
+  ($cigar1,$cigar2) = Bio::EnsEMBL::Compara::Utils::Cigars::minimize_cigars($cigar1,$cigar2);
+
+  #insert into homology_member table
+  $dbh->do("INSERT INTO homology_member (homology_id,gene_member_id,seq_member_id,cigar_line)"
+          ." VALUES (".$homology_id
+          .",".$gene_member_id_1
+          .",".$seq_member_id_1
+          .",".$dbh->quote($cigar1)
+          .")");
+  $dbh->do("INSERT INTO homology_member (homology_id,gene_member_id,seq_member_id,cigar_line)"
+          ." VALUES (".$homology_id
+          .",".$gene_member_id_2
+          .",".$seq_member_id_2
+          .",".$dbh->quote($cigar2)
+          .")");
+}
+
 sub parse_notung_homolog {
-  my ($notung_homolog_filename,$tax_prefix_size,$ignore_lines) = @_;
+  my ($params,$notung_homolog_filename,$ignore_lines) = @_;
   my %tax_count;
   my %homology_pair;
   my @seq_members;
@@ -118,7 +211,9 @@ sub parse_notung_homolog {
 
   my $all_seqs = <NOTUNG_HOMOLOG>;
 
-  while ($all_seqs =~ /\b(\w{$tax_prefix_size})_(\S+)/g) {
+  my $taxa = $params->{'ORTHOGROUP'}{'TAXA'};
+
+  while ($all_seqs =~ /($taxa).(\S+)/g) {
     $tax_count{$1}++;
     push @seq_members, "$1_$2";
   }
@@ -128,10 +223,10 @@ sub parse_notung_homolog {
     my @row  = split("\t");
     my @seq_members_local = @seq_members;
     my $seq1 = shift @row;
-    my ($tax1, $seqm1) = ($1, $2) if $seq1 =~ /(\w{$tax_prefix_size})_(\S+)/;
+    my ($tax1, $seqm1) = ($1, $2) if $seq1 =~ /^($taxa).(\S+)$/;
     while (my $homolog_value = shift @row) {
       my $seq2 = shift @seq_members_local;
-      my ($tax2, $seqm2) = ($1, $2) if $seq2 =~ /(\w{$tax_prefix_size})_(\S+)/;
+      my ($tax2, $seqm2) = ($1, $2) if $seq2 =~ /^($taxa).(\S+)$/;
       next if $seq1 eq $seq2;
 
       if ($homolog_value eq "O") {
