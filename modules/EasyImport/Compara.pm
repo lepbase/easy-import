@@ -285,6 +285,7 @@ sub fetch_species_tree_nodes {
 
   my $leaves = $speciestree_root->get_all_sorted_leaves();
   while (my $sp1 = shift @{$leaves}){
+  
     $st_nodes{$sp1->name()}{$sp1->name()} = $sp1->node_id();
     foreach my $sp2 (@{$leaves}){
       my $node_id = $sp1->find_first_shared_ancestor($sp2)->node_id();
@@ -312,72 +313,14 @@ sub add_species_tree {
   while (<SPECIES_NEWICK>) {
     chomp; $species_newick .= $_;
   }
-
-  #open TREEFILE, "<$newick_treefile" or die "Could not open newick treefile $newick_treefile\n";
-  #chomp(my $newick_tree = <TREEFILE>);
-
-  # TO DO load newick_tree from newick_treefile
-# my $newick_tree = "(((45351,669202)6073,((((((6282,6279,7209)6296,(6239,31234,6238,135651,281687)6237,54126)119089,6334)6231,((((6669,72036)6657,(((7029,13249)7524,121224)33342,(((((7159,7176)43817,(7165,43151)7164)7157,315563)43786,((((7244,7230)32281,(((7238,7245,7227,7240,7220)32351,7217)32346,(7234,46245)32358,7260)32341,7222)7215,7375)43738,36166)480117)7147,(((7460,132113)7458,(12957,13686)34695)7434,7425)7400,(77166,7070)41088,((34740,113334,13037)33415,7091)104431)33392,136037)33340)197562,126957)197563,(((32264,52283)6946,6945)6933,407821)6854)6656)1206794,((283909,6412)6340,(225164,29159,37653)6447,7574)1206795)33317,6183,7668)33213,27923)6072,10228,400682)33208;";
-
-#  $newroot->newick_format($species_newick);
-
-#   my $speciestree = new Bio::EnsEMBL::Compara::SpeciesTree;
-#   $speciestree->method_link_species_set_id(1);
-#   $speciestree->label("$params-speciestree");
-#   $speciestree->root($newroot);
-
-#  $speciestree->species_tree($newroot->newick_format());
-
-#  $sta->store($speciestree);
-  
-  
-  
   my $speciestree = $sta->fetch_by_root_id(1000);
-
-warn 1;
-
-#  my $speciestree_root = $speciestree->root();
-
-warn 2;
-
   my $newroot = Bio::EnsEMBL::Compara::Graph::NewickParser::parse_newick_into_tree($speciestree->species_tree(), "Bio::EnsEMBL::Compara::SpeciesTreeNode");
-
-warn 3;
-
   $speciestree->root($newroot);
-
-warn 4;
-  
-#  $speciestree_root->get_all_nodes();
   $newroot->build_leftright_indexing;
+  
+  
 
-warn 5;
-
-#   $speciestree->{'_root'} = $speciestree_root;
-#   $sta->store($speciestree);
-# 
-#   $speciestree->method_link_species_set_id(1);
-#   $speciestree->label("$params-speciestree");
-# 
-#   $speciestree->species_tree($newroot->newick_format());
-# 
   $sta->store($speciestree);
-
-warn 6;
-
-# $root->build_leftright_indexing;
-#exit;
-#warn "after buildleftright";
-# $newroot->node_id($speciestree->root_id());
-#warn $speciestree->root_id();
-# $newroot->distance_to_parent($speciestree->root->distance_to_parent);
-#warn "after distance_to_parent";
-# $newroot->adaptor($speciestree->root->adaptor);
-# $newroot->tree($speciestree);
-# $speciestree->{'_root'} = $newroot;
-
-# $sta->store($speciestree);
-
 }
 
 sub add_gene_tree {
@@ -895,10 +838,11 @@ sub add_to_species_set {
               .")");
   $ss_id++;
   # add single sequence and pairwise sequence sets
-  my $sth = $dbh->prepare("SELECT genome_db_id FROM genome_db WHERE genome_db_id != ".$core_dbs->{$sp}{'genome_db_id'});
+  my $sth = $dbh->prepare("SELECT genome_db_id,name FROM genome_db WHERE genome_db_id != ".$core_dbs->{$sp}{'genome_db_id'});
   $sth->execute();
   while (my $ref = $sth->fetchrow_arrayref()){
     my $db_id = $ref->[0];
+    my $db_name = $ref->[1];
     $dbh->do("INSERT INTO species_set (species_set_id,genome_db_id) "
         ."VALUES (  ".$ss_id
               .",".$core_dbs->{$sp}{'genome_db_id'}
@@ -907,11 +851,21 @@ sub add_to_species_set {
         ."VALUES (  ".$ss_id
               .",".$db_id
               .")");
+    $dbh->do("INSERT INTO species_set_tag (species_set_id,tag,value) "
+        ."VALUES (  ".$ss_id
+              .",'name'"
+              .",".$dbh->quote(join("-",sort(($core_dbs->{$sp}{'name'},$db_name))))
+              .")");
     $ss_id++;
   }
   $dbh->do("INSERT INTO species_set (species_set_id,genome_db_id) "
         ."VALUES (  ".$ss_id
               .",".$core_dbs->{$sp}{'genome_db_id'}
+              .")");
+  $dbh->do("INSERT INTO species_set_tag (species_set_id,tag,value) "
+        ."VALUES (  ".$ss_id
+              .",'name'"
+              .",".$dbh->quote($core_dbs->{$sp}{'name'})
               .")");
   return $ss_id;
 
