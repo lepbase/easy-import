@@ -51,7 +51,7 @@ load Bio::EnsEMBL::Compara::SpeciesTree;
 # create the compara database from a template
 # populate ncbi_taxa_node and ncbi_taxa_tree tables
 
-#setup_compara_db($params);
+setup_compara_db($params);
 
 add_species_tree($params);
 
