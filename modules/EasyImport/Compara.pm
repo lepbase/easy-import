@@ -57,7 +57,7 @@ sub load_sequences {
   my $species_set_id = get_species_set_id($dbh,'lepidoptera');
   my $method_link_id = 401;
   my $mlss_id = add_method_link_species_set($dbh,$method_link_id,$species_set_id,'protein_tree_lepbase_v1','lepbase');
-  my $genetree = add_gene_tree ($params,$path.'/'.$file.''.$params->{'ORTHOGROUP'}{'TREE'}, 'protein', 'tree', 'default', $mlss_id, $gene_align_id, $cluster_id, 1);
+  my $genetree = add_gene_tree ($params,$path.'/'.$file.''.$params->{'ORTHOGROUP'}{'TREE'}, 'protein', 'tree', 'default', $mlss_id, $gene_align_id, $cluster_id, 1, $st_nodes);
 #  my $st_nodes = fetch_species_tree_nodes ($params);
 
   add_homology ($dbh,$params,$genetree,$st_nodes,$path.'/'.$file.''.$params->{'ORTHOGROUP'}{'HOMOLOG'});
@@ -324,14 +324,14 @@ sub add_species_tree {
   my $newroot = Bio::EnsEMBL::Compara::Graph::NewickParser::parse_newick_into_tree($speciestree->species_tree(), "Bio::EnsEMBL::Compara::SpeciesTreeNode");
   $speciestree->root($newroot);
   $newroot->build_leftright_indexing;
-  
+  $newroot->distance_to_parent;
   
 
   $sta->store($speciestree);
 }
 
 sub add_gene_tree {
-  my ($params,$newick_treefile, $member_type, $tree_type, $clusterset_id, $mlss_id, $gene_align_id, $stable_id, $version) = @_;
+  my ($params,$newick_treefile, $member_type, $tree_type, $clusterset_id, $mlss_id, $gene_align_id, $stable_id, $version, $st_nodes) = @_;
   my $cdba = new Bio::EnsEMBL::Compara::DBSQL::DBAdaptor(
     -host => $params->{'DATABASE_COMPARA'}{'HOST'},
     -user => $params->{'DATABASE_COMPARA'}{'RW_USER'},
@@ -339,6 +339,7 @@ sub add_gene_tree {
     -port => $params->{'DATABASE_COMPARA'}{'PORT'},
     -dbname => $params->{'DATABASE_COMPARA'}{'NAME'},
   );
+  my $sta   = $cdba->get_adaptor("SpeciesTree");
   my $gta   = $cdba->get_adaptor("GeneTree");
   my $gtna  = $cdba->get_adaptor("GeneTreeNode");
   my $seqma = $cdba->get_adaptor("SeqMember");
@@ -361,6 +362,9 @@ sub add_gene_tree {
 
   my $supertree = $gta->fetch_by_root_id(1);
   $supertree->root->add_child($newroot);
+  my $species_tree = $sta->fetch_by_root_id(1000);
+  my $species_tree_root = $species_tree->root();
+#  $supertree->species_tree($species_tree);
   my $taxa = $params->{'ORTHOGROUP'}{'TAXA'};
   foreach my $node (@{$newroot->get_all_nodes}) {
     #print $node->name . "\n" if defined $node->name;
@@ -368,16 +372,36 @@ sub add_gene_tree {
       my $node_name = $node->name();
 
       $node_name =~ m/^($taxa).(.+)$/;
+      my $taxon = $1;
       $node->name($node_name);
       my $seqm = $seqma->fetch_by_stable_id($2);
       $node = bless $node, 'Bio::EnsEMBL::Compara::GeneTreeMember';
       $node->seq_member_id($seqm->seq_member_id) if $seqm;
+      $node->add_tag('species_tree_node_id',$st_nodes->{$taxon}{$taxon});
     } else {
       if (defined $node->get_tagvalue("Duplication")) {
         my $is_dup = $node->get_tagvalue("Duplication");
         $node->add_tag('is_dup', $is_dup );
         $node->add_tag('node_type',$is_dup == 1 ? 'duplication' : 'speciation');
       }
+      my $leaves = $node->get_all_sorted_leaves();
+      my %species;
+      while (my $leaf = shift @{$leaves}){
+        $species{$leaf->get_tagvalue("s")} = 1;
+      }
+      my @leaf_list;
+      foreach my $sp (keys %species){
+        push @leaf_list, $species_tree_root->find_leaf_by_name($sp)
+      } 
+      my $spt_node_id;
+      my $first = shift @leaf_list;
+      if (scalar @leaf_list > 0){
+        $spt_node_id = $first->find_first_shared_ancestor_from_leaves(\@leaf_list)->node_id;
+      }
+      else {
+        $spt_node_id = $first->node_id();
+      }
+      $node->add_tag('species_tree_node_id',$spt_node_id);
 #     if (defined $node->name and $node->name =~ /(\d*)(Y|N)/) {
 #       $node->add_tag('bootstrap',$1);
 #       $node->add_tag('is_dup',   $2 eq "Y" ? 1 : 0);
