@@ -68,15 +68,14 @@ foreach my $key (keys %{$params->{'TAXA'}}){
 chop $taxlist;
 $params->{'ORTHOGROUP'}{'TAXA'} = $taxlist;
 
-my $st_nodes = fetch_species_tree_nodes($params);
+my ($st_nodes,$core_dbs) = fetch_species_tree_nodes($params,$dbh);
 
-my %core_dbs;
 find({wanted => sub {
   my $file = $File::Find::name;
   if (!-d $file){
     if ($file =~ m/$prefix\w+$/){
       warn "importing $file\n";
-      load_sequences($dbh,$params,\%core_dbs,$file);
+      load_sequences($dbh,$params,$st_nodes,$core_dbs,$file);
     }
   }
 },

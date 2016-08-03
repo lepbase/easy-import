@@ -8,7 +8,7 @@ use Data::Dumper;
 
 # fill in/select from
 sub load_sequences {
-  my ($dbh,$params,$core_dbs,$fullname) = @_;
+  my ($dbh,$params,$st_nodes,$core_dbs,$fullname) = @_;
   my ($file,$path) = fileparse($fullname);
   my %seqs;
 
@@ -58,7 +58,7 @@ sub load_sequences {
   my $method_link_id = 401;
   my $mlss_id = add_method_link_species_set($dbh,$method_link_id,$species_set_id,'protein_tree_lepbase_v1','lepbase');
   my $genetree = add_gene_tree ($params,$path.'/'.$file.''.$params->{'ORTHOGROUP'}{'TREE'}, 'protein', 'tree', 'default', $mlss_id, $gene_align_id, $cluster_id, 1);
-  my $st_nodes = fetch_species_tree_nodes ($params);
+#  my $st_nodes = fetch_species_tree_nodes ($params);
 
   add_homology ($dbh,$params,$genetree,$st_nodes,$path.'/'.$file.''.$params->{'ORTHOGROUP'}{'HOMOLOG'});
 
@@ -269,7 +269,7 @@ sub read_seqs_to_hash {
 }
 
 sub fetch_species_tree_nodes {
-  my ($params) = @_;
+  my ($params,$dbh) = @_;
   my %st_nodes;
   my $cdba = new Bio::EnsEMBL::Compara::DBSQL::DBAdaptor(
     -host => $params->{'DATABASE_COMPARA'}{'HOST'},
@@ -284,16 +284,23 @@ sub fetch_species_tree_nodes {
   $speciestree_root = bless $speciestree_root, 'Bio::EnsEMBL::Compara::SpeciesTreeNode';
 
   my $leaves = $speciestree_root->get_all_sorted_leaves();
+  my %core_dbs;
   while (my $sp1 = shift @{$leaves}){
-  
-    $st_nodes{$sp1->name()}{$sp1->name()} = $sp1->node_id();
+    if ($sp1->name()){
+      my $production_name = $params->{'TAXA'}{$sp1->name()};
+      $production_name =~ s/_core_.+$//;
+      my $genome_db_id = fetch_meta_from_core_db($dbh,\%core_dbs,$sp1->name(),$params->{'TAXA'}{$sp1->name()},$params);
+      my $taxon_id = $core_dbs{$sp1->name()}{'taxon_id'};
+      $dbh->do("update species_tree_node set genome_db_id = ".$genome_db_id.", taxon_id = ".$taxon_id." where node_name = ".$dbh->quote($sp1->name()));
+      $st_nodes{$sp1->name()}{$sp1->name()} = $sp1->node_id();
+    }
     foreach my $sp2 (@{$leaves}){
       my $node_id = $sp1->find_first_shared_ancestor($sp2)->node_id();
       $st_nodes{$sp1->name()}{$sp2->name()} = $node_id;
       $st_nodes{$sp2->name()}{$sp1->name()} = $node_id;
     }
   }
-  return \%st_nodes;
+  return (\%st_nodes,\%core_dbs);;
 }
 
 sub add_species_tree {
