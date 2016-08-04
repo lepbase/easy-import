@@ -150,9 +150,7 @@ sub add_homology {
 
     }
   }
-
-die 2;
-
+  
 }
 
 sub add_homology_members {
