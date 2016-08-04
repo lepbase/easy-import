@@ -80,14 +80,13 @@ sub add_homology {
 
   $genetree = bless $genetree, 'Bio::EnsEMBL::Compara::GeneTree';
   my $gene_tree_root_id = $genetree->root_id();
-  my $mlss_id = $genetree->method_link_species_set_id();
   my $description = "";
   my $species_tree_node_id;
   my $gene_tree_node_id;
 
   # get all pairwise gene tree node ancestors and store in hash
   my %gt_nodes;
-  
+
   my $leaves = $genetree->get_all_sorted_leaves();
   foreach my $g1 (@{$leaves}){
     $g1 = bless $g1, 'Bio::EnsEMBL::Compara::GeneTreeNode';
@@ -99,7 +98,7 @@ sub add_homology {
       $gt_nodes{$g2->name()}{$g2->name()} = $node_id;
     }
   }
-  
+
   my $taxa = $params->{'ORTHOGROUP'}{'TAXA'};
 
   for my $seq1 (sort keys %{$homology_pair}) {
@@ -110,6 +109,20 @@ sub add_homology {
       my ($gtn1_id,$gtn2_id);
 
       $description = $homology_pair->{$seq1}{$seq2}{description};
+
+      my $species_set_name = join('-',(sort(($tax1,$tax2))));
+      my $species_set_id = get_species_set_id($dbh,$species_set_name);
+      my ($method_link_id,$mlss_name);
+      if ($description =~ m/ortholog/i){
+        $method_link_id = 201;
+        $mlss_name = $species_set_name.'_Orthologues';
+      }
+      else {
+        $method_link_id = 202;
+        $mlss_name = $species_set_name.'_Paralogues';
+      }
+
+      my $mlss_id = add_method_link_species_set($dbh,$method_link_id,$species_set_id,$mlss_name,'lepbase');
 
       # get gene_tree_node id
       $gene_tree_node_id = $gt_nodes{$seq1}{$seq2};
@@ -133,7 +146,7 @@ sub add_homology {
     }
   }
 
-die 2; 
+die 2;
 
 }
 
@@ -147,7 +160,7 @@ sub add_homology_members {
     -dbname => $params->{'DATABASE_COMPARA'}{'NAME'},
   );
   my $seqma = $cdba->get_adaptor("SeqMember");
-  
+
   my $sm1 = $seqma->fetch_by_stable_id($seqm1);
   my $gm1 = $sm1->gene_member();
   my $seq_member_id_1  = $sm1->dbID();
@@ -162,7 +175,7 @@ sub add_homology_members {
       die "Could not find SeqMember $seqm1 with dbID $seq_member_id_1 in gene_align_member";
     }
   }
-  
+
   my $sm2 = $seqma->fetch_by_stable_id($seqm2);
   my $gm2 = $sm2->gene_member();
   my $seq_member_id_2  = $sm2->dbID();
@@ -325,7 +338,7 @@ sub add_species_tree {
   $speciestree->root($newroot);
   $newroot->build_leftright_indexing;
   $newroot->distance_to_parent;
-  
+
 
   $sta->store($speciestree);
 }
@@ -392,7 +405,7 @@ sub add_gene_tree {
       my @leaf_list;
       foreach my $sp (keys %species){
         push @leaf_list, $species_tree_root->find_leaf_by_name($sp)
-      } 
+      }
       my $spt_node_id;
       my $first = shift @leaf_list;
       if (scalar @leaf_list > 0){
