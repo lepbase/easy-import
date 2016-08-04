@@ -107,19 +107,22 @@ sub add_homology {
       my ($tax1,$seqm1) = ($1,$2) if $seq1 =~ /^($taxa).(\S+)$/;
       my ($tax2,$seqm2) = ($1,$2) if $seq2 =~ /^($taxa).(\S+)$/;
       my ($gtn1_id,$gtn2_id);
-
+      my $sp1 = $params->{'TAXA'}{$tax1};
+      $sp1 =~ s/_core_.+$//;
+      my $sp2 = $params->{'TAXA'}{$tax2};
+      $sp2 =~ s/_core_.+$//;
       $description = $homology_pair->{$seq1}{$seq2}{description};
 
-      my $species_set_name = join('-',(sort(($tax1,$tax2))));
+      my $species_set_name = $sp1 eq $sp2 ? $sp1 : join('-',(sort(($sp1,$sp2))));
       my $species_set_id = get_species_set_id($dbh,$species_set_name);
       my ($method_link_id,$mlss_name);
       if ($description =~ m/ortholog/i){
         $method_link_id = 201;
-        $mlss_name = $species_set_name.'_Orthologues';
+        $mlss_name = $species_set_name.'-Orthologues';
       }
       else {
         $method_link_id = 202;
-        $mlss_name = $species_set_name.'_Paralogues';
+        $mlss_name = $species_set_name.'-Paralogues';
       }
 
       my $mlss_id = add_method_link_species_set($dbh,$method_link_id,$species_set_id,$mlss_name,'lepbase');
