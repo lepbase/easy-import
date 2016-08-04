@@ -150,7 +150,7 @@ sub add_homology {
 
     }
   }
-  
+
 }
 
 sub add_homology_members {
@@ -816,7 +816,7 @@ sub fetch_meta_from_core_db {
   }
   $csth->execute('species.production_name');
   if ($csth->rows > 0){
-    $core_dbs->{$sp}{'name'} = $csth->fetchrow_arrayref()->[0];
+    $core_dbs->{$sp}{'name'} = ucfirst($csth->fetchrow_arrayref()->[0]);
   }
   else {
     return;
