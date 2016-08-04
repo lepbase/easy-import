@@ -115,14 +115,16 @@ sub add_homology {
 
       my $species_set_name = $sp1 eq $sp2 ? $sp1 : join('-',(sort(($sp1,$sp2))));
       my $species_set_id = get_species_set_id($dbh,$species_set_name);
-      my ($method_link_id,$mlss_name);
+      my ($method_link_id,$mlss_name,$homology_type);
       if ($description =~ m/ortholog/i){
         $method_link_id = 201;
         $mlss_name = $species_set_name.'-Orthologues';
+        $homology_type = 'Orthologues';
       }
       else {
         $method_link_id = 202;
         $mlss_name = $species_set_name.'-Paralogues';
+        $homology_type = 'Paralogues';
       }
 
       my $mlss_id = add_method_link_species_set($dbh,$method_link_id,$species_set_id,$mlss_name,'lepbase');
@@ -144,7 +146,7 @@ sub add_homology {
               .")");
       my $homology_id = $dbh->last_insert_id(undef,undef,undef,undef);
 
-      add_homology_members($dbh,$params,$homology_id,$seqm1,$seqm2);
+      add_homology_members($dbh,$params,$homology_id,$seqm1,$seqm2,$homology_type);
 
     }
   }
@@ -154,7 +156,7 @@ die 2;
 }
 
 sub add_homology_members {
-  my ($dbh,$params,$homology_id,$seqm1,$seqm2) = @_;
+  my ($dbh,$params,$homology_id,$seqm1,$seqm2,$homology_type) = @_;
   my $cdba = new Bio::EnsEMBL::Compara::DBSQL::DBAdaptor(
     -host => $params->{'DATABASE_COMPARA'}{'HOST'},
     -user => $params->{'DATABASE_COMPARA'}{'RW_USER'},
@@ -209,6 +211,10 @@ sub add_homology_members {
           .",".$seq_member_id_2
           .",".$dbh->quote($cigar2)
           .")");
+
+  # increment orthologue/paralogue counts
+  $dbh->do("UPDATE gene_member SET `$homology_type` = `$homology_type` + 1 WHERE gene_member_id = $gene_member_id_1");
+  $dbh->do("UPDATE gene_member SET `$homology_type` = `$homology_type` + 1 WHERE gene_member_id = $gene_member_id_2");
 }
 
 sub parse_notung_homolog {
@@ -245,7 +251,7 @@ sub parse_notung_homolog {
       my ($tax2, $seqm2) = ($1, $2) if $seq2 =~ /^($taxa).(\S+)$/;
       next if $seq1 eq $seq2;
       next if $homology_pair{$seq2}{$seq1};
-      
+
       if ($homolog_value eq "O") {
         if ($tax_count{$tax1} == 1 and $tax_count{$tax2} == 1) {
           $homology_pair {$seq1}{$seq2}{description} = "ortholog_one2one";
