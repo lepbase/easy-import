@@ -244,7 +244,8 @@ sub parse_notung_homolog {
       my $seq2 = shift @seq_members_local;
       my ($tax2, $seqm2) = ($1, $2) if $seq2 =~ /^($taxa).(\S+)$/;
       next if $seq1 eq $seq2;
-
+      next if $homology_pair{$seq2}{$seq1};
+      
       if ($homolog_value eq "O") {
         if ($tax_count{$tax1} == 1 and $tax_count{$tax2} == 1) {
           $homology_pair {$seq1}{$seq2}{description} = "ortholog_one2one";
