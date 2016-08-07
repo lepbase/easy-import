@@ -86,7 +86,6 @@ sub add_homology {
 
   # get all pairwise gene tree node ancestors and store in hash
   my %gt_nodes;
-
   my $leaves = $genetree->get_all_sorted_leaves();
   foreach my $g1 (@{$leaves}){
     $g1 = bless $g1, 'Bio::EnsEMBL::Compara::GeneTreeNode';
@@ -309,6 +308,7 @@ sub fetch_species_tree_nodes {
   while (my $sp1 = shift @{$leaves}){
     if ($sp1->name()){
       my $production_name = $params->{'TAXA'}{$sp1->name()};
+
       $production_name =~ s/_core_.+$//;
       my $genome_db_id = fetch_meta_from_core_db($dbh,\%core_dbs,$sp1->name(),$params->{'TAXA'}{$sp1->name()},$params);
       my $taxon_id = $core_dbs{$sp1->name()}{'taxon_id'};
@@ -352,6 +352,7 @@ sub add_species_tree {
 }
 
 sub add_gene_tree {
+
   my ($params,$newick_treefile, $member_type, $tree_type, $clusterset_id, $mlss_id, $gene_align_id, $stable_id, $version, $st_nodes) = @_;
   my $cdba = new Bio::EnsEMBL::Compara::DBSQL::DBAdaptor(
     -host => $params->{'DATABASE_COMPARA'}{'HOST'},
@@ -372,6 +373,8 @@ sub add_gene_tree {
 
   open TREEFILE, "<$newick_treefile" or die "Could not open newick treefile $newick_treefile\n";
   chomp(my $newick_tree = <TREEFILE>);
+# HACK to accommodate typo in input files
+$newick_tree =~ s/PAPMA\]/PAPMAC]/g;
   my $newroot = Bio::EnsEMBL::Compara::Graph::NewickParser::parse_newick_into_tree($newick_tree, "Bio::EnsEMBL::Compara::GeneTreeNode");
   $newroot->build_leftright_indexing;
 
@@ -412,6 +415,7 @@ sub add_gene_tree {
       }
       my @leaf_list;
       foreach my $sp (keys %species){
+
         push @leaf_list, $species_tree_root->find_leaf_by_name($sp)
       }
       my $spt_node_id;
