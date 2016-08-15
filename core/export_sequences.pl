@@ -108,7 +108,7 @@ foreach my $slice (@supercontigs) {
     $supercontig_count++;
 }
 
-print "$dbname - Num of supercontigs : $supercontig_count\n";
+print "$dbname - Num of supercontigs        : $supercontig_count\n";
 
 # Get all transcripts
 # For each transcript
@@ -120,42 +120,50 @@ my $gene_adaptor       = $dba->get_GeneAdaptor();
 my @transcripts        = @{$transcript_adaptor->fetch_all_by_biotype('protein_coding')};
 my $gene;
 my ($pep, $cds, $bounded_exon, $transcript_id, $translation_id, $desc)  = ("","","","","");
-my ($protein_fh, $cds_fh, $bounded_exon_fh, $cds_translationid_fh);
+my ($protein_fh, $cds_fh, $canonical_protein_fh, $canonical_cds_fh, $bounded_exon_fh, $cds_translationid_fh);
 my $protein_count = 0;
+my $canonical_count = 0;
 
-open $protein_fh,           ">", "$outdir/$display_name\_-_proteins.fa"          or die $!;
-open $cds_fh,               ">", "$outdir/$display_name\_-_cds.fa"               or die $!;
-open $cds_translationid_fh, ">", "$outdir/$display_name\_-_cds_translationid.fa" or die $!;
-open $bounded_exon_fh,      ">", "$outdir/$display_name\_-_protein_bounded_exon.fa"  or die $!;
+open $protein_fh,           ">", "$outdir/$display_name\_-_proteins.fa"             or die $!;
+open $cds_fh,               ">", "$outdir/$display_name\_-_cds.fa"                  or die $!;
+open $canonical_protein_fh, ">", "$outdir/$display_name\_-_canonical_proteins.fa"   or die $!;
+open $canonical_cds_fh,     ">", "$outdir/$display_name\_-_canonical_cds.fa"        or die $!;
+open $cds_translationid_fh, ">", "$outdir/$display_name\_-_cds_translationid.fa"    or die $!;
+open $bounded_exon_fh,      ">", "$outdir/$display_name\_-_protein_bounded_exon.fa" or die $!;
 
 foreach my $transcript (@transcripts) {
-    if (defined $transcript->translate() ) {
-        $transcript_id   = $transcript->stable_id();
-        $translation_id  = $transcript->translation()->stable_id();
-        $desc = "";
-        # Leave desc out for now, getting a stack overflow error on next line
-        # $gene            = $gene_adaptor->fetch_by_transcript_id($transcript_id);
-        # if    (defined $transcript->description) {
-        #        $desc = $transcript->description;
-        # }
-        # elsif (defined $gene->description) {
-        #        $desc = $gene->description;
-        # }
-        $pep = $transcript->translate()->seq;
-        $cds = $transcript->translateable_seq();
-        $bounded_exon = _prepare_exon_sequences($transcript,$pep);
-        # print $cds_fh               ">$transcript_id $dbname cds $desc\n$cds\n";
-        # print $cds_translationid_fh ">$translation_id $dbname cds_translationid $desc\n$cds\n";
-        # print $protein_fh           ">$translation_id $dbname protein $desc\n$pep\n";
-        print $cds_fh               ">$transcript_id $dbname cds $desc\n$cds\n";
-        print $cds_translationid_fh ">$translation_id $dbname cds_translationid $desc\n$cds\n";
-        print $bounded_exon_fh      ">$translation_id $dbname protein_bounded_exon $desc\n$bounded_exon\n";
-        print $protein_fh           ">$translation_id $dbname protein $desc\n$pep\n";
-        $protein_count++;
+  if (defined $transcript->translate() ) {
+    $transcript_id   = $transcript->stable_id();
+    $translation_id  = $transcript->translation()->stable_id();
+    $desc = "";
+    $gene            = $gene_adaptor->fetch_by_transcript_stable_id($transcript_id);
+    if (defined $transcript->description) {
+      $desc = $transcript->description;
     }
+    elsif (defined $gene->description) {
+      $desc = $gene->description;
+    }
+    $pep = $transcript->translate()->seq;
+    $cds = $transcript->translateable_seq();
+    $bounded_exon = _prepare_exon_sequences($transcript,$pep);
+    # print $cds_fh               ">$transcript_id $dbname cds $desc\n$cds\n";
+    # print $cds_translationid_fh ">$translation_id $dbname cds_translationid $desc\n$cds\n";
+    # print $protein_fh           ">$translation_id $dbname protein $desc\n$pep\n";
+    print $cds_fh               ">$transcript_id $dbname cds $desc\n$cds\n";
+    print $protein_fh           ">$translation_id $dbname protein $desc\n$pep\n";
+    $protein_count++;
+    if ($transcript->is_canonical()){
+      print $canonical_cds_fh     ">$transcript_id $dbname cds $desc\n$cds\n";
+      print $canonical_protein_fh ">$translation_id $dbname protein $desc\n$pep\n";
+      print $cds_translationid_fh ">$translation_id $dbname cds_translationid $desc\n$cds\n";
+      print $bounded_exon_fh      ">$translation_id $dbname protein_bounded_exon $desc\n$bounded_exon\n";
+      $canonical_count++;
+    }
+  }
 }
 
-print "$dbname - Num of proteins     : $protein_count\n";
+print "$dbname - Num of proteins           : $protein_count\n";
+print "$dbname - Num of canonical proteins : $canonical_count\n";
 
 
 sub usage {
