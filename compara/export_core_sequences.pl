@@ -26,8 +26,9 @@ my %sections = (
               'RO_USER' => 1
             },
    'TAXA' =>	{},
-   'OVERWRITE' =>	{},
-   'SETUP' =>	{  'FASTA_DIR' => 1 }
+   'SETUP' =>	{  'FASTA_DIR' => 1,
+                 'OVERWRITE' =>	1
+               }
 
   );
 ## check that all required parameters have been defined in the config file
