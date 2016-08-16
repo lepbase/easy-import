@@ -18,11 +18,8 @@ use EasyImport::Core;
 my %sections = (
   'ENSEMBL' =>	{ 	'LOCAL' => 1
           },
-  'DATABASE_CORE' =>	{ 	'NAME' => 1,
-              'HOST' => 1,
+  'DATABASE_CORE' =>	{ 	'HOST' => 1,
               'PORT' => 1,
-              'RW_USER' => 1,
-              'RW_PASS' => 1,
               'RO_USER' => 1
             },
    'TAXA' =>	{},
