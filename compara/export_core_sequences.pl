@@ -24,7 +24,7 @@ my %sections = (
             },
    'TAXA' =>	{},
    'SETUP' =>	{  'FASTA_DIR' => 1,
-                 'OVERWRITE' =>	1
+                 'REMOVE' =>	1
                }
 
   );
@@ -46,11 +46,17 @@ my $outdir = $params->{'SETUP'}{'FASTA_DIR'};
 mkdir $outdir unless -d $outdir;
 
 my %overwrite;
-for my $taxon (@{$params->{'SETUP'}{'OVERWRITE'}}){
+for my $taxon (@{$params->{'SETUP'}{'REMOVE'}}){
   $overwrite{$taxon} = 1;
 }
 
 for my $taxon (keys %{$params->{'TAXA'}}){
+
+  # test if file exists and should be overwritten
+  if (-e "$outdir/$taxon\_-_canonical_proteins.fa"){
+    next unless $overwrite{$taxon};
+  }
+
   my $dbname = $params->{'TAXA'}{$taxon};
 
   my $dba = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
@@ -72,12 +78,6 @@ for my $taxon (keys %{$params->{'TAXA'}}){
   # convert display name spaces to underscores
   $display_name =~ s/ /_/g;
 
-  # test if file exists and should be overwritten
-  if (-e "$outdir/$display_name\_-_canonical_proteins.fa"){
-    next unless $overwrite{$taxon};
-  }
-
-
   # Get all transcripts
   # For each transcript
   #   Print to proteins.fa, cds.fa, cds_translationid.fa
@@ -88,10 +88,10 @@ for my $taxon (keys %{$params->{'TAXA'}}){
   my ($canonical_protein_fh, $canonical_cds_fh, $bounded_exon_fh, $cds_translationid_fh);
   my $canonical_count = 0;
 
-  open $canonical_protein_fh, ">", "$outdir/$display_name\_-_canonical_proteins.fa"   or die $!;
-  open $canonical_cds_fh,     ">", "$outdir/$display_name\_-_canonical_cds.fa"        or die $!;
-  open $cds_translationid_fh, ">", "$outdir/$display_name\_-_cds_translationid.fa"    or die $!;
-  open $bounded_exon_fh,      ">", "$outdir/$display_name\_-_protein_bounded_exon.fa" or die $!;
+  open $canonical_protein_fh, ">", "$outdir/$taxon\_-_canonical_proteins.fa"   or die $!;
+  open $canonical_cds_fh,     ">", "$outdir/$taxon\_-_canonical_cds.fa"        or die $!;
+  open $cds_translationid_fh, ">", "$outdir/$taxon\_-_cds_translationid.fa"    or die $!;
+  open $bounded_exon_fh,      ">", "$outdir/$taxon\_-_protein_bounded_exon.fa" or die $!;
 
   foreach my $transcript (@transcripts) {
     if (defined $transcript->translate() ) {
@@ -101,10 +101,10 @@ for my $taxon (keys %{$params->{'TAXA'}}){
         $pep = $transcript->translate()->seq;
         $cds = $transcript->translateable_seq();
         $bounded_exon = _prepare_exon_sequences($transcript,$pep);
-        print $canonical_cds_fh     ">$transcript_id $dbname cds\n$cds\n";
-        print $canonical_protein_fh ">$translation_id $dbname protein\n$pep\n";
-        print $cds_translationid_fh ">$translation_id $dbname cds_translationid\n$cds\n";
-        print $bounded_exon_fh      ">$translation_id $dbname protein_bounded_exon\n$bounded_exon\n";
+        print $canonical_cds_fh     ">${taxon}_$transcript_id $dbname cds\n$cds\n";
+        print $canonical_protein_fh ">${taxon}_$translation_id $dbname protein\n$pep\n";
+        print $cds_translationid_fh ">${taxon}_$translation_id $dbname cds_translationid\n$cds\n";
+        print $bounded_exon_fh      ">${taxon}_$translation_id $dbname protein_bounded_exon\n$bounded_exon\n";
         $canonical_count++;
       }
     }
