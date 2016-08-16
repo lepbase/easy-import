@@ -113,7 +113,7 @@ for my $taxon (keys %{$params->{'TAXA'}}){
 }
 
 sub usage {
-	return "USAGE: perl /path/to/export_sequences.pl /path/to/config_file.ini";
+	return "USAGE: perl /path/to/export_core_sequences.pl /path/to/config_file.ini";
 }
 
 sub _prepare_exon_sequences {
