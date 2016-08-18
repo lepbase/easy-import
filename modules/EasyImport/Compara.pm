@@ -258,7 +258,7 @@ sub parse_notung_homolog {
           $homology_pair {$seq1}{$seq2}{description} = "ortholog_many2many";
         }
       } elsif ($homolog_value eq "P") {
-        $homology_pair {$seq1}{$seq2}{description} = ($tax1 eq $tax2) ? "within_species_paralog" : "other_species_paralog";
+        $homology_pair {$seq1}{$seq2}{description} = ($tax1 eq $tax2) ? "within_species_paralog" : "between_species_paralog";
       }
     }
   }
@@ -299,6 +299,8 @@ sub fetch_species_tree_nodes {
     -dbname => $params->{'DATABASE_COMPARA'}{'NAME'},
   );
   my $sta = $cdba->get_adaptor("SpeciesTree");
+  my $ncbita = $cdba->get_adaptor("NCBITaxon");
+
   my $speciestree = $sta->fetch_by_root_id(1000);
   my $speciestree_root = $speciestree->root();
   $speciestree_root = bless $speciestree_root, 'Bio::EnsEMBL::Compara::SpeciesTreeNode';
@@ -308,10 +310,10 @@ sub fetch_species_tree_nodes {
   while (my $sp1 = shift @{$leaves}){
     if ($sp1->name()){
       my $production_name = $params->{'TAXA'}{$sp1->name()};
-
       $production_name =~ s/_core_.+$//;
       my $genome_db_id = fetch_meta_from_core_db($dbh,\%core_dbs,$sp1->name(),$params->{'TAXA'}{$sp1->name()},$params);
       my $taxon_id = $core_dbs{$sp1->name()}{'taxon_id'};
+      $sp1->taxon_id($taxon_id);
       $dbh->do("update species_tree_node set genome_db_id = ".$genome_db_id.", taxon_id = ".$taxon_id." where node_name = ".$dbh->quote($sp1->name()));
       $st_nodes{$sp1->name()}{$sp1->name()} = $sp1->node_id();
     }
@@ -321,6 +323,19 @@ sub fetch_species_tree_nodes {
       $st_nodes{$sp2->name()}{$sp1->name()} = $node_id;
     }
   }
+
+  my $nodes = $speciestree_root->get_all_nodes();
+  while (my $node = shift @{$nodes}){
+    next if $node->is_leaf();
+    my @leaf_tax_nodes;
+    my $node_leaves = $node->get_all_sorted_leaves();
+    for my $node_leaf (@{$node_leaves}) {
+      push @leaf_tax_nodes, $ncbita->fetch_node_by_taxon_id($node_leaf->taxon_id());
+    }
+    my $tax_node = $ncbita->fetch_first_shared_ancestor_indexed(@leaf_tax_nodes);
+    $dbh->do("update species_tree_node set taxon_id = ". $tax_node->taxon_id() ." where node_id = ".$dbh->quote($node->node_id()));
+  }
+
   return (\%st_nodes,\%core_dbs);;
 }
 
@@ -886,12 +901,18 @@ sub add_to_species_set {
               .",'name'"
               .",'lepidoptera'"
               .")");
+    $dbh->do("INSERT INTO species_set_header (species_set_id,name,size) "
+        ."VALUES (  ".1
+              .",'lepidoptera'"
+              .",0"
+              .")");
 
   }
   $dbh->do("INSERT INTO species_set (species_set_id,genome_db_id) "
         ."VALUES (  ".1
               .",".$core_dbs->{$sp}{'genome_db_id'}
               .")");
+  $dbh->do("UPDATE species_set_header SET size = size + 1 WHERE species_set_id = 1");
   $ss_id++;
   # add single sequence and pairwise sequence sets
   my $sth = $dbh->prepare("SELECT genome_db_id,name FROM genome_db WHERE genome_db_id != ".$core_dbs->{$sp}{'genome_db_id'});
@@ -912,6 +933,11 @@ sub add_to_species_set {
               .",'name'"
               .",".$dbh->quote(join("-",sort(($core_dbs->{$sp}{'name'},$db_name))))
               .")");
+    $dbh->do("INSERT INTO species_set_header (species_set_id,name,size) "
+        ."VALUES (  ".$ss_id
+              .",".$dbh->quote(join("-",sort(($core_dbs->{$sp}{'name'},$db_name))))
+              .",2"
+              .")");
     $ss_id++;
   }
   $dbh->do("INSERT INTO species_set (species_set_id,genome_db_id) "
@@ -922,6 +948,11 @@ sub add_to_species_set {
         ."VALUES (  ".$ss_id
               .",'name'"
               .",".$dbh->quote($core_dbs->{$sp}{'name'})
+              .")");
+  $dbh->do("INSERT INTO species_set_header (species_set_id,name,size) "
+        ."VALUES (  ".$ss_id
+              .",".$dbh->quote($core_dbs->{$sp}{'name'})
+              .",1"
               .")");
   return $ss_id;
 
