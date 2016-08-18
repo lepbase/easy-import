@@ -85,13 +85,12 @@ for my $taxon (keys %{$params->{'TAXA'}}){
   my $transcript_adaptor = $dba->get_TranscriptAdaptor();
   my @transcripts        = @{$transcript_adaptor->fetch_all_by_biotype('protein_coding')};
   my ($pep, $cds, $bounded_exon, $transcript_id, $translation_id, $desc)  = ("","","","","");
-  my ($canonical_protein_fh, $canonical_cds_fh, $bounded_exon_fh, $cds_translationid_fh);
+  my ($canonical_protein_fh, $bounded_exon_fh, $cds_translationid_fh);
   my $canonical_count = 0;
 
   open $canonical_protein_fh, ">", "$outdir/$taxon\_-_canonical_proteins.fa"   or die $!;
-  open $canonical_cds_fh,     ">", "$outdir/$taxon\_-_canonical_cds.fa"        or die $!;
-  open $cds_translationid_fh, ">", "$outdir/$taxon\_-_cds_translationid.fa"    or die $!;
-  open $bounded_exon_fh,      ">", "$outdir/$taxon\_-_protein_bounded_exon.fa" or die $!;
+  open $cds_translationid_fh, ">", "$outdir/$taxon\_-_canonical_cds_translationid.fa"    or die $!;
+  open $bounded_exon_fh,      ">", "$outdir/$taxon\_-_canonical_protein_bounded_exon.fa" or die $!;
 
   foreach my $transcript (@transcripts) {
     if (defined $transcript->translate() ) {
@@ -101,7 +100,6 @@ for my $taxon (keys %{$params->{'TAXA'}}){
         $pep = $transcript->translate()->seq;
         $cds = $transcript->translateable_seq();
         $bounded_exon = _prepare_exon_sequences($transcript,$pep);
-        print $canonical_cds_fh     ">${taxon}_$transcript_id $dbname cds\n$cds\n";
         print $canonical_protein_fh ">${taxon}_$translation_id $dbname protein\n$pep\n";
         print $cds_translationid_fh ">${taxon}_$translation_id $dbname cds_translationid\n$cds\n";
         print $bounded_exon_fh      ">${taxon}_$translation_id $dbname protein_bounded_exon\n$bounded_exon\n";
