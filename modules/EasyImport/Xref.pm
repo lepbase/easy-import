@@ -89,7 +89,7 @@ sub read_iprscan {
 		chomp;
 		my ($name,$hash,$protein_length,$analysis,$hitname,$desc,$start,$end,$evalue,@row) = split /\t/;
 		my ($translation_id,$transcript_id,$gene_id) = translation_id($dbh,$name);
-		die "ERROR: no translation_id for $name\n" unless $translation_id;
+		warn "ERROR: no translation_id for $name\n" and next unless $translation_id;
 		my $analysis_id = analysis_id($dbh,$analysis,$analysis); # analysis takes logic_name and db but for interproscan we seem to have
 		my $ipr = ipr($dbh,$hitname);
 		if ($ipr){

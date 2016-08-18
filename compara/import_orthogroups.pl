@@ -56,6 +56,7 @@ load Bio::EnsEMBL::Compara::GeneTreeNode;
 load Bio::EnsEMBL::Compara::GeneTreeMember;
 load Bio::EnsEMBL::Compara::SpeciesTreeNode;
 load Bio::EnsEMBL::Compara::SpeciesTree;
+load Bio::EnsEMBL::Compara::DBSQL::NCBITaxonAdaptor;
 
 my $dbh = compara_db_connect($params);
 

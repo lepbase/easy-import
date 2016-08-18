@@ -1430,21 +1430,22 @@ sub _split_scaf {
 }
 
 
-sub _fasta_file_to_scaffold_hash {
-    my $fastafile = shift;
-    my %sequences;
-    open IN,$fastafile;
-    my $seqid;
-    while (<IN>){
-        next if /^\s*$/ or /^#/;
-		if (/^>\s*(\S+)/) {
-            $seqid = $1;
-        }
-        else {
-            chomp($sequences{$seqid}{seq} .= $_  );
-        }
+sub _fasta_file_to_hash {
+  my $fastafile = shift;
+  my %sequences;
+  open IN,$fastafile or warn "Could not open $fastafile";
+  my $seqid;
+  while (<IN>){
+    next if /^\s*$/ or /^#/;
+    if (/^>\s*(\S+)/) {
+      $seqid = $1;
     }
-    return \%sequences;
+    else {
+      chomp($sequences{$seqid}{seq} .= $_  );
+    }
+  }
+  close IN;
+  return \%sequences;
 }
 
 sub _scaffold_hash_to_contig_hash {

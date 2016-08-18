@@ -24,10 +24,10 @@ my %sections = (
             },
    'TAXA' =>	{},
    'SETUP' =>	{  'FASTA_DIR' => 1,
-                  'REMOVE' =>	1,
+                 'REMOVE' =>	1,
                  'VIRTENV' => 1,
                  'ORTHOFINDER' => 1,
-                 'BLAST' => 1,
+                 'BLASTPATH' => 1,
                  'MCL' => 1
                }
 

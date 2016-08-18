@@ -1006,5 +1006,56 @@ sub core_db_connect {
   return $dbh;
 }
 
+sub make_orthogroup_files {
+  my $params = shift @_;
+  my @species_list   = keys %{$params->{'TAXA'}};
+  my $species_regexp = join("|",@species_list);
+
+  my %sequences;
+
+  # load all sequences in memory
+  for my $species (@species_list) {
+    $sequences{$species}{faa} = _fasta_file_to_hash($params->{'SETUP'}{'FASTA_DIR'} . "/$species\_-_canonical_proteins.fa");
+    $sequences{$species}{fna} = _fasta_file_to_hash($params->{'SETUP'}{'FASTA_DIR'} . "/$species\_-_cds_translationid.fa");
+    $sequences{$species}{fba} = _fasta_file_to_hash($params->{'SETUP'}{'FASTA_DIR'} . "/$species\_-_protein_bounded_exon.fa");
+  }
+
+  # create folder with sequences for each orthogroup
+  open OG, "<" . $params->{'SETUP'}{'ORTHOFINDER_GROUPS'} or die $!;
+  mkdir "orthogroups";
+  while (<OG>) {
+    my @tokens = split /\s+/;
+    my $orthogroup_id = shift @tokens;
+    $orthogroup_id =~ s/:$//;
+    mkdir "orthogroups/$orthogroup_id";
+    open IDS, ">orthogroups/$orthogroup_id/$orthogroup_id" or die $!;
+    open FAA, ">orthogroups/$orthogroup_id/$orthogroup_id.faa" or die $!;
+    open FNA, ">orthogroups/$orthogroup_id/$orthogroup_id.fna" or die $!;
+    open FBA, ">orthogroups/$orthogroup_id/$orthogroup_id.fba" or die $!;
+    for my $sequence_id (@tokens) {
+      if ($sequence_id =~ /^(${species_regexp})_\S+$/) {
+        my $species = $1;
+        if (exists $sequences{$species}{faa}{$sequence_id} and 
+            exists $sequences{$species}{fna}{$sequence_id} and
+            exists $sequences{$species}{fba}{$sequence_id}) {
+          print IDS "$sequence_id\n";
+          print FAA ">$sequence_id\n" . $sequences{$species}{faa}{$sequence_id}->{seq} . "\n";
+          print FNA ">$sequence_id\n" . $sequences{$species}{fna}{$sequence_id}->{seq} . "\n";
+          print FBA ">$sequence_id\n" . $sequences{$species}{fba}{$sequence_id}->{seq} . "\n";
+        }
+        else {
+          warn "$sequence_id does not exist in one of the input fasta files";
+        }
+      }
+      else {
+        warn "$sequence_id does not match species list";
+      }
+    }
+    close IDS;
+    close FAA;
+    close FNA;
+    close FBA;
+  }
+}
 
 1;
