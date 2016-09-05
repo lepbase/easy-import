@@ -1813,7 +1813,10 @@ sub gff_feature_summary {
 	my @tsc_types;
 	foreach my $key (keys %{$params->{'GFF'}}){
 		my $value = $params->{'GFF'}{$key};
-		if (ref $value || ref $value eq 'ARRAY') {
+    if ($key = 'FORMAT'){
+      $gff->format(lc $value);
+    }
+		elsif (ref $value || ref $value eq 'ARRAY') {
 			my @value = @$value;
 			my $type = shift @value;
 			if ($type eq 'MULTILINE'){
