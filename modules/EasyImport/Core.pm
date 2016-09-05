@@ -397,7 +397,7 @@ sub rewrite_gff {
 	#$gff->add_expectation('cds|exon|mrna|trna|transcript|gene','<=[_start,_end]','SELF','warn');
 	foreach my $key (keys %{$params->{'GFF'}}){
 		my $value = $params->{'GFF'}{$key};
-		if ($key = 'FORMAT'){
+		if ($key eq 'FORMAT'){
       $gff->format(lc $value);
     }
 		elsif (ref $value || ref $value eq 'ARRAY') {
@@ -1816,10 +1816,7 @@ sub gff_feature_summary {
 	my @tsc_types;
 	foreach my $key (keys %{$params->{'GFF'}}){
 		my $value = $params->{'GFF'}{$key};
-    if ($key = 'FORMAT'){
-      $gff->format(lc $value);
-    }
-		elsif (ref $value || ref $value eq 'ARRAY') {
+    if (ref $value || ref $value eq 'ARRAY') {
 			my @value = @$value;
 			my $type = shift @value;
 			if ($type eq 'MULTILINE'){
