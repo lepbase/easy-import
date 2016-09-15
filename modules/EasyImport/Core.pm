@@ -228,6 +228,7 @@ sub gff_to_ensembl {
             my $len = sum @lengths;
             my $l = 0;
             my $strand = $mrna->attributes->{_strand};
+            for (my $i = 0; $i < @phases; $i++) { $phases[$i] = 0 if $phases[$i] eq "." }
             if ($len % 3 != 0 || ($strand > 0 && $phases[0] != 0) || ($strand < 0 && $phases[-1] != 0)){
               # assume first cds has been phased correctly
               $l = $strand > 0 ? $phases[0] : $phases[-1];
@@ -235,6 +236,7 @@ sub gff_to_ensembl {
                 $l = $adjust[$l];
               }
             }
+
             if ($mrna->attributes->{_strand} > 0){
               for (my $p = 0; $p < @phases; $p++){
   					  	my $phase = $l % 3;
@@ -380,6 +382,34 @@ sub rewrite_gff {
 			system "mv ".$filename.".tmp ".$filename;
 		}
 	}
+        if ($params->{'GFF'}{'FORMAT'} =~ m/gtf/i){
+          system "cp $filename $filename.gtf";
+          open IN,"$filename.gtf";
+          open OUT,">$filename";
+          while (my $line = <IN>){
+            chomp $line;
+            next if $line =~ m/^#/;
+            my @data = split /\t/,$line;
+            if ($data[8]){
+              if ($data[8] =~ m/^g\d+$/){
+                $data[8] = 'ID='.$data[8].';';
+              }
+              elsif ($data[8] =~ m/^(g\d+)\.t\d+$/){
+                $data[8] = 'ID='.$data[8].';Parent=$1;';
+              }
+              elsif ($data[2] =~ m/cds/i) {
+                $data[8] =~ s/transcript_id "(g\d+.t\d+)"/ID=$1.cds;transcript_id=$1;Parent=$1/;
+                $data[8] =~ s/gene_id "(g\d+)"/gene_id=$1/;
+              }
+              else {
+                $data[8] =~ s/transcript_id "(g\d+.t\d+)"/transcript_id=$1;Parent=$1/;
+                $data[8] =~ s/gene_id "(g\d+)"/gene_id=$1/;
+              }
+  	    }
+            $line = join "\t",@data;
+            print OUT $line,"\n";
+          }
+       }
 	unshift @ARGV,$filename;
 	open OUT, ">".$filename.".gff.tmp";
 	open EXC, ">".$filename.".exception.gff.tmp";
@@ -398,7 +428,7 @@ sub rewrite_gff {
 	foreach my $key (keys %{$params->{'GFF'}}){
 		my $value = $params->{'GFF'}{$key};
 		if ($key eq 'FORMAT'){
-      $gff->format(lc $value);
+    #  $gff->format(lc $value);
     }
 		elsif (ref $value || ref $value eq 'ARRAY') {
 			my @value = @$value;
