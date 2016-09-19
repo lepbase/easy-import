@@ -492,6 +492,9 @@ sub rewrite_gff {
 				push @exceptions,$gene;
 				next;
 			}
+      if ($stable_id){
+        $stable_id = _match_and_replace($stable_id,$stable_id_regex,$stable_id_substitution);
+      }
 			if (!$stable_id){
 				warn "WARNING: could not find a stable_id at [GENE_STABLE_IDS] $stable_id_location for gene ".$gene->id."\n";
 				push @exceptions,$gene;
