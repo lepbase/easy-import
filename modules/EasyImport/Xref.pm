@@ -107,7 +107,7 @@ sub read_iprscan {
         while (my $goterm = shift @goterms){
           $xref_id = xref_id($dbh,1000,$goterm,$goterm,'NULL','DEPENDENT');
           my $go_object_xref_id = object_xref_id($dbh,$xref_id,$transcript_id,$go_analysis_id);
-          ontology_xref($dbh,$go_object_xref_id,$swissprot_xref_id,'IEA') if $swissprot_xref_id == 2000;
+          ontology_xref($dbh,$go_object_xref_id,$swissprot_xref_id,'IEA') if $swissprot_xref_id;
         }
       }
 		}
