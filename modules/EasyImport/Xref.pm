@@ -26,7 +26,7 @@ sub read_blastp {
 		my $blastp_db = $params->{'XREF'}{'BLASTP'}->[1];
 		my $analysis_id = analysis_id($dbh,"BLASTP",$blastp_db); # analysis_id expects [ dbconnection, logic_name, db ]
 		my $object_xref_id = object_xref_id($dbh,$xref_id,$transcript_id,$analysis_id);
-    object_xref($dbh,$object_xref_id,$xref_id,'IEA') if $external_db_id == 2000;
+    ontology_xref($dbh,$object_xref_id,$xref_id,'IEA') if $external_db_id == 2000;
 		my $nident = $row[2] * $row[1] / 100;
 		my $xid = $nident / $row[12] * 100;
 		my $eid = $nident / $row[11] * 100;
@@ -350,7 +350,7 @@ sub analysis_id {
     );
 
 
-    my $arr_ref = $descriptions{$logic_name};
+    my $arr_ref = $descriptions{$logic_name} || [$logic_name,$logic_name];
 		my $web_data = $arr_ref->[2] ? $dbh->quote($arr_ref->[2]) : 'NULL';
 		$dbh->do("INSERT INTO analysis_description (analysis_id,description,display_label,displayable,web_data)
 						VALUES (".$analysis_id
