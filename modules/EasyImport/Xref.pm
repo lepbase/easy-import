@@ -18,7 +18,7 @@ sub read_blastp {
 		my ($name,@row) = split /\t/;
 		next if $transcripts{$name};
 		$transcripts{$name} = 1;
-		my $transcript_id = transcript_id($dbh,$name);
+		my ($translation_id,$transcript_id,$gene_id) = translation_id($dbh,$name);
 		my $acc = my $disp = $row[0];
 		$acc =~ s/^sp\|(.*?)\|.*/$1/; # if accession is of form sp|XXX|YYY, extract XXX
 		my $desc = $row[13] || undef;
@@ -284,7 +284,7 @@ sub transcript_id {
 sub translation_id {
 	my ($dbh,$name) = @_;
 	my @array;
-	my $sth_translation = $dbh->prepare("SELECT tl.translation_id, tl.transcript_id, tc.gene_id FROM translation AS tl JOIN transcript AS tc ON tl.transcript_id = tc.transcript_id WHERE tl.stable_id LIKE ".$dbh->quote($name));
+	my $sth_translation = $dbh->prepare("SELECT tl.translation_id, tl.transcript_id, tc.gene_id FROM translation AS tl JOIN transcript AS tc ON tl.transcript_id = tc.transcript_id WHERE tl.stable_id = ".$dbh->quote($name)." OR tc.stable_id = ".$dbh->quote($name));
 	$sth_translation->execute;
 	if ($sth_translation->rows > 0){
 		@array = $sth_translation->fetchrow_array();
