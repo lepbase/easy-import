@@ -26,6 +26,7 @@ sub read_blastp {
 		my $blastp_db = $params->{'XREF'}{'BLASTP'}->[1];
 		my $analysis_id = analysis_id($dbh,"BLASTP",$blastp_db); # analysis_id expects [ dbconnection, logic_name, db ]
 		my $object_xref_id = object_xref_id($dbh,$xref_id,$transcript_id,$analysis_id);
+    object_xref($dbh,$object_xref_id,$xref_id,'IEA') if external_db_id = 2000;
 		my $nident = $row[2] * $row[1] / 100;
 		my $xid = $nident / $row[12] * 100;
 		my $eid = $nident / $row[11] * 100;
@@ -87,11 +88,11 @@ sub read_iprscan {
 	my $external_db_id = 1200;
 	while (<>){
 		chomp;
-		my ($name,$hash,$protein_length,$analysis,$hitname,$desc,$start,$end,$evalue,@row) = split /\t/;
+		my ($name,$hash,$protein_length,$analysis,$hitname,$desc,$start,$end,$evalue,undef,undef,$ipr,undef,undef,$goterms) = split /\t/;
 		my ($translation_id,$transcript_id,$gene_id) = translation_id($dbh,$name);
 		warn "ERROR: no translation_id for $name\n" and next unless $translation_id;
 		my $analysis_id = analysis_id($dbh,$analysis,$analysis); # analysis takes logic_name and db but for interproscan we seem to have
-		my $ipr = ipr($dbh,$hitname);
+		$ipr ||= ipr($dbh,$hitname);
 		if ($ipr){
 			$hits{$ipr}{'count'}++;
 			$hits{$ipr}{'desc'} = $desc if !$hits{$ipr}{'desc'} || length $hits{$ipr}{'desc'} < length $desc;
@@ -421,6 +422,23 @@ sub object_xref_id {
 	    $object_xref_id = $sth_oxref->fetchrow_arrayref()->[0];
 	}
 	return $object_xref_id;
+}
+
+sub ontology_xref_id {
+	my ($dbh,$object_xref_id,$xref_id,$linkage_type) = @_;
+	my $sth = $dbh->prepare("SELECT * FROM ontology_xref WHERE object_xref_id = $object_xref_id AND source_xref_id = $xref_id");
+	$sth->execute;
+	if ($sth->rows > 0){
+		return 1;
+	}
+	$dbh->do("INSERT INTO ontology_xref (object_xref_id,source_xref_id,linkage_type)
+					VALUES (".$object_xref_id
+							.",".$xref_id
+  					 		.",".$dbh->quote($linkage_type)
+  					 		.")");
+  $sth->execute;
+  $object_xref_id = $sth_oxref->fetchrow_arrayref()->[0];
+	return 2;
 }
 
 sub protein_feature {
