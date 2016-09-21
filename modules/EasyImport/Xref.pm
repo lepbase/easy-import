@@ -424,7 +424,7 @@ sub object_xref_id {
 	return $object_xref_id;
 }
 
-sub ontology_xref_id {
+sub ontology_xref {
 	my ($dbh,$object_xref_id,$xref_id,$linkage_type) = @_;
 	my $sth = $dbh->prepare("SELECT * FROM ontology_xref WHERE object_xref_id = $object_xref_id AND source_xref_id = $xref_id");
 	$sth->execute;
