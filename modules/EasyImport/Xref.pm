@@ -85,6 +85,7 @@ sub read_repeatmasker {
 sub read_iprscan {
 	my ($dbh,$params) = @_;
 	my $external_db_id = 1200;
+  my $blastp_db = $params->{'XREF'}{'BLASTP'}->[1];
 	while (<>){
 		chomp;
 		my ($name,$hash,$protein_length,$analysis,$hitname,$desc,$start,$end,$evalue,undef,undef,$ipr,undef,$go) = split /\t/;
@@ -101,7 +102,7 @@ sub read_iprscan {
 			my $xref_id = xref_id($dbh,$external_db_id,$ipr,$ipr,$desc,'SEQUENCE_MATCH');
 			my $object_xref_id = object_xref_id($dbh,$xref_id,$translation_id,$analysis_id,'Translation');
       if ($go){
-        $go_analysis_id ||= analysis_id($dbh,'IPRlookup','IPRlookup');
+        $go_analysis_id ||= analysis_id($dbh,'BLASTP',$blastp_db);
         my @goterms = split /[\|]/,$go;
         my $swissprot_xref_id = swissprot_xref_id($dbh,2000,$translation_id);
         while (my $goterm = shift @goterms){
