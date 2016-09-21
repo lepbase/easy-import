@@ -437,8 +437,7 @@ sub ontology_xref_id {
   					 		.",".$dbh->quote($linkage_type)
   					 		.")");
   $sth->execute;
-  $object_xref_id = $sth_oxref->fetchrow_arrayref()->[0];
-	return 2;
+  return 2;
 }
 
 sub protein_feature {
