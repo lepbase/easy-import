@@ -102,7 +102,7 @@ sub read_iprscan {
 			my $xref_id = xref_id($dbh,$external_db_id,$ipr,$ipr,$desc,'SEQUENCE_MATCH');
 			my $object_xref_id = object_xref_id($dbh,$xref_id,$translation_id,$analysis_id,'Translation');
       if ($go){
-        $go_analysis_id ||= analysis_id($dbh,'BLASTP',$blastp_db);
+        $go_analysis_id ||= analysis_id($dbh,'iprlookup','iprlookup');
         my @goterms = split /[\|]/,$go;
         while (my $goterm = shift @goterms){
           my $go_xref_id = xref_id($dbh,1000,$goterm,$goterm,'NULL','DEPENDENT');
