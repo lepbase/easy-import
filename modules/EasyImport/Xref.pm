@@ -440,7 +440,7 @@ sub object_xref_id {
 		$dbh->do("INSERT INTO object_xref (xref_id,ensembl_id,ensembl_object_type,analysis_id)
 						VALUES (".$xref_id
 								.",".$transcript_id
-	  					 		.",".$dbh->quote('Transcript')
+	  					 		.",".$dbh->quote($type)
 	  					 		.",".$analysis_id
 	  					 		.")");
 	    $sth_oxref->execute;
