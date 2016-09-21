@@ -26,7 +26,6 @@ sub read_blastp {
 		my $blastp_db = $params->{'XREF'}{'BLASTP'}->[1];
 		my $analysis_id = analysis_id($dbh,"BLASTP",$blastp_db); # analysis_id expects [ dbconnection, logic_name, db ]
 		my $object_xref_id = object_xref_id($dbh,$xref_id,$transcript_id,$analysis_id);
-    ontology_xref($dbh,$object_xref_id,$xref_id,'IEA') if $external_db_id == 2000;
 		my $nident = $row[2] * $row[1] / 100;
 		my $xid = $nident / $row[12] * 100;
 		my $eid = $nident / $row[11] * 100;
@@ -88,11 +87,12 @@ sub read_iprscan {
 	my $external_db_id = 1200;
 	while (<>){
 		chomp;
-		my ($name,$hash,$protein_length,$analysis,$hitname,$desc,$start,$end,$evalue,undef,undef,$ipr,undef,undef,$goterms) = split /\t/;
+		my ($name,$hash,$protein_length,$analysis,$hitname,$desc,$start,$end,$evalue,undef,undef,$ipr,undef,undef,$go) = split /\t/;
 		my ($translation_id,$transcript_id,$gene_id) = translation_id($dbh,$name);
 		warn "ERROR: no translation_id for $name\n" and next unless $translation_id;
 		my $analysis_id = analysis_id($dbh,$analysis,$analysis); # analysis takes logic_name and db but for interproscan we seem to have
-		$ipr ||= ipr($dbh,$hitname);
+    my $go_analysis_id;
+    $ipr ||= ipr($dbh,$hitname);
 		if ($ipr){
 			$hits{$ipr}{'count'}++;
 			$hits{$ipr}{'desc'} = $desc if !$hits{$ipr}{'desc'} || length $hits{$ipr}{'desc'} < length $desc;
@@ -100,6 +100,16 @@ sub read_iprscan {
 			$genes{$ipr}{$gene_id}++;
 			my $xref_id = xref_id($dbh,$external_db_id,$ipr,$ipr,$desc,'SEQUENCE_MATCH');
 			my $object_xref_id = object_xref_id($dbh,$xref_id,$transcript_id,$analysis_id);
+      if ($go){
+        $go_analysis_id ||= analysis_id($dbh,'IPRlookup','IPRlookup');
+        my @goterms = split /[\|]/,$go;
+        my $swissprot_xref_id = swissprot_xref_id($dbh,2000,$transcript_id);
+        while (my $goterm = shift @goterms){
+          $xref_id = xref_id($dbh,1000,$goterm,$goterm,'NULL','DEPENDENT');
+          my $go_object_xref_id = object_xref_id($dbh,$xref_id,$transcript_id,$go_analysis_id);
+          ontology_xref($dbh,$go_object_xref_id,$swissprot_xref_id,'IEA') if $swissprot_xref_id == 2000;
+        }
+      }
 		}
 		$hitname =~ s/G3DSA://;
 		$evalue = $evalue ne '-' ? $evalue : 'NULL';
@@ -398,6 +408,20 @@ sub xref_id {
 						 		.",".$dbh->quote($info_type)
 						 		.")");
 		$sth_xref->execute;
+		$xref_id = $sth_xref->fetchrow_arrayref()->[0];
+	}
+	return $xref_id;
+}
+
+sub swissprot_xref_id {
+	# lookup any matching swissprot ids in the xrefs table
+
+	my ($dbh,$external_db_id,$transcript_id) = @_;
+
+	my $xref_id;
+	my $sth_xref = $dbh->prepare("SELECT xref.xref_id FROM xref JOIN object_xref ON object_xref.xref_id = xref.xref_id WHERE xref.external_db_id = $external_db_id AND object_xref.ensembl_id = $transcript_id AND object_xref.ensembl_object_type = ".$dbh->quote('Transcript'));
+	$sth_xref->execute;
+	if ($sth_xref->rows > 0){
 		$xref_id = $sth_xref->fetchrow_arrayref()->[0];
 	}
 	return $xref_id;
