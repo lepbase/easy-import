@@ -104,11 +104,10 @@ sub read_iprscan {
       if ($go){
         $go_analysis_id ||= analysis_id($dbh,'BLASTP',$blastp_db);
         my @goterms = split /[\|]/,$go;
-        my $swissprot_xref_id = swissprot_xref_id($dbh,2000,$translation_id);
         while (my $goterm = shift @goterms){
-          $xref_id = xref_id($dbh,1000,$goterm,$goterm,'NULL','DEPENDENT');
-          my $go_object_xref_id = object_xref_id($dbh,$xref_id,$translation_id,$go_analysis_id,'Translation');
-          ontology_xref($dbh,$go_object_xref_id,$swissprot_xref_id,'IEA') if $swissprot_xref_id;
+          my $go_xref_id = xref_id($dbh,1000,$goterm,$goterm,'NULL','DEPENDENT');
+          my $go_object_xref_id = object_xref_id($dbh,$go_xref_id,$translation_id,$go_analysis_id,'Translation');
+          ontology_xref($dbh,$go_object_xref_id,$xref_id,'IEA');
         }
       }
 		}
@@ -409,20 +408,6 @@ sub xref_id {
 						 		.",".$dbh->quote($info_type)
 						 		.")");
 		$sth_xref->execute;
-		$xref_id = $sth_xref->fetchrow_arrayref()->[0];
-	}
-	return $xref_id;
-}
-
-sub swissprot_xref_id {
-	# lookup any matching swissprot ids in the xrefs table
-
-	my ($dbh,$external_db_id,$transcript_id) = @_;
-
-	my $xref_id;
-	my $sth_xref = $dbh->prepare("SELECT xref.xref_id FROM xref JOIN object_xref ON object_xref.xref_id = xref.xref_id WHERE xref.external_db_id = $external_db_id AND object_xref.ensembl_id = $transcript_id AND object_xref.ensembl_object_type = ".$dbh->quote('Transcript'));
-	$sth_xref->execute;
-	if ($sth_xref->rows > 0){
 		$xref_id = $sth_xref->fetchrow_arrayref()->[0];
 	}
 	return $xref_id;
