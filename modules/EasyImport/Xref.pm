@@ -25,7 +25,7 @@ sub read_blastp {
 		my $xref_id = xref_id($dbh,$external_db_id,$acc,$disp,$desc,'SEQUENCE_MATCH');
 		my $blastp_db = $params->{'XREF'}{'BLASTP'}->[1];
 		my $analysis_id = analysis_id($dbh,"BLASTP",$blastp_db); # analysis_id expects [ dbconnection, logic_name, db ]
-		my $object_xref_id = object_xref_id($dbh,$xref_id,$transcript_id,$analysis_id);
+		my $object_xref_id = object_xref_id($dbh,$xref_id,$translation_id,$analysis_id,'Translation');
 		my $nident = $row[2] * $row[1] / 100;
 		my $xid = $nident / $row[12] * 100;
 		my $eid = $nident / $row[11] * 100;
@@ -99,14 +99,14 @@ sub read_iprscan {
 			$hits{$ipr}{'genecount'}++ unless $genes{$ipr}{$gene_id};
 			$genes{$ipr}{$gene_id}++;
 			my $xref_id = xref_id($dbh,$external_db_id,$ipr,$ipr,$desc,'SEQUENCE_MATCH');
-			my $object_xref_id = object_xref_id($dbh,$xref_id,$transcript_id,$analysis_id);
+			my $object_xref_id = object_xref_id($dbh,$xref_id,$translation_id,$analysis_id,'Translation');
       if ($go){
         $go_analysis_id ||= analysis_id($dbh,'IPRlookup','IPRlookup');
         my @goterms = split /[\|]/,$go;
-        my $swissprot_xref_id = swissprot_xref_id($dbh,2000,$transcript_id);
+        my $swissprot_xref_id = swissprot_xref_id($dbh,2000,$translation_id);
         while (my $goterm = shift @goterms){
           $xref_id = xref_id($dbh,1000,$goterm,$goterm,'NULL','DEPENDENT');
-          my $go_object_xref_id = object_xref_id($dbh,$xref_id,$transcript_id,$go_analysis_id);
+          my $go_object_xref_id = object_xref_id($dbh,$xref_id,$translation_id,$go_analysis_id,'Translation');
           ontology_xref($dbh,$go_object_xref_id,$swissprot_xref_id,'IEA') if $swissprot_xref_id;
         }
       }
@@ -428,9 +428,9 @@ sub swissprot_xref_id {
 }
 
 sub object_xref_id {
-	my ($dbh,$xref_id,$transcript_id,$analysis_id) = @_;
+	my ($dbh,$xref_id,$transcript_id,$analysis_id,$type) = @_;
 	my $object_xref_id;
-	my $sth_oxref = $dbh->prepare("SELECT object_xref_id FROM object_xref WHERE ensembl_id = $transcript_id AND ensembl_object_type LIKE ".$dbh->quote('Transcript')." AND analysis_id = $analysis_id AND xref_id = $xref_id");
+	my $sth_oxref = $dbh->prepare("SELECT object_xref_id FROM object_xref WHERE ensembl_id = $transcript_id AND ensembl_object_type LIKE ".$dbh->quote($type)." AND analysis_id = $analysis_id AND xref_id = $xref_id");
 	$sth_oxref->execute;
 	if ($sth_oxref->rows > 0){
 		$object_xref_id = $sth_oxref->fetchrow_arrayref()->[0];
