@@ -87,7 +87,7 @@ sub read_iprscan {
 	my $external_db_id = 1200;
 	while (<>){
 		chomp;
-		my ($name,$hash,$protein_length,$analysis,$hitname,$desc,$start,$end,$evalue,undef,undef,$ipr,undef,undef,$go) = split /\t/;
+		my ($name,$hash,$protein_length,$analysis,$hitname,$desc,$start,$end,$evalue,undef,undef,$ipr,undef,$go) = split /\t/;
 		my ($translation_id,$transcript_id,$gene_id) = translation_id($dbh,$name);
 		warn "ERROR: no translation_id for $name\n" and next unless $translation_id;
 		my $analysis_id = analysis_id($dbh,$analysis,$analysis); # analysis takes logic_name and db but for interproscan we seem to have
