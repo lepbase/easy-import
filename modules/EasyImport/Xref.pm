@@ -26,7 +26,7 @@ sub read_blastp {
 		my $blastp_db = $params->{'XREF'}{'BLASTP'}->[1];
 		my $analysis_id = analysis_id($dbh,"BLASTP",$blastp_db); # analysis_id expects [ dbconnection, logic_name, db ]
 		my $object_xref_id = object_xref_id($dbh,$xref_id,$transcript_id,$analysis_id);
-    object_xref($dbh,$object_xref_id,$xref_id,'IEA') if external_db_id = 2000;
+    object_xref($dbh,$object_xref_id,$xref_id,'IEA') if $external_db_id == 2000;
 		my $nident = $row[2] * $row[1] / 100;
 		my $xid = $nident / $row[12] * 100;
 		my $eid = $nident / $row[11] * 100;
