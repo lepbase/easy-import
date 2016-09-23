@@ -16,16 +16,16 @@ sub read_blastp {
 	while (<>){
 		chomp;
 		my ($name,@row) = split /\t/;
-		next if $transcripts{$name};
-		$transcripts{$name} = 1;
-		my $transcript_id = transcript_id($dbh,$name);
+		$transcripts{$name}++;
+		next if $transcripts{$name} > 10;
+		my ($translation_id,$transcript_id,$gene_id) = translation_id($dbh,$name);
 		my $acc = my $disp = $row[0];
 		$acc =~ s/^sp\|(.*?)\|.*/$1/; # if accession is of form sp|XXX|YYY, extract XXX
 		my $desc = $row[13] || undef;
 		my $xref_id = xref_id($dbh,$external_db_id,$acc,$disp,$desc,'SEQUENCE_MATCH');
 		my $blastp_db = $params->{'XREF'}{'BLASTP'}->[1];
 		my $analysis_id = analysis_id($dbh,"BLASTP",$blastp_db); # analysis_id expects [ dbconnection, logic_name, db ]
-		my $object_xref_id = object_xref_id($dbh,$xref_id,$transcript_id,$analysis_id);
+		my $object_xref_id = object_xref_id($dbh,$xref_id,$translation_id,$analysis_id,'Translation');
 		my $nident = $row[2] * $row[1] / 100;
 		my $xid = $nident / $row[12] * 100;
 		my $eid = $nident / $row[11] * 100;
@@ -85,20 +85,31 @@ sub read_repeatmasker {
 sub read_iprscan {
 	my ($dbh,$params) = @_;
 	my $external_db_id = 1200;
+  my $blastp_db = $params->{'XREF'}{'BLASTP'}->[1];
 	while (<>){
 		chomp;
-		my ($name,$hash,$protein_length,$analysis,$hitname,$desc,$start,$end,$evalue,@row) = split /\t/;
+		my ($name,$hash,$protein_length,$analysis,$hitname,$desc,$start,$end,$evalue,undef,undef,$ipr,undef,$go) = split /\t/;
 		my ($translation_id,$transcript_id,$gene_id) = translation_id($dbh,$name);
 		warn "ERROR: no translation_id for $name\n" and next unless $translation_id;
 		my $analysis_id = analysis_id($dbh,$analysis,$analysis); # analysis takes logic_name and db but for interproscan we seem to have
-		my $ipr = ipr($dbh,$hitname);
+    my $go_analysis_id;
+    $ipr ||= ipr($dbh,$hitname);
 		if ($ipr){
 			$hits{$ipr}{'count'}++;
 			$hits{$ipr}{'desc'} = $desc if !$hits{$ipr}{'desc'} || length $hits{$ipr}{'desc'} < length $desc;
 			$hits{$ipr}{'genecount'}++ unless $genes{$ipr}{$gene_id};
 			$genes{$ipr}{$gene_id}++;
 			my $xref_id = xref_id($dbh,$external_db_id,$ipr,$ipr,$desc,'SEQUENCE_MATCH');
-			my $object_xref_id = object_xref_id($dbh,$xref_id,$transcript_id,$analysis_id);
+			my $object_xref_id = object_xref_id($dbh,$xref_id,$translation_id,$analysis_id,'Translation');
+      if ($go){
+        $go_analysis_id ||= analysis_id($dbh,'iprlookup','iprlookup');
+        my @goterms = split /[\|]/,$go;
+        while (my $goterm = shift @goterms){
+          my $go_xref_id = xref_id($dbh,1000,$goterm,$goterm,'NULL','DEPENDENT');
+          my $go_object_xref_id = object_xref_id($dbh,$go_xref_id,$translation_id,$go_analysis_id,'Translation');
+          ontology_xref($dbh,$go_object_xref_id,$xref_id,'IEA');
+        }
+      }
 		}
 		$hitname =~ s/G3DSA://;
 		$evalue = $evalue ne '-' ? $evalue : 'NULL';
@@ -272,7 +283,7 @@ sub transcript_id {
 sub translation_id {
 	my ($dbh,$name) = @_;
 	my @array;
-	my $sth_translation = $dbh->prepare("SELECT tl.translation_id, tl.transcript_id, tc.gene_id FROM translation AS tl JOIN transcript AS tc ON tl.transcript_id = tc.transcript_id WHERE tl.stable_id LIKE ".$dbh->quote($name));
+	my $sth_translation = $dbh->prepare("SELECT tl.translation_id, tl.transcript_id, tc.gene_id FROM translation AS tl JOIN transcript AS tc ON tl.transcript_id = tc.transcript_id WHERE tl.stable_id = ".$dbh->quote($name)." OR tc.stable_id = ".$dbh->quote($name));
 	$sth_translation->execute;
 	if ($sth_translation->rows > 0){
 		@array = $sth_translation->fetchrow_array();
@@ -349,7 +360,7 @@ sub analysis_id {
     );
 
 
-    my $arr_ref = $descriptions{$logic_name};
+    my $arr_ref = $descriptions{$logic_name} || [$logic_name,$logic_name];
 		my $web_data = $arr_ref->[2] ? $dbh->quote($arr_ref->[2]) : 'NULL';
 		$dbh->do("INSERT INTO analysis_description (analysis_id,description,display_label,displayable,web_data)
 						VALUES (".$analysis_id
@@ -403,9 +414,9 @@ sub xref_id {
 }
 
 sub object_xref_id {
-	my ($dbh,$xref_id,$transcript_id,$analysis_id) = @_;
+	my ($dbh,$xref_id,$transcript_id,$analysis_id,$type) = @_;
 	my $object_xref_id;
-	my $sth_oxref = $dbh->prepare("SELECT object_xref_id FROM object_xref WHERE ensembl_id = $transcript_id AND ensembl_object_type LIKE ".$dbh->quote('Transcript')." AND analysis_id = $analysis_id AND xref_id = $xref_id");
+	my $sth_oxref = $dbh->prepare("SELECT object_xref_id FROM object_xref WHERE ensembl_id = $transcript_id AND ensembl_object_type LIKE ".$dbh->quote($type)." AND analysis_id = $analysis_id AND xref_id = $xref_id");
 	$sth_oxref->execute;
 	if ($sth_oxref->rows > 0){
 		$object_xref_id = $sth_oxref->fetchrow_arrayref()->[0];
@@ -414,13 +425,29 @@ sub object_xref_id {
 		$dbh->do("INSERT INTO object_xref (xref_id,ensembl_id,ensembl_object_type,analysis_id)
 						VALUES (".$xref_id
 								.",".$transcript_id
-	  					 		.",".$dbh->quote('Transcript')
+	  					 		.",".$dbh->quote($type)
 	  					 		.",".$analysis_id
 	  					 		.")");
 	    $sth_oxref->execute;
 	    $object_xref_id = $sth_oxref->fetchrow_arrayref()->[0];
 	}
 	return $object_xref_id;
+}
+
+sub ontology_xref {
+	my ($dbh,$object_xref_id,$xref_id,$linkage_type) = @_;
+	my $sth = $dbh->prepare("SELECT * FROM ontology_xref WHERE object_xref_id = $object_xref_id AND source_xref_id = $xref_id");
+	$sth->execute;
+	if ($sth->rows > 0){
+		return 1;
+	}
+	$dbh->do("INSERT INTO ontology_xref (object_xref_id,source_xref_id,linkage_type)
+					VALUES (".$object_xref_id
+							.",".$xref_id
+  					 		.",".$dbh->quote($linkage_type)
+  					 		.")");
+  $sth->execute;
+  return 2;
 }
 
 sub protein_feature {
