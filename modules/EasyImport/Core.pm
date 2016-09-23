@@ -2128,7 +2128,7 @@ sub fetch_file {
 	if (($new_name && !-e $new_name) || (!$new_name && !-e $filename)){
 		if ($location =~ m/^(?:ftp|http|https):/){
 			$command = 'wget';
-			system "wget $location -O $filename"."$compression";
+			system "wget \"$location\" -O $filename"."$compression";
 		}
 		elsif ($location =~ m/:[\/~]/){
 			$command = 'scp';
