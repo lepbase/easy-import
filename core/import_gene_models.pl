@@ -51,7 +51,7 @@ if ($params->{'MODIFY'}{'TRUNCATE_GENE_TABLES'}){
 my $suffix = '.gff';
 $suffix = '.sorted'.$suffix if $params->{'GFF'}{'SORT'};
 my $filename = $infiles{'GFF'}{'name'}.$suffix;
-if (!-e $infiles{'GFF'}{'name'}){
+if (!-e $filename){
   $filename = $infiles{'GFF'}{'name'};
   warn "WARNING: unable to locate prepared GFF, attempting to use unmodified file\n"
 }
