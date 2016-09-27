@@ -50,6 +50,11 @@ if ($params->{'MODIFY'}{'TRUNCATE_GENE_TABLES'}){
 ## load gff into ensembl
 my $suffix = '.gff';
 $suffix = '.sorted'.$suffix if $params->{'GFF'}{'SORT'};
+my $infile = $infiles{'GFF'}{'name'}.$suffix;
+if (!-e $infiles{'GFF'}{'name'}){
+  $infile = $infiles{'GFF'}{'name'};
+  warn "WARNING: unable to locate prepared GFF, attempting to use unmodified file\n"
+}
 
 gff_to_ensembl($infiles{'GFF'}{'name'}.$suffix,$dbh,$params);
 
