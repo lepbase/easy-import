@@ -27,7 +27,7 @@ sub truncate_gene_tables {
 }
 
 sub gff_to_ensembl {
-	my ($infile,$dbh,$params) = @_;
+	my ($infile,$dbh,$params,$protfile) = @_;
 	my %sources;
 	my $data_source = $params->{'META'}{'GENEBUILD.METHOD'} eq 'import' ? $params->{'META'}{'PROVIDER.NAME'} : 'LepBase';
 	my $data_url = $params->{'META'}{'GENEBUILD.METHOD'} eq 'import' ? $params->{'META'}{'PROVIDER.URL'} : 'http://lepbase.org';
@@ -76,6 +76,23 @@ sub gff_to_ensembl {
 			push @ontologies,\%tmp;
 		}
 	}
+  my $proteins;
+  my $transcript_adaptor;
+  if ($protfile){
+    # read proteins file into hash
+    $proteins = _fasta_file_to_hash($protfile);
+
+    # set up ensembl transcript adaptor
+    my $dbname = $params->{'DATABASE_CORE'}{'NAME'};
+    my $dba = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
+        -user   => $params->{'DATABASE_CORE'}{'RO_USER'},
+        -dbname => $dbname,
+        -host   => $params->{'DATABASE_CORE'}{'HOST'},
+        -port   => $params->{'DATABASE_CORE'}{'PORT'},
+        -driver => 'mysql'
+    );
+    $transcript_adaptor = $dba->get_TranscriptAdaptor();
+  }
 
 	unshift @ARGV,$infile;
 	my $gff = GFFTree->new({});
@@ -216,6 +233,7 @@ sub gff_to_ensembl {
 					# loop through exons,
 					# to work out phase and end_phase for exons plus start and stop for translation
 					# add to database and store exon_ids
+          # TODO: if translation doesn't match protein, try another start phase?
 					my @exon = $mrna->by_type('exon');
 					my ($first,$last) = (-1,-1);
 					my @starts;
@@ -334,6 +352,26 @@ sub gff_to_ensembl {
 							$translation_id = add_translation($dbh,$mrna,$exon[($end_exon-1)],$exon[($start_exon-1)],$prot_stable_id);
 						}
 						simple_update($dbh,'transcript',{'canonical_translation_id' => $translation_id},{'transcript_id' => $mrna->attributes->{_transcript_id}});
+
+            # test phase against provided proteins
+            if ($proteins){
+              my @next = (1,2,0);
+              my $cycle = 0;
+              # fetch translation by id
+              my $ens_transcript = $transcript_adaptor->fetch_by_id($mrna->attributes->{_transcript_id});
+              my $pep = $ens_transcript->translate()->seq;
+              $pep = substr $pep, 0, 5;
+              while ($cycle <= 3){
+                # compare with hashed proteins
+                if ($proteins->{$mrna->attributes->{translation_stable_id}} =~ m/^$pep/i){
+                  last;
+                }
+                # cycle phase for each exon if needed
+                warn "WARNING: ".$mrna->attributes->{translation_stable_id}." translation does not match provider file\n";
+                $cycle++;
+              }
+
+            }
 
 					}
 

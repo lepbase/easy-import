@@ -33,6 +33,10 @@ while (my $ini_file = shift @ARGV){
 	load_ini($params,$ini_file,\%sections,scalar(@ARGV));
 }
 
+my $lib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl/modules';
+push @INC, $lib;
+load Bio::EnsEMBL::DBSQL::DBAdaptor;
+
 ## connect to core database
 my $dbh = core_db_connect($params);
 
@@ -55,8 +59,12 @@ if (!-e $filename){
   $filename = $infiles{'GFF'}{'name'};
   warn "WARNING: unable to locate prepared GFF, attempting to use unmodified file\n"
 }
+my $protfile;
+if ($infiles{'PROTEIN'}){
+  $protfile = $infiles{'PROTEIN'}{'NAME'};
+}
 
-gff_to_ensembl($filename,$dbh,$params);
+gff_to_ensembl($filename,$dbh,$params,$protfile);
 
 count_rows($dbh,qw( gene transcript translation exon));
 
