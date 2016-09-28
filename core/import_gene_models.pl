@@ -3,6 +3,7 @@
 use strict;
 use Cwd 'abs_path';
 use File::Basename;
+use Module::Load;
 
 ## find the full path to the directory that this script is executing in
 our $dirname;
