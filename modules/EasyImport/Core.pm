@@ -76,23 +76,6 @@ sub gff_to_ensembl {
 			push @ontologies,\%tmp;
 		}
 	}
-  my $proteins;
-  my $transcript_adaptor;
-  if ($protfile){
-    # read proteins file into hash
-    $proteins = _fasta_file_to_hash($protfile);
-
-    # set up ensembl transcript adaptor
-    my $dbname = $params->{'DATABASE_CORE'}{'NAME'};
-    my $dba = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
-        -user   => $params->{'DATABASE_CORE'}{'RO_USER'},
-        -dbname => $dbname,
-        -host   => $params->{'DATABASE_CORE'}{'HOST'},
-        -port   => $params->{'DATABASE_CORE'}{'PORT'},
-        -driver => 'mysql'
-    );
-    $transcript_adaptor = $dba->get_TranscriptAdaptor();
-  }
 
 	unshift @ARGV,$infile;
 	my $gff = GFFTree->new({});
@@ -107,7 +90,7 @@ sub gff_to_ensembl {
 			}
 		}
 	}
-	while ($gff->parse_chunk('change','region')){
+	while ($gff->parse_chunk('separator','###')){
 		# modify strands to use +1 or -1
 		my @features = $gff->descendants();
 		while (my $feature = shift @features){
@@ -233,7 +216,6 @@ sub gff_to_ensembl {
 					# loop through exons,
 					# to work out phase and end_phase for exons plus start and stop for translation
 					# add to database and store exon_ids
-          # TODO: if translation doesn't match protein, try another start phase?
 					my @exon = $mrna->by_type('exon');
 					my ($first,$last) = (-1,-1);
 					my @starts;
@@ -352,26 +334,6 @@ sub gff_to_ensembl {
 							$translation_id = add_translation($dbh,$mrna,$exon[($end_exon-1)],$exon[($start_exon-1)],$prot_stable_id);
 						}
 						simple_update($dbh,'transcript',{'canonical_translation_id' => $translation_id},{'transcript_id' => $mrna->attributes->{_transcript_id}});
-
-            # test phase against provided proteins
-            if ($proteins){
-              my @next = (1,2,0);
-              my $cycle = 0;
-              # fetch translation by id
-              my $ens_transcript = $transcript_adaptor->fetch_by_id($mrna->attributes->{_transcript_id});
-              my $pep = $ens_transcript->translate()->seq;
-              $pep = substr $pep, 0, 5;
-              while ($cycle <= 3){
-                # compare with hashed proteins
-                if ($proteins->{$mrna->attributes->{translation_stable_id}} =~ m/^$pep/i){
-                  last;
-                }
-                # cycle phase for each exon if needed
-                warn "WARNING: ".$mrna->attributes->{translation_stable_id}." translation does not match provider file\n";
-                $cycle++;
-              }
-
-            }
 
 					}
 
@@ -786,6 +748,7 @@ sub rewrite_gff {
 		while (my $gene = shift @valid){
 			if (my $out = $gene->structured_output(1)){
 				print OUT $out;
+        print OUT "###\n";
 			}
 		}
 		while (my $gene = shift @exceptions){

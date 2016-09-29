@@ -34,10 +34,6 @@ while (my $ini_file = shift @ARGV){
 	load_ini($params,$ini_file,\%sections,scalar(@ARGV));
 }
 
-my $lib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl/modules';
-push @INC, $lib;
-load Bio::EnsEMBL::DBSQL::DBAdaptor;
-
 ## connect to core database
 my $dbh = core_db_connect($params);
 
