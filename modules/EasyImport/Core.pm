@@ -374,7 +374,7 @@ sub rewrite_gff {
 	my ($tl_stable_id_location,$tl_stable_id_regex,$tl_stable_id_substitution) = @$tl_stable_ids_ref if $tl_stable_ids_ref;
 	# create new gff tree object
 	# add lots of validation conditions
-  my $infile = \%{$infiles{'GFF'}};
+  my $infile = \%{$infiles->{'GFF'}};
 	my $filename = $infile->{'name'};
 	if ($params->{'GFF'}{'SORT'} && $filename !~ m/.sorted/){
 		$filename .= ".sorted";
