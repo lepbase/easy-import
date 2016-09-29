@@ -381,7 +381,7 @@ sub rewrite_gff {
   if ($params->{'AUTOPHASE'}){
     if ($infiles->{'PROTEIN'}){
       $proteins = _fasta_file_to_hash($infiles->{'PROTEIN'}{'NAME'});
-      $transcripts = _fasta_file_to_hash($infiles->{'SCAFFOLD'}{'NAME'});
+      $scaffolds = _fasta_file_to_hash($infiles->{'SCAFFOLD'}{'NAME'});
     }
   }
 	my $filename = $infile->{'name'};
@@ -844,6 +844,7 @@ sub fix_phase {
       $protein =~ s/\*/X/g;
       my $cds = $mrna->by_type('cds');
       next unless $cds;
+      my (@startarr,@endarr,@phases);
       if ($cds->attributes->{_start_array}){
         @startarr = @{$cds->attributes->{_start_array}};
         @ends = @{$cds->attributes->{_end_array}};
@@ -859,7 +860,7 @@ sub fix_phase {
         $phases[0] = 0 unless $phases[0] =~ m/^[012]$/;
         $frame = $frames[$phases[0]];
         for (my $i = 0; $i < @startarr; $i++){
-          for ($f = 0; $f < 3; $f++){
+          for (my $f = 0; $f < 3; $f++){
             my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->translate(-frame=>$frame);
             $pep = substr( $pep, 1, (length($pep) - 2) );
             $pep =~ s/\*/X/g;
