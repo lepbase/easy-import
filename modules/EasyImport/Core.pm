@@ -847,12 +847,12 @@ sub fix_phase {
       my (@startarr,@endarr,@phases);
       if ($cds->attributes->{_start_array}){
         @startarr = @{$cds->attributes->{_start_array}};
-        @ends = @{$cds->attributes->{_end_array}};
+        @endarr = @{$cds->attributes->{_end_array}};
         @phases = @{$cds->attributes->{_phase_array}};
       }
       else {
         $startarr[0] = $cds->attributes->{_start};
-        $ends[0] = $cds->attributes->{_end};
+        $endarr[0] = $cds->attributes->{_end};
         $phases[0] = $cds->attributes->{_phase};
       }
       my $frame;
@@ -882,7 +882,7 @@ sub fix_phase {
         $phases[-1] = 0 unless $phases[-1] =~ m/^[012]$/;
         $frame = $frames[$phases[-1]];
         for (my $i = @startarr -1; $i >= 0; $i--){
-          for ($f = 0; $f < 3; $f++){
+          for (my $f = 0; $f < 3; $f++){
             my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->revcom()->translate(-frame=>$frame);
             $pep = substr( $pep, 1, (length($pep) - 2) );
             $pep =~ s/\*/X/g;
