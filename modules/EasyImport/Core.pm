@@ -363,7 +363,7 @@ sub count_rows {
 }
 
 sub rewrite_gff {
-	my ($params,$infile,$properties,$stable_ids_ref,$desc_ref,$names_ref,$tr_properties,$tr_stable_ids_ref,$tr_desc_ref,$tr_names_ref,$tl_stable_ids_ref) = @_;
+	my ($params,$infiles,$properties,$stable_ids_ref,$desc_ref,$names_ref,$tr_properties,$tr_stable_ids_ref,$tr_desc_ref,$tr_names_ref,$tl_stable_ids_ref) = @_;
 	my (%ids,%dups);
 	my ($stable_id_location,$stable_id_regex,$stable_id_substitution) = @$stable_ids_ref;
 	my ($index,$desc_location,$desc_regex,$desc_substitution) = @$desc_ref if $desc_ref;
@@ -374,6 +374,7 @@ sub rewrite_gff {
 	my ($tl_stable_id_location,$tl_stable_id_regex,$tl_stable_id_substitution) = @$tl_stable_ids_ref if $tl_stable_ids_ref;
 	# create new gff tree object
 	# add lots of validation conditions
+  my $infile = \%{$infiles{'GFF'}};
 	my $filename = $infile->{'name'};
 	if ($params->{'GFF'}{'SORT'} && $filename !~ m/.sorted/){
 		$filename .= ".sorted";
