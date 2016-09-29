@@ -6,6 +6,7 @@ use GFFTree;
 use EasyImport::GFF;
 use List::Util qw(reduce sum);
 use Bio::SeqIO;
+use Bio::Location::Split;
 
 sub truncate_seq_tables {
 	my ($dbh) = @_;
@@ -375,6 +376,14 @@ sub rewrite_gff {
 	# create new gff tree object
 	# add lots of validation conditions
   my $infile = \%{$infiles->{'GFF'}};
+
+  my ($proteins,$scaffolds);
+  if ($params->{'AUTOPHASE'}){
+    if ($infiles->{'PROTEIN'}){
+      $proteins = _fasta_file_to_hash($infiles->{'PROTEIN'}{'NAME'});
+      $transcripts = _fasta_file_to_hash($infiles->{'SCAFFOLD'}{'NAME'});
+    }
+  }
 	my $filename = $infile->{'name'};
 	if ($params->{'GFF'}{'SORT'} && $filename !~ m/.sorted/){
 		$filename .= ".sorted";
@@ -747,6 +756,9 @@ sub rewrite_gff {
 
 		}
 		while (my $gene = shift @valid){
+      if ($proteins && $scaffolds){
+        fix_phase($gene,$proteins,$scaffolds);
+      }
 			if (my $out = $gene->structured_output(1)){
 				print OUT $out;
         print OUT "###\n";
@@ -820,7 +832,76 @@ sub dedup_gff {
 	return;
 }
 
-
+sub fix_phase {
+  my ($gene,$proteins,$scaffolds) = @_;
+  my @frames = (0,2,1);
+  if (my @mrna = $gene->by_type('mrna')){
+    my $scaffold = $scaffolds->{$gene->{attributes}->{_seq_name}};
+    $scaffold = Bio::Seq->new(-seq=>$scaffold);
+    my $strand = $scaffolds->{$gene->{attributes}->{_strand}};
+    while (my $mrna = shift @mrna){
+      my $protein = $proteins->{$mrna->{attributes}->{'translation_stable_id'}};
+      $protein =~ s/\*/X/g;
+      my $cds = $mrna->by_type('cds');
+      next unless $cds;
+      if ($cds->attributes->{_start_array}){
+        @startarr = @{$cds->attributes->{_start_array}};
+        @ends = @{$cds->attributes->{_end_array}};
+        @phases = @{$cds->attributes->{_phase_array}};
+      }
+      else {
+        $startarr[0] = $cds->attributes->{_start};
+        $ends[0] = $cds->attributes->{_end};
+        $phases[0] = $cds->attributes->{_phase};
+      }
+      my $frame;
+      if ($strand == 1){
+        $phases[0] = 0 unless $phases[0] =~ m/^[012]$/;
+        $frame = $frames[$phases[0]];
+        for (my $i = 0; $i < @startarr; $i++){
+          for ($f = 0; $f < 3; $f++){
+            my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->translate(-frame=>$frame);
+            $pep = substr( $pep, 1, (length($pep) - 2) );
+            $pep =~ s/\*/X/g;
+            if ($protein =~ m/$pep/){
+              $phases[$i] = $frames[$frame];
+              last;
+            }
+            elsif ($i > 0){
+              warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." exon $i is out of phase with previous\n";
+            }
+          }
+          if ($i < @startarr - 1){
+            my $len = $frame + $endarr[$i] - $startarr[$i] + 1;
+            $frame = $len % 3;
+          }
+        }
+      }
+      else {
+        $phases[-1] = 0 unless $phases[-1] =~ m/^[012]$/;
+        $frame = $frames[$phases[-1]];
+        for (my $i = @startarr -1; $i >= 0; $i--){
+          for ($f = 0; $f < 3; $f++){
+            my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->revcom()->translate(-frame=>$frame);
+            $pep = substr( $pep, 1, (length($pep) - 2) );
+            $pep =~ s/\*/X/g;
+            if ($protein =~ m/$pep/){
+              $phases[$i] = $frames[$frame];
+              last;
+            }
+            elsif ($i > 0){
+              warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." exon $i is out of phase with previous\n";
+            }
+          }
+          if ($i > 0){
+            my $len = $frame + $endarr[$i] - $startarr[$i] + 1;
+            $frame = $len % 3;
+          }
+        }
+      }
+    }
+  }
+}
 
 sub get_properties {
 	my ($infile,$property,$properties,$stable_ids_ref,$prop_ref) = @_;
