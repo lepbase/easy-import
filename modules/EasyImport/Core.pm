@@ -346,11 +346,16 @@ sub rewrite_gff {
 	# add lots of validation conditions
   my $infile = \%{$infiles->{'GFF'}};
 
-  my ($proteins,$scaffolds);
+  my ($proteins,$scaffolds,$mitochondrial) = ({},{},{});
   if ($params->{'MODIFY'}{'AUTO_PHASE'}){
     if ($infiles->{'PROTEIN'}){
       $proteins = _fasta_file_to_hash($infiles->{'PROTEIN'}{'name'});
       $scaffolds = _fasta_file_to_hash($infiles->{'SCAFFOLD'}{'name'});
+    }
+    if ($params->{'CODON_TABLE'}{'MITOCHONDRIAL'}){
+      foreach my $seqname (@{$params->{'CODON_TABLE'}{'MITOCHONDRIAL'}}){
+        $mitochondrial->{$seqname} = 5;
+      }
     }
   }
 	my $filename = $infile->{'name'};
@@ -726,7 +731,9 @@ sub rewrite_gff {
 		}
 		while (my $gene = shift @valid){
       if ($proteins && $scaffolds){
-        fix_phase($gene,$proteins,$scaffolds);
+        my $codontable_id = 1;
+        $codontable_id = 5 if ($mitochondrial->{$gene->{attributes}->{_seq_name}});
+        fix_phase($gene,$proteins,$scaffolds,$codontable_id);
       }
 			if (my $out = $gene->structured_output(1)){
 				print OUT $out;
@@ -802,7 +809,8 @@ sub dedup_gff {
 }
 
 sub fix_phase {
-  my ($gene,$proteins,$scaffolds) = @_;
+  my ($gene,$proteins,$scaffolds,$codontable_id) = @_;
+  $codontable_id ||= 1;
   my @frames = (0,2,1);
   if (my @mrna = $gene->by_type('mrna')){
     my $scaffold = $scaffolds->{$gene->{attributes}->{_seq_name}}{seq};
@@ -830,9 +838,8 @@ sub fix_phase {
         $frame = $frames[$phases[0]];
         for (my $i = 0; $i < @startarr; $i++){
           for (my $f = 0; $f < 3; $f++){
-            my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->translate(-frame=>$frame)->seq();
+            my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->translate(-frame=>$frame,-codontable_id=>$codontable_id,-terminator=>'X')->seq();
             $pep = substr( $pep, 1, (length($pep) - 2) );
-            $pep =~ s/\*/X/g;
             if ($protein =~ m/$pep/){
               $phases[$i] = $frames[$frame];
               if ($cds->attributes->{_phase_array}){
@@ -858,9 +865,8 @@ sub fix_phase {
         $frame = $frames[$phases[-1]];
         for (my $i = @startarr -1; $i >= 0; $i--){
           for (my $f = 0; $f < 3; $f++){
-            my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->revcom()->translate(-frame=>$frame)->seq();
+            my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->revcom()->translate(-frame=>$frame,-codontable_id=>$codontable_id,-terminator=>'X')->seq();
             $pep = substr( $pep, 1, (length($pep) - 2) );
-            $pep =~ s/\*/X/g;
             if ($protein =~ m/$pep/){
               $phases[$i] = $frames[$frame];
               if ($cds->attributes->{_phase_array}){
@@ -1185,6 +1191,16 @@ sub load_sequences {
 	}
 	system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/set_toplevel.pl '.$connection_info;
 
+  if ($params->{'CODON_TABLE'}{'MITOCHONDRIAL'}){
+    foreach my $seqname (@{$params->{'CODON_TABLE'}{'MITOCHONDRIAL'}}){
+      my $sth = $dbh->prepare("SELECT seq_region_id FROM seq_region WHERE name = ".$dbh->quote($seqname));
+      $sth->execute();
+      if ($sth->rows > 0){
+  			my $id = $sth->fetchrow_arrayref()->[0];
+  			$dbh->do("INSERT INTO seq_region_attrib (seq_region_id,attrib_type_id,value) values ($id,11,5)");
+  		}
+    }
+  }
 	return 1;
 
 }
