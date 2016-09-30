@@ -866,11 +866,18 @@ sub fix_phase {
             $pep =~ s/\*/X/g;
             if ($protein =~ m/$pep/){
               $phases[$i] = $frames[$frame];
+              if ($cds->attributes->{_phase_array}){
+                $cds->attributes->{_phase_array}->[$i] = $frames[$frame];
+              }
+              else {
+                $cds->attributes->{_phase} = $frames[$frame];
+              }
               last;
             }
             elsif ($i > 0){
               warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." exon $i is out of phase with previous\n";
             }
+            $frame = $frame < 2 ? $frame++ : 0;
           }
           if ($i < @startarr - 1){
             my $len = $frame + $endarr[$i] - $startarr[$i] + 1;
@@ -888,11 +895,18 @@ sub fix_phase {
             $pep =~ s/\*/X/g;
             if ($protein =~ m/$pep/){
               $phases[$i] = $frames[$frame];
+              if ($cds->attributes->{_phase_array}){
+                $cds->attributes->{_phase_array}->[$i] = $frames[$frame];
+              }
+              else {
+                $cds->attributes->{_phase} = $frames[$frame];
+              }
               last;
             }
             elsif ($i > 0){
               warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." exon $i is out of phase with previous\n";
             }
+            $frame = $frame < 2 ? $frame++ : 0;
           }
           if ($i > 0){
             my $len = $frame + $endarr[$i] - $startarr[$i] + 1;
