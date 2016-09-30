@@ -57,7 +57,7 @@ if (!-e $filename){
   warn "WARNING: unable to locate prepared GFF, attempting to use unmodified file\n"
 }
 
-gff_to_ensembl($filename,$dbh,$params,$protfile);
+gff_to_ensembl($filename,$dbh,$params);
 
 count_rows($dbh,qw( gene transcript translation exon));
 
