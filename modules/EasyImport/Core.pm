@@ -5,6 +5,7 @@ use DBI;
 use GFFTree;
 use EasyImport::GFF;
 use List::Util qw(reduce sum);
+use Bio::Seq;
 use Bio::SeqIO;
 use Bio::Location::Split;
 
@@ -380,8 +381,8 @@ sub rewrite_gff {
   my ($proteins,$scaffolds);
   if ($params->{'MODIFY'}{'AUTO_PHASE'}){
     if ($infiles->{'PROTEIN'}){
-      $proteins = _fasta_file_to_hash($infiles->{'PROTEIN'}{'NAME'});
-      $scaffolds = _fasta_file_to_hash($infiles->{'SCAFFOLD'}{'NAME'});
+      $proteins = _fasta_file_to_hash($infiles->{'PROTEIN'}{'name'});
+      $scaffolds = _fasta_file_to_hash($infiles->{'SCAFFOLD'}{'name'});
     }
   }
 	my $filename = $infile->{'name'};
@@ -836,11 +837,11 @@ sub fix_phase {
   my ($gene,$proteins,$scaffolds) = @_;
   my @frames = (0,2,1);
   if (my @mrna = $gene->by_type('mrna')){
-    my $scaffold = $scaffolds->{$gene->{attributes}->{_seq_name}};
+    my $scaffold = $scaffolds->{$gene->{attributes}->{_seq_name}}{seq};
     $scaffold = Bio::Seq->new(-seq=>$scaffold);
-    my $strand = $scaffolds->{$gene->{attributes}->{_strand}};
+    my $strand = $gene->{attributes}->{_strand} =~ m/-/ ? -1 : 1;
     while (my $mrna = shift @mrna){
-      my $protein = $proteins->{$mrna->{attributes}->{'translation_stable_id'}};
+      my $protein = $proteins->{$mrna->{attributes}->{'translation_stable_id'}}{seq};
       $protein =~ s/\*/X/g;
       my $cds = $mrna->by_type('cds');
       next unless $cds;
@@ -861,7 +862,7 @@ sub fix_phase {
         $frame = $frames[$phases[0]];
         for (my $i = 0; $i < @startarr; $i++){
           for (my $f = 0; $f < 3; $f++){
-            my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->translate(-frame=>$frame);
+            my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->translate(-frame=>$frame)->seq();
             $pep = substr( $pep, 1, (length($pep) - 2) );
             $pep =~ s/\*/X/g;
             if ($protein =~ m/$pep/){
@@ -877,12 +878,11 @@ sub fix_phase {
             elsif ($i > 0){
               warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." exon $i is out of phase with previous\n";
             }
-            $frame = $frame < 2 ? $frame++ : 0;
+            $frame = $frame < 2 ? $frame + 1 : 0;
           }
-          if ($i < @startarr - 1){
-            my $len = $frame + $endarr[$i] - $startarr[$i] + 1;
-            $frame = $len % 3;
-          }
+          my $offset = $frames[(1 + $endarr[$i] - $startarr[$i]) % 3];
+          $frame += $offset;
+          $frame = $frame % 3;
         }
       }
       else {
@@ -890,7 +890,7 @@ sub fix_phase {
         $frame = $frames[$phases[-1]];
         for (my $i = @startarr -1; $i >= 0; $i--){
           for (my $f = 0; $f < 3; $f++){
-            my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->revcom()->translate(-frame=>$frame);
+            my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->revcom()->translate(-frame=>$frame)->seq();
             $pep = substr( $pep, 1, (length($pep) - 2) );
             $pep =~ s/\*/X/g;
             if ($protein =~ m/$pep/){
@@ -903,15 +903,14 @@ sub fix_phase {
               }
               last;
             }
-            elsif ($i > 0){
+            elsif ($i < @startarr - 1){
               warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." exon $i is out of phase with previous\n";
             }
-            $frame = $frame < 2 ? $frame++ : 0;
+            $frame = $frame < 2 ? $frame + 1 : 0;
           }
-          if ($i > 0){
-            my $len = $frame + $endarr[$i] - $startarr[$i] + 1;
-            $frame = $len % 3;
-          }
+          my $offset = $frames[(1 + $endarr[$i] - $startarr[$i]) % 3];
+          $frame += $offset;
+          $frame = $frame % 3;
         }
       }
     }
