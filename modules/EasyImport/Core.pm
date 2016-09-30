@@ -814,6 +814,7 @@ sub fix_phase {
   my @frames = (0,2,1);
   if (my @mrna = $gene->by_type('mrna')){
     my $scaffold = $scaffolds->{$gene->{attributes}->{_seq_name}}{seq};
+    next unless $scaffold;
     $scaffold = Bio::Seq->new(-seq=>$scaffold);
     my $strand = $gene->{attributes}->{_strand} =~ m/-/ ? -1 : 1;
     while (my $mrna = shift @mrna){
@@ -839,8 +840,8 @@ sub fix_phase {
         for (my $i = 0; $i < @startarr; $i++){
           for (my $f = 0; $f < 3; $f++){
             my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->translate(-frame=>$frame,-codontable_id=>$codontable_id,-terminator=>'X')->seq();
-            $pep = substr( $pep, 1, (length($pep) - 2) );
-            if ($protein =~ m/$pep/){
+            $pep = substr( $pep, 1, (length($pep) - 2) ) if length $pep >= 3;
+            if (length $pep < 3 || $protein =~ m/$pep/){
               $phases[$i] = $frames[$frame];
               if ($cds->attributes->{_phase_array}){
                 $cds->attributes->{_phase_array}->[$i] = $frames[$frame];
@@ -866,8 +867,8 @@ sub fix_phase {
         for (my $i = @startarr -1; $i >= 0; $i--){
           for (my $f = 0; $f < 3; $f++){
             my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->revcom()->translate(-frame=>$frame,-codontable_id=>$codontable_id,-terminator=>'X')->seq();
-            $pep = substr( $pep, 1, (length($pep) - 2) );
-            if ($protein =~ m/$pep/){
+            $pep = substr( $pep, 1, (length($pep) - 2) ) if length $pep >= 3;
+            if (length $pep < 3 || $protein =~ m/$pep/){
               $phases[$i] = $frames[$frame];
               if ($cds->attributes->{_phase_array}){
                 $cds->attributes->{_phase_array}->[$i] = $frames[$frame];
