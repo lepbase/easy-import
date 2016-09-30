@@ -222,39 +222,7 @@ sub gff_to_ensembl {
 					my ($first,$last) = (-1,-1);
 					my @starts;
 					my @adjust = (0,2,1);
-          if ($cds && $params->{'MODIFY'}{'AUTO_PHASE'}){
-            my @lengths;
-            for (my $s = 0; $s < @startarr; $s++){
-						  push @lengths, $ends[$s]-$startarr[$s]+1;
-            }
-            my $len = sum @lengths;
-            my $l = 0;
-            my $strand = $mrna->attributes->{_strand};
-            for (my $i = 0; $i < @phases; $i++) { $phases[$i] = 0 if $phases[$i] eq "." }
-            if ($len % 3 != 0 || ($strand > 0 && $phases[0] != 0) || ($strand < 0 && $phases[-1] != 0)){
-              # assume first cds has been phased correctly
-              $l = $strand > 0 ? $phases[0] : $phases[-1];
-              if ($params->{'MODIFY'}{'INVERT_PHASE'}){
-                $l = $adjust[$l];
-              }
-            }
-
-            if ($mrna->attributes->{_strand} > 0){
-              for (my $p = 0; $p < @phases; $p++){
-  					  	my $phase = $l % 3;
-                $phases[$p] = $phase;
-                $l += $lengths[$p];
-  					  }
-            }
-            else {
-              for (my $p = @phases - 1; $p >= 0; $p--){
-  					  	my $phase = $l % 3;
-                $phases[$p] = $phase;
-                $l += $lengths[$p];
-  					  }
-            }
-          }
-          elsif ($params->{'MODIFY'}{'INVERT_PHASE'}){
+          if ($params->{'MODIFY'}{'INVERT_PHASE'}){
 						for (my $p = 0; $p < @phases; $p++){
   						$phases[$p] = $adjust[$phases[$p]];
   					}
