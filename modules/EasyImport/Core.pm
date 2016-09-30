@@ -378,7 +378,7 @@ sub rewrite_gff {
   my $infile = \%{$infiles->{'GFF'}};
 
   my ($proteins,$scaffolds);
-  if ($params->{'AUTOPHASE'}){
+  if ($params->{'MODIFY'}{'AUTO_PHASE'}){
     if ($infiles->{'PROTEIN'}){
       $proteins = _fasta_file_to_hash($infiles->{'PROTEIN'}{'NAME'});
       $scaffolds = _fasta_file_to_hash($infiles->{'SCAFFOLD'}{'NAME'});
