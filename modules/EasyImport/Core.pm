@@ -849,6 +849,26 @@ sub fix_phase {
               else {
                 $cds->attributes->{_phase} = $frames[$frame];
               }
+              if ($i == 0 && $frame > 0){
+                my @features = $parent->by_type($alt_type);
+                my $exon;
+        				while (my $feature = shift @features){
+                  if ($startarr[$i] >= $feature->{attributes}->{_start} && $endarr[$i] <= $feature->{attributes}->{_end}){
+        						$exon = $feature;
+        					}
+        					last if $exon;
+                }
+                if ($exon->{attributes}->{_start} < $startarr[$i]){
+                  if ($cds->attributes->{_start_array}){
+                    $cds->attributes->{_start_array}->[0] += $frame;
+                    $cds->attributes->{_phase_array}->[0] = 0;
+                  }
+                  else {
+                    $cds->attributes->{_start} += $frame;
+                    $cds->attributes->{_phase} = 0;
+                  }
+                }
+              }
               last;
             }
             elsif ($i > 0){
@@ -875,6 +895,26 @@ sub fix_phase {
               }
               else {
                 $cds->attributes->{_phase} = $frames[$frame];
+              }
+              if ($i == @startarr -1 && $frame > 0){
+                my @features = $parent->by_type($alt_type);
+                my $exon;
+        				while (my $feature = shift @features){
+                  if ($startarr[$i] >= $feature->{attributes}->{_start} && $endarr[$i] <= $feature->{attributes}->{_end}){
+        						$exon = $feature;
+        					}
+        					last if $exon;
+                }
+                if ($exon->{attributes}->{_start} < $startarr[$i]){
+                  if ($cds->attributes->{_start_array}){
+                    $cds->attributes->{_start_array}->[0] += $frame;
+                    $cds->attributes->{_phase_array}->[0] = 0;
+                  }
+                  else {
+                    $cds->attributes->{_start} += $frame;
+                    $cds->attributes->{_phase} = 0;
+                  }
+                }
               }
               last;
             }
