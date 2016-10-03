@@ -915,8 +915,6 @@ sub fix_phase {
               warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds part $i is out of phase with previous\n";
             }
           }
-          $frame = $frame < 2 ? $frame + 1 : 0;
-          }
           if ($cds->attributes->{_phase_array}){
             $cds->attributes->{_phase_array}->[$i] = $frames[$frame];
           }
