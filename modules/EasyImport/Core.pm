@@ -842,7 +842,7 @@ sub fix_phase {
           my $f = 0;
           my %distances;
           while ($f < 3){
-            my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->translate(-frame=>$frame,-codontable_id=>$codontable_id,,-terminator=>'.',-unknown=>'.')->seq();
+            my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->translate(-frame=>$frame,-codontable_id=>$codontable_id,-terminator=>'.',-unknown=>'.')->seq();
             $pep = substr( $pep, 1, (length($pep) - 2) ) if length $pep >= 3;
             last if (length $pep < 3 || $protein =~ m/$pep/);
             $distances{$frame} = distance($protein,$pep);
@@ -896,12 +896,9 @@ sub fix_phase {
           my $f = 0;
           my %distances;
           while ($f < 3){
-            my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->revcom()->translate(-frame=>$frame,-codontable_id=>$codontable_id,,-terminator=>'.',-unknown=>'.')->seq();
+            my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->revcom()->translate(-frame=>$frame,-codontable_id=>$codontable_id,-terminator=>'.',-unknown=>'.')->seq();
             $pep = substr( $pep, 1, (length($pep) - 2) ) if length $pep >= 3;
             last if (length $pep < 3 || $protein =~ m/$pep/);
-            if ($i < @startarr - 1){
-              warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." exon $i is out of phase with previous\n";
-            }
             $distances{$frame} = distance($protein,$pep);
             $frame = $frame < 2 ? $frame + 1 : 0;
             $f++;
