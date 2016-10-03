@@ -842,7 +842,7 @@ sub fix_phase {
           my $f = 0;
           my %distances;
           while ($f < 3){
-            my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->translate(-frame=>$frame,-codontable_id=>$codontable_id,-terminator=>'X')->seq();
+            my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->translate(-frame=>$frame,-codontable_id=>$codontable_id,,-terminator=>'.',-unknown=>'.')->seq();
             $pep = substr( $pep, 1, (length($pep) - 2) ) if length $pep >= 3;
             last if (length $pep < 3 || $protein =~ m/$pep/);
             $distances{$frame} = distance($protein,$pep);
@@ -893,15 +893,29 @@ sub fix_phase {
         $phases[-1] = 0 unless $phases[-1] =~ m/^[012]$/;
         $frame = $frames[$phases[-1]];
         for (my $i = @startarr -1; $i >= 0; $i--){
-          my $f;
-          for ($f = 0; $f < 3; $f++){
-            my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->revcom()->translate(-frame=>$frame,-codontable_id=>$codontable_id,-terminator=>'X')->seq();
+          my $f = 0;
+          my %distances;
+          while ($f < 3){
+            my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->revcom()->translate(-frame=>$frame,-codontable_id=>$codontable_id,,-terminator=>'.',-unknown=>'.')->seq();
             $pep = substr( $pep, 1, (length($pep) - 2) ) if length $pep >= 3;
             last if (length $pep < 3 || $protein =~ m/$pep/);
             if ($i < @startarr - 1){
               warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." exon $i is out of phase with previous\n";
             }
+            $distances{$frame} = distance($protein,$pep);
             $frame = $frame < 2 ? $frame + 1 : 0;
+            $f++;
+          }
+          if ($f > 0 && $i > 0){
+            if ($f == 3) {
+              warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds part $i does not match provided protein\n";
+              $frame = reduce { $distances{$a} < $distances{$b} ? $a : $b } keys %distances;
+            }
+            else {
+              warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds part $i is out of phase with previous\n";
+            }
+          }
+          $frame = $frame < 2 ? $frame + 1 : 0;
           }
           if ($cds->attributes->{_phase_array}){
             $cds->attributes->{_phase_array}->[$i] = $frames[$frame];
