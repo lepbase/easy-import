@@ -841,40 +841,37 @@ sub fix_phase {
           for (my $f = 0; $f < 3; $f++){
             my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->translate(-frame=>$frame,-codontable_id=>$codontable_id,-terminator=>'X')->seq();
             $pep = substr( $pep, 1, (length($pep) - 2) ) if length $pep >= 3;
-            if (length $pep < 3 || $protein =~ m/$pep/){
-              $phases[$i] = $frames[$frame];
-              if ($cds->attributes->{_phase_array}){
-                $cds->attributes->{_phase_array}->[$i] = $frames[$frame];
+            last if (length $pep < 3 || $protein =~ m/$pep/);
+            if ($i > 0){
+              warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." exon $i is out of phase with previous\n";
+            }           
+            $frame = $frame < 2 ? $frame + 1 : 0;
+          }
+          if ($cds->attributes->{_phase_array}){
+            $cds->attributes->{_phase_array}->[$i] = $frames[$frame];
+          }
+          else {
+            $cds->attributes->{_phase} = $frames[$frame];
+          }
+          if ($i == 0 && $frame > 0){
+            my @features = $mrna->by_type('exon');
+            my $exon;
+            while (my $feature = shift @features){
+              if ($startarr[$i] >= $feature->{attributes}->{_start} && $endarr[$i] <= $feature->{attributes}->{_end}){
+                $exon = $feature;
+              }
+              last if $exon;
+            }
+            if ($exon->{attributes}->{_start} < $startarr[$i]){
+              if ($cds->attributes->{_start_array}){
+                $cds->attributes->{_start_array}->[0] += $frame;
+                $cds->attributes->{_phase_array}->[0] = 0;
               }
               else {
-                $cds->attributes->{_phase} = $frames[$frame];
+                $cds->attributes->{_start} += $frame;
+                $cds->attributes->{_phase} = 0;
               }
-              if ($i == 0 && $frame > 0){
-                my @features = $mrna->by_type('exon');
-                my $exon;
-        				while (my $feature = shift @features){
-                  if ($startarr[$i] >= $feature->{attributes}->{_start} && $endarr[$i] <= $feature->{attributes}->{_end}){
-        						$exon = $feature;
-        					}
-        					last if $exon;
-                }
-                if ($exon->{attributes}->{_start} < $startarr[$i]){
-                  if ($cds->attributes->{_start_array}){
-                    $cds->attributes->{_start_array}->[0] += $frame;
-                    $cds->attributes->{_phase_array}->[0] = 0;
-                  }
-                  else {
-                    $cds->attributes->{_start} += $frame;
-                    $cds->attributes->{_phase} = 0;
-                  }
-                }
-              }
-              last;
             }
-            elsif ($i > 0){
-              warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." exon $i is out of phase with previous\n";
-            }
-            $frame = $frame < 2 ? $frame + 1 : 0;
           }
           my $offset = $frames[(1 + $endarr[$i] - $startarr[$i]) % 3];
           $frame += $offset;
@@ -888,40 +885,37 @@ sub fix_phase {
           for (my $f = 0; $f < 3; $f++){
             my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->revcom()->translate(-frame=>$frame,-codontable_id=>$codontable_id,-terminator=>'X')->seq();
             $pep = substr( $pep, 1, (length($pep) - 2) ) if length $pep >= 3;
-            if (length $pep < 3 || $protein =~ m/$pep/){
-              $phases[$i] = $frames[$frame];
-              if ($cds->attributes->{_phase_array}){
-                $cds->attributes->{_phase_array}->[$i] = $frames[$frame];
-              }
-              else {
-                $cds->attributes->{_phase} = $frames[$frame];
-              }
-              if ($i == @startarr -1 && $frame > 0){
-                my @features = $mrna->by_type('exon');
-                my $exon;
-        				while (my $feature = shift @features){
-                  if ($startarr[$i] >= $feature->{attributes}->{_start} && $endarr[$i] <= $feature->{attributes}->{_end}){
-        						$exon = $feature;
-        					}
-        					last if $exon;
-                }
-                if ($exon->{attributes}->{_start} < $startarr[$i]){
-                  if ($cds->attributes->{_start_array}){
-                    $cds->attributes->{_start_array}->[0] += $frame;
-                    $cds->attributes->{_phase_array}->[0] = 0;
-                  }
-                  else {
-                    $cds->attributes->{_start} += $frame;
-                    $cds->attributes->{_phase} = 0;
-                  }
-                }
-              }
-              last;
-            }
-            elsif ($i < @startarr - 1){
+            last if (length $pep < 3 || $protein =~ m/$pep/);
+            if ($i < @startarr - 1){
               warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." exon $i is out of phase with previous\n";
             }
             $frame = $frame < 2 ? $frame + 1 : 0;
+          }
+          if ($cds->attributes->{_phase_array}){
+            $cds->attributes->{_phase_array}->[$i] = $frames[$frame];
+          }
+          else {
+            $cds->attributes->{_phase} = $frames[$frame];
+          }
+          if ($i == @startarr -1 && $frame > 0){
+            my @features = $mrna->by_type('exon');
+            my $exon;
+            while (my $feature = shift @features){
+              if ($startarr[$i] >= $feature->{attributes}->{_start} && $endarr[$i] <= $feature->{attributes}->{_end}){
+                $exon = $feature;
+              }
+              last if $exon;
+            }
+            if ($exon->{attributes}->{_start} < $startarr[$i]){
+              if ($cds->attributes->{_start_array}){
+                $cds->attributes->{_start_array}->[0] += $frame;
+                $cds->attributes->{_phase_array}->[0] = 0;
+              }
+              else {
+                $cds->attributes->{_start} += $frame;
+                $cds->attributes->{_phase} = 0;
+              }
+            }
           }
           my $offset = $frames[(1 + $endarr[$i] - $startarr[$i]) % 3];
           $frame += $offset;
