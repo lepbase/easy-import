@@ -850,7 +850,7 @@ sub fix_phase {
                 $cds->attributes->{_phase} = $frames[$frame];
               }
               if ($i == 0 && $frame > 0){
-                my @features = $parent->by_type($alt_type);
+                my @features = $mrna->by_type('exon');
                 my $exon;
         				while (my $feature = shift @features){
                   if ($startarr[$i] >= $feature->{attributes}->{_start} && $endarr[$i] <= $feature->{attributes}->{_end}){
@@ -897,7 +897,7 @@ sub fix_phase {
                 $cds->attributes->{_phase} = $frames[$frame];
               }
               if ($i == @startarr -1 && $frame > 0){
-                my @features = $parent->by_type($alt_type);
+                my @features = $mrna->by_type('exon');
                 my $exon;
         				while (my $feature = shift @features){
                   if ($startarr[$i] >= $feature->{attributes}->{_start} && $endarr[$i] <= $feature->{attributes}->{_end}){
