@@ -842,7 +842,8 @@ sub fix_phase {
           my $f = 0;
           my %distances;
           while ($f < 3){
-            my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->translate(-frame=>$frame,-codontable_id=>$codontable_id,-terminator=>'.',-unknown=>'.')->seq();
+            my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->translate(-frame=>$frame,-codontable_id=>$codontable_id,-terminator=>'X',-unknown=>'X')->seq();
+            $pep =~ s/X/./g;
             $pep = substr( $pep, 1, (length($pep) - 2) ) if length $pep >= 3;
             last if (length $pep < 3 || $protein =~ m/$pep/);
             $distances{$frame} = distance($protein,$pep);
@@ -896,7 +897,8 @@ sub fix_phase {
           my $f = 0;
           my %distances;
           while ($f < 3){
-            my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->revcom()->translate(-frame=>$frame,-codontable_id=>$codontable_id,-terminator=>'.',-unknown=>'.')->seq();
+            my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->revcom()->translate(-frame=>$frame,-codontable_id=>$codontable_id,-terminator=>'X',-unknown=>'X')->seq();
+            $pep =~ s/X/./g;
             $pep = substr( $pep, 1, (length($pep) - 2) ) if length $pep >= 3;
             last if (length $pep < 3 || $protein =~ m/$pep/);
             $distances{$frame} = distance($protein,$pep);
