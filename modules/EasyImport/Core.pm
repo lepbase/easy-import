@@ -905,7 +905,7 @@ sub fix_phase {
             $frame = $frame < 2 ? $frame + 1 : 0;
             $f++;
           }
-          if ($f > 0 && $i > 0){
+          if ($f > 0 && $i < @startarr -1){
             if ($f == 3) {
               warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds part $i does not match provided protein\n";
               $frame = reduce { $distances{$a} < $distances{$b} ? $a : $b } keys %distances;
