@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-
+use File::Path qw(make_path);
 my $orthologousgroupstxt_filename = shift @ARGV;
 
 my @species_list = @ARGV;
@@ -24,7 +24,7 @@ while (<OG>) {
   my @tokens = split /\s+/;
   my $orthogroup_id = shift @tokens;
   $orthogroup_id =~ s/:$//;
-  mkdir "orthogroups/$orthogroup_id";
+  make_path "orthogroups/$orthogroup_id";
   open IDS, ">orthogroups/$orthogroup_id/$orthogroup_id" or die $!;
   open FAA, ">orthogroups/$orthogroup_id/$orthogroup_id.faa" or die $!;
   open FNA, ">orthogroups/$orthogroup_id/$orthogroup_id.fna" or die $!;

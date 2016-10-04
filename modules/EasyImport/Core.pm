@@ -835,15 +835,26 @@ sub fix_phase {
         $phases[0] = $cds->attributes->{_phase};
       }
       my $frame;
-      if ($strand == 1){
+      if ($strand == -1){
+        @startarr = reverse @startarr;
+        @endarr = reverse @endarr;
+        @phases = reverse@phases;;
+      }
+      if (1){#$strand == 1){
         $phases[0] = 0 unless $phases[0] =~ m/^[012]$/;
         $frame = $frames[$phases[0]];
         for (my $i = 0; $i < @startarr; $i++){
           my $f = 0;
           my %distances;
           while ($f < 3){
-            my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->translate(-frame=>$frame,-codontable_id=>$codontable_id,-terminator=>'X',-unknown=>'X')->seq();
-            $pep =~ s/X/./g;
+            my $pep;
+            if ($strand == 1){
+              $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->translate(-frame=>$frame,-codontable_id=>$codontable_id,-terminator=>'X',-unknown=>'X')->seq();
+            }
+            else {
+              $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->revcom()->translate(-frame=>$frame,-codontable_id=>$codontable_id,-terminator=>'X',-unknown=>'X')->seq();
+            }
+            $pep =~ s/[BXZ]/./g;
             $pep = substr( $pep, 1, (length($pep) - 2) ) if length $pep >= 3;
             last if (length $pep < 3 || $protein =~ m/$pep/);
             $distances{$frame} = distance($protein,$pep);
@@ -865,7 +876,26 @@ sub fix_phase {
           else {
             $cds->attributes->{_phase} = $frames[$frame];
           }
-          if ($i == 0 && $frame > 0){
+#          if ($i == 0 && $frame > 0){
+#            my @features = $mrna->by_type('exon');
+#            my $exon;
+#            while (my $feature = shift @features){
+#              if ($startarr[$i] >= $feature->{attributes}->{_start} && $endarr[$i] <= $feature->{attributes}->{_end}){
+#                $exon = $feature;
+#              }
+#              last if $exon;
+#            }
+#            if ($exon->{attributes}->{_start} < $startarr[$i]){
+#              if ($cds->attributes->{_start_array}){
+#                $cds->attributes->{_start_array}->[0] += $frame;
+#                $cds->attributes->{_phase_array}->[0] = 0;
+#              }
+#              else {
+#                $cds->attributes->{_start} += $frame;
+#                $cds->attributes->{_phase} = 0;
+#              }
+#            }
+#          }
             my @features = $mrna->by_type('exon');
             my $exon;
             while (my $feature = shift @features){
@@ -874,7 +904,8 @@ sub fix_phase {
               }
               last if $exon;
             }
-            if ($exon->{attributes}->{_start} < $startarr[$i]){
+          if ($i == 0 && $frame > 0){
+            if ($strand == 1 && $exon->{attributes}->{_start} < $startarr[$i]){
               if ($cds->attributes->{_start_array}){
                 $cds->attributes->{_start_array}->[0] += $frame;
                 $cds->attributes->{_phase_array}->[0] = 0;
@@ -883,6 +914,24 @@ sub fix_phase {
                 $cds->attributes->{_start} += $frame;
                 $cds->attributes->{_phase} = 0;
               }
+            }
+            elsif ($strand == -1 && $exon->{attributes}->{_end} > $endarr[$i]){
+              if ($cds->attributes->{_end_array}){
+                $cds->attributes->{_end_array}->[0] += $frame;
+                $cds->attributes->{_phase_array}->[0] = 0;
+              }
+              else {
+                $cds->attributes->{_end} += $frame;
+                $cds->attributes->{_phase} = 0;
+              }
+            }
+          }
+          elsif ($i > 0 && $i < @startarr -1){
+            if ($exon->{attributes}->{_start} < $startarr[$i]){
+              $exon->{attributes}->{_start} = $startarr[$i];
+            }
+            if ($exon->{attributes}->{_end} > $endarr[$i]){
+              $exon->{attributes}->{_end} = $endarr[$i];
             }
           }
           my $offset = $frames[(1 + $endarr[$i] - $startarr[$i]) % 3];
