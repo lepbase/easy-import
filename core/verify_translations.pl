@@ -175,6 +175,8 @@ my $substrexportedofprovidertostop = 0;
 my $differenttostop = 0;
 my @different;
 
+open DIFF, ">$outdir/different.fasta" or die $!;
+
 for my $id (sort keys %providerhash) {
     if (exists $exportedhash{$id}) {
         if ($providerhash{$id} eq $exportedhash{$id}) {
@@ -203,9 +205,11 @@ for my $id (sort keys %providerhash) {
             $exportedtostop =~ s/\*.*//;
             push @different,  $id . "\t" . distance($providerhash{$id},$exportedhash{$id}) . "\t" . (($exportedtostop ne $providertostop) ? "diff_to_stop_codon" : "same_to_stop_codon") . "\t" . distance($providertostop,$exportedtostop);
             $differenttostop++ if ($exportedtostop ne $providertostop);
+            print DIFF ">$id\n$providerhash{$id}\n>$id\n$exportedhash{$id}\n";
         }
     }
 }
+close DIFF;
 
 print LOG "Identical: " . scalar(@identical) . "\n";
 print LOG "Sequence in Database is substr of sequence in Provider file: $substrexportedofprovidertostop (" . scalar(@substrexportedofprovider) . ")\n";
