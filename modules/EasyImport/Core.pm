@@ -838,7 +838,7 @@ sub fix_phase {
       if ($strand == -1){
         @startarr = reverse @startarr;
         @endarr = reverse @endarr;
-        @phases = reverse@phases;;
+        @phases = reverse @phases;
       }
       if (1){#$strand == 1){
         $phases[0] = 0 unless $phases[0] =~ m/^[012]$/;
@@ -854,58 +854,40 @@ sub fix_phase {
             else {
               $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->revcom()->translate(-frame=>$frame,-codontable_id=>$codontable_id,-terminator=>'X',-unknown=>'X')->seq();
             }
-            $pep =~ s/[BXZ]/./g;
-            $pep = substr( $pep, 1, (length($pep) - 2) ) if length $pep >= 3;
-            last if (length $pep < 3 || $protein =~ m/$pep/);
+            my $shortpep = $pep;
+            $shortpep =~ s/[BXZ]/./g;
+            $shortpep = substr( $shortpep, 1, (length($shortpep) - 2) ) if length $shortpep >= 3;
+            last if (length $pep < 3 || $protein =~ m/$shortpep/);
             $distances{$frame} = distance($protein,$pep);
             $frame = $frame < 2 ? $frame + 1 : 0;
             $f++;
           }
-          if ($f > 0 && $i > 0){
-            if ($f == 3) {
-              warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds part $i does not match provided protein\n";
-              $frame = reduce { $distances{$a} < $distances{$b} ? $a : $b } keys %distances;
-            }
-            else {
-              warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds part $i is out of phase with previous\n";
-            }
+          if ($f == 3) {
+            $frame = reduce { $distances{$a} < $distances{$b} ? $a : $b } keys %distances;
+            warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds coordinates ($startarr[$i], $endarr[$i]) do not match provided protein\n";
+          }
+          elsif ($f > 0 && $i > 0){
+            warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds coordinates ($startarr[$i], $endarr[$i]) are  out of phase with previous\n";
           }
           if ($cds->attributes->{_phase_array}){
-            $cds->attributes->{_phase_array}->[$i] = $frames[$frame];
+            my $index = $i;
+            $index = -1 - $i if $strand == -1;
+            $cds->attributes->{_phase_array}->[$index] = $frames[$frame];
           }
           else {
             $cds->attributes->{_phase} = $frames[$frame];
           }
-#          if ($i == 0 && $frame > 0){
-#            my @features = $mrna->by_type('exon');
-#            my $exon;
-#            while (my $feature = shift @features){
-#              if ($startarr[$i] >= $feature->{attributes}->{_start} && $endarr[$i] <= $feature->{attributes}->{_end}){
-#                $exon = $feature;
-#              }
-#              last if $exon;
-#            }
-#            if ($exon->{attributes}->{_start} < $startarr[$i]){
-#              if ($cds->attributes->{_start_array}){
-#                $cds->attributes->{_start_array}->[0] += $frame;
-#                $cds->attributes->{_phase_array}->[0] = 0;
-#              }
-#              else {
-#                $cds->attributes->{_start} += $frame;
-#                $cds->attributes->{_phase} = 0;
-#              }
-#            }
-#          }
-            my @features = $mrna->by_type('exon');
-            my $exon;
-            while (my $feature = shift @features){
-              if ($startarr[$i] >= $feature->{attributes}->{_start} && $endarr[$i] <= $feature->{attributes}->{_end}){
-                $exon = $feature;
-              }
-              last if $exon;
+          my @features = $mrna->by_type('exon');
+          my $exon;
+          while (my $feature = shift @features){
+            if ($startarr[$i] >= $feature->{attributes}->{_start} && $endarr[$i] <= $feature->{attributes}->{_end}){
+              $exon = $feature;
             }
+            last if $exon;
+          }
           if ($i == 0 && $frame > 0){
             if ($strand == 1 && $exon->{attributes}->{_start} < $startarr[$i]){
+warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds coordinates ($startarr[$i], $endarr[$i]) are out of phase in exon with 5' UTR\n";  
               if ($cds->attributes->{_start_array}){
                 $cds->attributes->{_start_array}->[0] += $frame;
                 $cds->attributes->{_phase_array}->[0] = 0;
@@ -916,21 +898,24 @@ sub fix_phase {
               }
             }
             elsif ($strand == -1 && $exon->{attributes}->{_end} > $endarr[$i]){
+warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds coordinates ($startarr[$i], $endarr[$i]) are out of phase in exon with 5' UTR\n";  
               if ($cds->attributes->{_end_array}){
-                $cds->attributes->{_end_array}->[0] += $frame;
-                $cds->attributes->{_phase_array}->[0] = 0;
+                $cds->attributes->{_end_array}->[-1] -= $frame;
+                $cds->attributes->{_phase_array}->[-1] = 0;
               }
               else {
-                $cds->attributes->{_end} += $frame;
+                $cds->attributes->{_end} -= $frame;
                 $cds->attributes->{_phase} = 0;
               }
             }
           }
           elsif ($i > 0 && $i < @startarr -1){
             if ($exon->{attributes}->{_start} < $startarr[$i]){
+warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds coordinates ($startarr[$i], $endarr[$i]) do not match exon coordinates (".$exon->{attributes}->{_start}.", ".$exon->{attributes}->{_end}.")\n";  
               $exon->{attributes}->{_start} = $startarr[$i];
-            }
+           }
             if ($exon->{attributes}->{_end} > $endarr[$i]){
+warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds coordinates ($startarr[$i], $endarr[$i]) do not match exon coordinates (".$exon->{attributes}->{_start}.", ".$exon->{attributes}->{_end}.")\n";  
               $exon->{attributes}->{_end} = $endarr[$i];
             }
           }
