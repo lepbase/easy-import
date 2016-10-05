@@ -734,7 +734,7 @@ sub rewrite_gff {
       if ($proteins && $scaffolds){
         my $codontable_id = 1;
         $codontable_id = 5 if ($mitochondrial->{$gene->{attributes}->{_seq_name}});
-        fix_phase($gene,$proteins,$scaffolds,$codontable_id);
+        fix_phase($gene,$proteins,$scaffolds,$codontable_id) if $proteins;
       }
 			if (my $out = $gene->structured_output(1)){
 				print OUT $out;
@@ -887,7 +887,7 @@ sub fix_phase {
           }
           if ($i == 0 && $frame > 0){
             if ($strand == 1 && $exon->{attributes}->{_start} < $startarr[$i]){
-warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds coordinates ($startarr[$i], $endarr[$i]) are out of phase in exon with 5' UTR\n";  
+warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds coordinates ($startarr[$i], $endarr[$i]) are out of phase in exon with 5' UTR\n";
               if ($cds->attributes->{_start_array}){
                 $cds->attributes->{_start_array}->[0] += $frame;
                 $cds->attributes->{_phase_array}->[0] = 0;
@@ -898,7 +898,7 @@ warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds coordinates ($startarr
               }
             }
             elsif ($strand == -1 && $exon->{attributes}->{_end} > $endarr[$i]){
-warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds coordinates ($startarr[$i], $endarr[$i]) are out of phase in exon with 5' UTR\n";  
+warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds coordinates ($startarr[$i], $endarr[$i]) are out of phase in exon with 5' UTR\n";
               if ($cds->attributes->{_end_array}){
                 $cds->attributes->{_end_array}->[-1] -= $frame;
                 $cds->attributes->{_phase_array}->[-1] = 0;
@@ -911,11 +911,11 @@ warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds coordinates ($startarr
           }
           elsif ($i > 0 && $i < @startarr -1){
             if ($exon->{attributes}->{_start} < $startarr[$i]){
-warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds coordinates ($startarr[$i], $endarr[$i]) do not match exon coordinates (".$exon->{attributes}->{_start}.", ".$exon->{attributes}->{_end}.")\n";  
+warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds coordinates ($startarr[$i], $endarr[$i]) do not match exon coordinates (".$exon->{attributes}->{_start}.", ".$exon->{attributes}->{_end}.")\n";
               $exon->{attributes}->{_start} = $startarr[$i];
            }
             if ($exon->{attributes}->{_end} > $endarr[$i]){
-warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds coordinates ($startarr[$i], $endarr[$i]) do not match exon coordinates (".$exon->{attributes}->{_start}.", ".$exon->{attributes}->{_end}.")\n";  
+warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds coordinates ($startarr[$i], $endarr[$i]) do not match exon coordinates (".$exon->{attributes}->{_start}.", ".$exon->{attributes}->{_end}.")\n";
               $exon->{attributes}->{_end} = $endarr[$i];
             }
           }
