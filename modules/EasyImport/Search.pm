@@ -26,6 +26,7 @@ use DBI;
   	$sth1->execute();
   	while (my ($key,$value) = $sth1->fetchrow_array()){
       next if $key =~ m/(date|mapping|biomart)/;
+      next if $value =~ m/^[\d\.]+/;
   		%strings = ();
   		add_search_term($search_dbh,'species',0,$value,"meta.$key",$production_name);
   	}
