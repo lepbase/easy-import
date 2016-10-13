@@ -417,8 +417,8 @@ sub rewrite_gff {
     #  $gff->format(lc $value);
     }
 		elsif ($key eq 'CHUNK'){
-      $chunk_by = $value[0];
-      $chunk_on = $value[1];
+      $chunk_by = $value->[0];
+      $chunk_on = $value->[1];
     }
 		elsif (ref $value || ref $value eq 'ARRAY') {
 			my @value = @$value;
