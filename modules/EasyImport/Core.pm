@@ -410,10 +410,15 @@ sub rewrite_gff {
 	#$gff->add_expectation('exon','hasParent','mrna|transcript','force');
 	#$gff->add_expectation('cds','hasParent','mrna|transcript','force');
 	#$gff->add_expectation('cds|exon|mrna|trna|transcript|gene','<=[_start,_end]','SELF','warn');
+  my ($chunk_by,$chunk_on) = ('separator','###');
 	foreach my $key (keys %{$params->{'GFF'}}){
 		my $value = $params->{'GFF'}{$key};
 		if ($key eq 'FORMAT'){
     #  $gff->format(lc $value);
+    }
+		elsif ($key eq 'CHUNK'){
+      $chunk_by = $value[0];
+      $chunk_on = $value[1];
     }
 		elsif (ref $value || ref $value eq 'ARRAY') {
 			my @value = @$value;
@@ -451,9 +456,7 @@ sub rewrite_gff {
 	}
 
 
-	#while ($gff->parse_chunk('separator','###')){
-	while ($gff->parse_chunk('change','region')){
-		# PRIORITY TODO: skip features by source (if set in the ini)
+	while ($gff->parse_chunk($chunk_by,$chunk_on)){
 		$gff->validate_all();
 		my @genes = $gff->by_type('gene');
 		my @exceptions;
