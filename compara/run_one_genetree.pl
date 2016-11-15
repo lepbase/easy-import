@@ -51,23 +51,23 @@ my $comparalib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-compara/modules';
 push @INC, $lib;
 push @INC, $comparalib;
 
-print "cd orthogroups/$orthogroup_id;";
+print "cd orthogroups/$orthogroup_id;\n\n";
 if (exists $params->{'SETUP'}{'MAFFT'}) {
-  print $params->{'SETUP'}{'MAFFT'} . " --treeout --auto --reorder $orthogroup_id.faa > $orthogroup_id.faa.mafft;" ; 
+  print $params->{'SETUP'}{'MAFFT'} . " --treeout --auto --reorder $orthogroup_id.faa > $orthogroup_id.faa.mafft;\n\n" ; 
 }
 if (exists $params->{'SETUP'}{'MAFFT'} and
     exists $params->{'SETUP'}{'NOISY'}) {
-  print $params->{'SETUP'}{'NOISY'} . "  --seqtype P $orthogroup_id.faa.mafft;" ; 
+  print $params->{'SETUP'}{'NOISY'} . "  --seqtype P $orthogroup_id.faa.mafft;\n\n" ; 
 }
 if (exists $params->{'SETUP'}{'MAFFT'} and
     exists $params->{'SETUP'}{'NOISY'} and
     exists $params->{'SETUP'}{'RAXML'}) {
-  print $params->{'SETUP'}{'RAXML'} . " -f a -x 12345 -# 3 -T 1 -p 12345 -m PROTGAMMAAUTO -s $orthogroup_id.faa_out.fas -n $orthogroup_id;";
-  print "mv RAxML_info.$orthogroup_id $orthogroup_id.RAxML_info;";
-  print "mv RAxML_bipartitionsBranchLabels.$orthogroup_id $orthogroup_id.RAxML_bipartitionsBranchLabels;";
-  print "mv RAxML_bipartitions.$orthogroup_id $orthogroup_id.RAxML_bipartitions;";
-  print "mv RAxML_bestTree.$orthogroup_id $orthogroup_id.RAxML_bestTree;";
-  print "mv RAxML_bootstrap.$orthogroup_id $orthogroup_id.RAxML_bootstrap;";
+  print $params->{'SETUP'}{'RAXML'} . " -f a -x 12345 -# 3 -T 1 -p 12345 -m PROTGAMMAAUTO -s $orthogroup_id.faa_out.fas -n $orthogroup_id;\n";
+  print "mv RAxML_info.$orthogroup_id $orthogroup_id.RAxML_info;\n";
+  print "mv RAxML_bipartitionsBranchLabels.$orthogroup_id $orthogroup_id.RAxML_bipartitionsBranchLabels;\n";
+  print "mv RAxML_bipartitions.$orthogroup_id $orthogroup_id.RAxML_bipartitions;\n";
+  print "mv RAxML_bestTree.$orthogroup_id $orthogroup_id.RAxML_bestTree;\n";
+  print "mv RAxML_bootstrap.$orthogroup_id $orthogroup_id.RAxML_bootstrap;\n\n";
 }
 if (exists $params->{'SETUP'}{'MAFFT'} and
     exists $params->{'SETUP'}{'NOISY'} and
@@ -77,11 +77,11 @@ if (exists $params->{'SETUP'}{'MAFFT'} and
   print "java -jar " . $params->{'SETUP'}{'NOTUNG'} . 
     " --treeoutput nhx --root -s " . 
     $params->{'SETUP'}{'NOTUNG_SPECIESTREE'} . 
-    " -g $orthogroup_id.RAxML_bipartitionsBranchLabels;";
+    " -g $orthogroup_id.RAxML_bipartitionsBranchLabels;\n\n";
   print "java -jar " . $params->{'SETUP'}{'NOTUNG'} . 
     " --nolosses --treeoutput nhx --homologtabletabs --reconcile --stpruned -s " . 
     $params->{'SETUP'}{'NOTUNG_SPECIESTREE'} . 
-    " -g $orthogroup_id.RAxML_bipartitionsBranchLabels.rooting.0;";
+    " -g $orthogroup_id.RAxML_bipartitionsBranchLabels.rooting.0;\n\n";
 }
 
 sub usage {
