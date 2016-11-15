@@ -25,14 +25,14 @@ sub setup_variation_db {
 
   $dbh->do('USE '.$params->{'DATABASE_VARIATION'}{'NAME'});
   $dbh->do("INSERT INTO meta (meta_key,meta_value) "
-      ."VALUES ('species.production_name',$dbh->quote($params->{'META'}{'SPECIES.PRODUCTION_NAME'}))");
+      ."VALUES ('species.production_name','".$params->{'META'}{'SPECIES.PRODUCTION_NAME'}."')");
   $dbh->do("INSERT INTO meta (meta_key,meta_value) "
-      ."VALUES ('species.division',$dbh->quote($params->{'META'}{'SPECIES.DIVISION'}))");
+      ."VALUES ('species.division','".$params->{'META'}{'SPECIES.DIVISION'}."')");
 
   return $dbh;
 }
 
-sub compara_db_connect {
+sub variation_db_connect {
   my $params = shift;
   my $dsn = "DBI:mysql:host=$params->{'DATABASE_CORE'}{'HOST'};port=$params->{'DATABASE_CORE'}{'PORT'}";
   my $dbh = DBI->connect($dsn,"$params->{'DATABASE_CORE'}{'RW_USER'}","$params->{'DATABASE_CORE'}{'RW_PASS'}") || die "ERROR: unable to connect to [DATABASE_VARIATION] HOST ".$params->{'DATABASE_CORE'}{'HOST'}." using provided settings";

@@ -26,9 +26,6 @@ my %sections = (
               'RW_USER' => 1,
               'RW_PASS' => 1,
               'RO_USER' => 1
-            },
-  'DATABASE_TEMPLATE' =>	{ 	'NAME' => 1,
-              'URL' => 1
             }
   );
 ## check that all required parameters have been defined in the config file
