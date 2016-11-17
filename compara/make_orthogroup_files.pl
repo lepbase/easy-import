@@ -2,20 +2,67 @@
 
 use strict;
 use warnings;
+use Cwd 'abs_path';
 use File::Path qw(make_path);
-my $orthologousgroupstxt_filename = shift @ARGV;
+use File::Basename;
+use Module::Load;
 
-my @species_list = @ARGV;
+## find the full path to the directory that this script is executing in
+our $dirname;
+BEGIN {
+  $dirname  = dirname(abs_path($0));
+}
+use lib "$dirname/../modules";
+use lib "$dirname/../gff-parser";
+use EasyImport::Core;
+
+## load parameters from an INI-style config file
+my %sections = (
+  'ENSEMBL' =>  {
+    'LOCAL' => 1,
+  },
+  'TAXA' =>  {},
+  'SETUP' => {
+    'FASTA_DIR' => 1,
+    'REMOVE'    =>  1,
+  },
+  'ORTHOGROUP'  => {
+    'PREFIX'       => 1,
+    'SUFFIXLENGTH' => 7,
+  },
+);
+
+## check that all required parameters have been defined in the config file
+die "ERROR: you must specify at least one ini file\n",usage(),"\n" unless $ARGV[0];
+my %params;
+my $params = \%params;
+while (my $ini_file = shift @ARGV){
+  load_ini($params,$ini_file,\%sections,scalar(@ARGV));
+}
+
+my $lib = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl/modules';
+push @INC, $lib;
+load Bio::EnsEMBL::DBSQL::DBAdaptor;
+
+my $fastadir = $params->{'SETUP'}{'FASTA_DIR'};
+die "Core sequences fasta dir $fastadir does not exist\n" unless -d $fastadir;
+
+my $orthologousgroupstxt_filename = $params->{'ORTHOGROUP'}{'ORTHOGROUPS_FILE'};
+die "Orthogroups file $orthologousgroupstxt_filename does not exist\n" unless -s $orthologousgroupstxt_filename;
+
+my $orthogroup_prefix       = $params->{'ORTHOGROUP'}{'PREFIX'};
+my $orthogroup_suffixlength = $params->{'ORTHOGROUP'}{'SUFFIXLENGTH'};
+
+my @species_list = keys %{$params->{'TAXA'}};
 my $species_regexp = join("|", @species_list);
-# or get this from params ini file like import_orthogroups.pl
 
 my %sequences;
 
 # load all sequences in memory
 for my $species (@species_list) {
-  $sequences{$species}{faa} = fastafile2hash("$species\_-_canonical_proteins.fa");
-  $sequences{$species}{fna} = fastafile2hash("$species\_-_canonical_cds_translationid.fa");
-  $sequences{$species}{fba} = fastafile2hash("$species\_-_canonical_protein_bounded_exon.fa");
+  $sequences{$species}{faa} = fastafile2hash("$fastadir/canonical_proteins/$species\_-_canonical_proteins.fa");
+  $sequences{$species}{fna} = fastafile2hash("$fastadir/canonical_cds_translationid/$species\_-_canonical_cds_translationid.fa");
+  $sequences{$species}{fba} = fastafile2hash("$fastadir/canonical_protein_bounded_exon/$species\_-_canonical_protein_bounded_exon.fa");
 }
 
 # create folder with sequences for each orthogroup
@@ -23,7 +70,10 @@ open OG, "<$orthologousgroupstxt_filename" or die $!;
 while (<OG>) {
   my @tokens = split /\s+/;
   my $orthogroup_id = shift @tokens;
-  $orthogroup_id =~ s/:$//;
+  next if scalar @tokens < 4; # no need to make trees if there are less than 4 sequences
+  $orthogroup_id =~ s/.*?(.{$orthogroup_suffixlength}):$/$1/;
+  $orthogroup_id = $orthogroup_prefix . $orthogroup_id;
+  # In the future, add checks to ensure that an orthogroup ID stays consistent across releases
   make_path "orthogroups/$orthogroup_id";
   open IDS, ">orthogroups/$orthogroup_id/$orthogroup_id" or die $!;
   open FAA, ">orthogroups/$orthogroup_id/$orthogroup_id.faa" or die $!;
