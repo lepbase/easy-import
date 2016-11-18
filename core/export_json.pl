@@ -73,10 +73,10 @@ my $meta_container = $dba->get_adaptor("MetaContainer");
 
 my $display_name    = $meta_container->get_display_name();
 my $assembly_name   = $meta_container->single_value_by_key('ASSEMBLY.NAME');
-$display_name .= '_'.$assembly_name; 
+$display_name .= ' '.$assembly_name;
 
 # convert display name spaces to underscores
-$display_name =~ s/ /_/g;
+# $display_name =~ s/ /_/g;
 
 my $ontology_adaptor = $registry->get_adaptor( 'Multi', 'Ontology', 'OntologyTerm' );
 my $slice_adaptor    = $dba->get_adaptor("Slice");
@@ -131,12 +131,13 @@ elsif ($meta_container->single_value_by_key('assembly.cegma_complete')){
   $cegma_busco{'cegma_partial'} = $meta_container->single_value_by_key('assembly.cegma_partial')*1;
 }
 my $assembly_stats = scaffold_summary($params,\@scaffolds,'SCAFFOLD',\%cegma_busco);
+$assembly_stats->{'name'} = $display_name;
 
 my $json = JSON->new;
 $json->pretty(1);
 
 mkdir 'web';
-open JS,">web/$display_name.assembly-stats.json";
+open JS,">web/$dbname.assembly-stats.json";
 print JS $json->encode($assembly_stats),"\n";
 close JS;
 
@@ -178,11 +179,11 @@ foreach my $key (keys %features){
   print $maxbin,"\n";
   print 10**$maxbin,"\n";
 }
-
+$features{'name'} = $display_name;
 $json = JSON->new;
 $json->pretty(1);
 
-open JS,">web/$display_name.codon-usage.json";
+open JS,">web/$dbname.codon-usage.json";
 print JS $json->encode(\%features),"\n";
 close JS;
 
@@ -230,7 +231,7 @@ $meta{'genebuild'}->{'exon_count'} = $meta_container->single_value_by_key('geneb
 $json = JSON->new;
 $json->pretty(1);
 
-open JS,">web/$display_name.meta.json";
+open JS,">web/$dbname.meta.json";
 print JS $json->encode(\%meta),"\n";
 close JS;
 
