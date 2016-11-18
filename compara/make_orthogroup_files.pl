@@ -28,7 +28,7 @@ my %sections = (
   },
   'ORTHOGROUP'  => {
     'PREFIX'       => 1,
-    'SUFFIXLENGTH' => 7,
+    'SUFFIXLENGTH' => 1,
   },
 );
 

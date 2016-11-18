@@ -94,6 +94,7 @@ sub gff_to_ensembl {
 		}
 	}
 	while ($gff->parse_chunk('separator','###')){
+#	while ($gff->parse_chunk('change','region')){
 		# modify strands to use +1 or -1
 		my @features = $gff->descendants();
 		while (my $feature = shift @features){

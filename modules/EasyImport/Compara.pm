@@ -6,6 +6,50 @@ use Bio::SeqIO;
 use File::Basename;
 use Data::Dumper;
 
+sub create_qsub_script {
+	my ($params,$fullname) = @_;
+  my ($orthogroup_id,$path) = fileparse($fullname);
+  
+	open  BASH, ">$path/$orthogroup_id.bash" or die $!;
+	
+	print BASH  "#!/bin/bash\n\n";
+	print BASH  "cd $path\n\n";
+	if (exists $params->{'SETUP'}{'MAFFT'}) {
+		print BASH $params->{'SETUP'}{'MAFFT'} . " --treeout --auto --reorder $orthogroup_id.faa > $orthogroup_id.faa.mafft;\n\n" ; 
+	}
+	if (exists $params->{'SETUP'}{'MAFFT'} and
+			exists $params->{'SETUP'}{'NOISY'}) {
+		print BASH $params->{'SETUP'}{'NOISY'} . "  --seqtype P $orthogroup_id.faa.mafft;\n\n" ; 
+	}
+	if (exists $params->{'SETUP'}{'MAFFT'} and
+			exists $params->{'SETUP'}{'NOISY'} and
+			exists $params->{'SETUP'}{'RAXML'}) {
+		print BASH $params->{'SETUP'}{'RAXML'} . " -f a -x 12345 -# 3 -T 1 -p 12345 -m PROTGAMMAAUTO -s $orthogroup_id.faa_out.fas -n $orthogroup_id;\n";
+		print BASH "mv RAxML_info.$orthogroup_id $orthogroup_id.RAxML_info;\n";
+		print BASH "mv RAxML_bipartitionsBranchLabels.$orthogroup_id $orthogroup_id.RAxML_bipartitionsBranchLabels;\n";
+		print BASH "mv RAxML_bipartitions.$orthogroup_id $orthogroup_id.RAxML_bipartitions;\n";
+		print BASH "mv RAxML_bestTree.$orthogroup_id $orthogroup_id.RAxML_bestTree;\n";
+		print BASH "mv RAxML_bootstrap.$orthogroup_id $orthogroup_id.RAxML_bootstrap;\n\n";
+	}
+	if (exists $params->{'SETUP'}{'MAFFT'} and
+			exists $params->{'SETUP'}{'NOISY'} and
+			exists $params->{'SETUP'}{'RAXML'} and
+			exists $params->{'SETUP'}{'NOTUNG'} and
+			exists $params->{'SETUP'}{'NOTUNG_SPECIESTREE'}) {
+		print BASH "java -jar " . $params->{'SETUP'}{'NOTUNG'} . 
+			" --treeoutput nhx --root -s " . 
+			$params->{'SETUP'}{'NOTUNG_SPECIESTREE'} . 
+			" -g $orthogroup_id.RAxML_bipartitionsBranchLabels;\n\n";
+		print BASH "java -jar " . $params->{'SETUP'}{'NOTUNG'} . 
+			" --nolosses --treeoutput nhx --homologtabletabs --reconcile --stpruned -s " . 
+			$params->{'SETUP'}{'NOTUNG_SPECIESTREE'} . 
+			" -g $orthogroup_id.RAxML_bipartitionsBranchLabels.rooting.0;\n\n";
+	}
+	close BASH;
+	chmod 0755, "$path/$orthogroup_id.bash";
+}
+
+
 # fill in/select from
 sub load_sequences {
   my ($dbh,$params,$st_nodes,$core_dbs,$fullname) = @_;

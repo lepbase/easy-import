@@ -61,6 +61,8 @@ load Bio::EnsEMBL::Compara::DBSQL::NCBITaxonAdaptor;
 my $dbh = compara_db_connect($params);
 
 our $prefix = $params->{'ORTHOGROUP'}{'PREFIX'};
+# this is the current version prefix, trim the version digits at the end
+$prefix =~ s/\d*$//;
 
 my $taxlist;
 foreach my $key (keys %{$params->{'TAXA'}}){
