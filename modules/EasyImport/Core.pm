@@ -1251,50 +1251,68 @@ sub load_sequences {
 							.' -dbpass '.$params->{'DATABASE_CORE'}{'RW_PASS'};
 	my $perl_libs = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl/modules';
 	my $perl = "perl -I $perl_libs";
-	if ($infiles->{'CONTIG'} && !$infiles->{'SCAFFOLD'}){
-		if ($infiles->{'CONTIG'}{'type'} ne 'fas'){
-			die "ERROR: [FILES] CONTIG $infiles->{'CONTIG'}{'name'} must be a fasta file if it is the only sequence file specified\n";
-		}
-		system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_seq_region.pl '.$connection_info.' -coord_system_name contig -rank 1 -coord_system_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -default_version -sequence_level -verbose -fasta_file '.$infiles->{'CONTIG'}{'name'}.' -replace_ambiguous_bases';
-	}
-	elsif ($infiles->{'CONTIG'}){
-		if ($infiles->{'CONTIG'}{'type'} ne 'fas' && $infiles->{'SCAFFOLD'}{'type'} ne 'fas'){
-			die "ERROR: at least one of [FILES] CONTIG $infiles->{'CONTIG'}{'name'} or SCAFFOLD $infiles->{'SCAFFOLD'}{'name'} must be a fasta file\n";
-		}
-		if ($infiles->{'CONTIG'}{'type'} ne 'agp' && $infiles->{'SCAFFOLD'}{'type'} ne 'agp'){
-			die "ERROR: at least one of [FILES] CONTIG $infiles->{'CONTIG'}{'name'} or SCAFFOLD $infiles->{'SCAFFOLD'}{'name'} must be agp file\n";
-		}
-		if ($infiles->{'CONTIG'}{'type'} ne 'agp'){
-			system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_seq_region.pl '.$connection_info.' -coord_system_name scaffold -rank 1 -coord_system_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -default_version -agp_file '.$infiles->{'SCAFFOLD'}{'name'};
-			system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_seq_region.pl '.$connection_info.' -coord_system_name contig -rank 2 -default_version -sequence_level -verbose -fasta_file '.$infiles->{'CONTIG'}{'name'}.' -replace_ambiguous_bases';
-			system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_agp.pl '.$connection_info.' -assembled_name scaffold -assembled_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -component_name contig -agp_file '.$infiles->{'SCAFFOLD'}{'name'};
-		}
-		else {
-			system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_seq_region.pl '.$connection_info.' -coord_system_name scaffold -rank 1 -default_version -sequence_level -verbose -fasta_file '.$infiles->{'SCAFFOLD'}{'name'}.' -replace_ambiguous_bases';
-			system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_seq_region.pl '.$connection_info.' -coord_system_name contig -rank 2 -coord_system_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -default_version -agp_file '.$infiles->{'CONTIG'}{'name'};
-			system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_agp.pl '.$connection_info.' -assembled_name contig -assembled_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -component_name scaffold -agp_file '.$infiles->{'CONTIG'}{'name'};
-		}
-		$dbh->{RaiseError} = 0;
-		$dbh->do('INSERT INTO meta(species_id, meta_key,meta_value) VALUES (1, '.$dbh->quote('assembly.mapping').','.$dbh->quote('scaffold:'.$params->{'META'}{'ASSEMBLY.NAME'}.'|contig').')');
-		$dbh->{RaiseError} = 1;
-	}
-	else {
-		if ($infiles->{'SCAFFOLD'}{'type'} ne 'fas'){
-			die "ERROR: [FILES] SCAFFOLD $infiles->{'SCAFFOLD'}{'name'} must be a fasta file if it is the only sequence file specified\n";
-		}
-		system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_seq_region.pl '.$connection_info.' -coord_system_name scaffold -rank 1 -coord_system_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -default_version -sequence_level -verbose -fasta_file '.$infiles->{'SCAFFOLD'}{'name'}.' -replace_ambiguous_bases';
+  my $rank = 1;
+  if ($infiles->{'CHROMOSOME'}){
+    if ($infiles->{'CHROMOSOME'}{'type'} eq 'agp'){
+      system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_seq_region.pl '.$connection_info.' -coord_system_name scaffold -rank '.$rank.' -coord_system_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -default_version -agp_file '.$infiles->{'CHROMOSOME'}{'name'};
+    }
+    else {
+      system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_seq_region.pl '.$connection_info.' -coord_system_name chromosome -rank '.$rank.' -coord_system_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -default_version -sequence_level -verbose -fasta_file '.$infiles->{'CHROMOSOME'}{'name'}.' -replace_ambiguous_bases';
+    }
+    $dbh->{RaiseError} = 0;
+    if ($infiles->{'SCAFFOLD'}){
+      $dbh->do('INSERT INTO meta(species_id, meta_key,meta_value) VALUES (1, '.$dbh->quote('assembly.mapping').','.$dbh->quote('chromosome:'.$params->{'META'}{'ASSEMBLY.NAME'}.'|scaffold:'.$params->{'META'}{'ASSEMBLY.NAME'}).')');
+    }
+    if ($infiles->{'CONTIG'}){
+      $dbh->do('INSERT INTO meta(species_id, meta_key,meta_value) VALUES (1, '.$dbh->quote('assembly.mapping').','.$dbh->quote('chromosome:'.$params->{'META'}{'ASSEMBLY.NAME'}.'|contig:'.$params->{'META'}{'ASSEMBLY.NAME'}).')');
+    }
+    $dbh->{RaiseError} = 1;
+    $rank++;
+  }
+  if ($infiles->{'SCAFFOLD'}){
+    if ($infiles->{'SCAFFOLD'}{'type'} eq 'agp'){
+      system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_seq_region.pl '.$connection_info.' -coord_system_name scaffold -rank '.$rank.' -coord_system_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -default_version -agp_file '.$infiles->{'SCAFFOLD'}{'name'};
+    }
+    else {
+      system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_seq_region.pl '.$connection_info.' -coord_system_name chromosome -rank '.$rank.' -coord_system_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -default_version -sequence_level -verbose -fasta_file '.$infiles->{'SCAFFOLD'}{'name'}.' -replace_ambiguous_bases';
+    }
+    if ($infiles->{'CONTIG'}){
+      $dbh->do('INSERT INTO meta(species_id, meta_key,meta_value) VALUES (1, '.$dbh->quote('assembly.mapping').','.$dbh->quote('scaffold:'.$params->{'META'}{'ASSEMBLY.NAME'}.'|contig:'.$params->{'META'}{'ASSEMBLY.NAME'}).')');
+    }
+    $rank++;
+  }
+  if ($infiles->{'CONTIG'}){
+    if ($infiles->{'CONTIG'}{'type'} eq 'agp'){
+      system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_seq_region.pl '.$connection_info.' -coord_system_name scaffold -rank '.$rank.' -coord_system_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -default_version -agp_file '.$infiles->{'CONTIG'}{'name'};
+    }
+    else {
+      system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_seq_region.pl '.$connection_info.' -coord_system_name chromosome -rank '.$rank.' -coord_system_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -default_version -sequence_level -verbose -fasta_file '.$infiles->{'CONTIG'}{'name'}.' -replace_ambiguous_bases';
+    }
+    $rank++;
+  }
+  if ($infiles->{'CHROMOSOME'} && $infiles->{'CHROMOSOME'}{'type'} eq 'agp'){
+    system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_agp.pl '.$connection_info.' -assembled_name scaffold -assembled_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -component_name chromosome -agp_file '.$infiles->{'CHROMOSOME'}{'name'};
+  }
+  if ($infiles->{'SCAFFOLD'} && $infiles->{'SCAFFOLD'}{'type'} eq 'agp'){
+    system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_agp.pl '.$connection_info.' -assembled_name scaffold -assembled_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -component_name scaffold -agp_file '.$infiles->{'SCAFFOLD'}{'name'};
+  }
+  if ($infiles->{'CONTIG'} && $infiles->{'CONTIG'}{'type'} eq 'agp'){
+    system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_agp.pl '.$connection_info.' -assembled_name scaffold -assembled_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -component_name contig -agp_file '.$infiles->{'CONTIG'}{'name'};
+  }
 
-	}
 	system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/set_toplevel.pl '.$connection_info;
 
-  if ($params->{'CODON_TABLE'}{'MITOCHONDRIAL'}){
-    foreach my $seqname (@{$params->{'CODON_TABLE'}{'MITOCHONDRIAL'}}){
-      my $sth = $dbh->prepare("SELECT seq_region_id FROM seq_region WHERE name = ".$dbh->quote($seqname));
-      $sth->execute();
-      if ($sth->rows > 0){
-  			my $id = $sth->fetchrow_arrayref()->[0];
-  			$dbh->do("INSERT INTO seq_region_attrib (seq_region_id,attrib_type_id,value) values ($id,11,5)");
-  		}
+  if ($params->{'CODON_TABLE'}){
+    foreach my $table (keys %{$params->{'CODON_TABLE'}}){
+      $table = 5 if $table eq 'MITOCHONDRIAL';
+      foreach my $seqname (@{$params->{'CODON_TABLE'}{$table}}){
+        my $sth = $dbh->prepare("SELECT seq_region_id FROM seq_region WHERE name LIKE ".$dbh->quote($seqname));
+        $sth->execute();
+        if ($sth->rows > 0){
+  			  my $id = $sth->fetchrow_arrayref()->[0];
+  			  $dbh->do("INSERT INTO seq_region_attrib (seq_region_id,attrib_type_id,value) values ($id,11,$table)");
+  		  }
+      }
     }
   }
 	return 1;
