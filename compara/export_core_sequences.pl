@@ -59,7 +59,9 @@ for my $taxon (keys %{$params->{'TAXA'}}){
   $pm->start and next; # do the fork
 
   # test if file exists and should be overwritten
-  if (-e "$outdir/$taxon\_-_canonical_proteins.fa"){
+  if (-e "$outdir/canonical_proteins/$taxon\_-_canonical_proteins.fa" and
+      -e "$outdir/canonical_cds_translationid/$taxon\_-_canonical_cds_translationid.fa" and
+      -e "$outdir/canonical_protein_bounded_exon/$taxon\_-_canonical_protein_bounded_exon.fa"){
     next unless $overwrite{$taxon};
   }
 

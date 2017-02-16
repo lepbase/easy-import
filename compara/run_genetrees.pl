@@ -82,10 +82,20 @@ no_chdir => 1},'.');
 
 close QSUB;
 open  QSUB, ">qsub.bash" or die $!;
-print QSUB  '#$ -j y
-awk "NR==$SGE_TASK_ID" run_genetrees_qsub.txt | bash';
+print QSUB  '
+#$ -j y
+#$ -pe smp 2
+export MAFFT='. $params->{'SETUP'}{'MAFFT'}.'
+export RAXML='. $params->{'SETUP'}{'RAXML'}.'
+export NOISY='. $params->{'SETUP'}{'NOISY'}.'
+export NOTUNG='. $params->{'SETUP'}{'NOTUNG'}.'
+export NOTUNG_SPECIESTREE='. $params->{'SETUP'}{'NOTUNG_SPECIESTREE'}.'
+export COMPARATEMP='. $params->{'SETUP'}{'COMPARATEMP'}.'
+export JAVA='. $params->{'SETUP'}{'JAVA'}.'
+awk "NR==$SGE_TASK_ID" run_genetrees_qsub.txt | bash
+';
 
-system "qsub -cwd -V -l h=bigwig -t 1-`cat run_genetrees_qsub.txt | wc -l` qsub.bash";
+#system "qsub -l h=bigshot|bigwig|bigbird|bigbang -cwd -V -t 1-`cat run_genetrees_qsub.txt | wc -l` qsub.bash";
 
 sub usage {
   return "USAGE: perl /path/to/run_genetrees.pl /path/to/config_file.ini";

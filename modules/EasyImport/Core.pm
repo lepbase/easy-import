@@ -2334,7 +2334,7 @@ sub fetch_file {
 	$location =~ m/.+\/([^\/]+)$/;
 	my $filename = $1 ? $1 : $location;
 	my $command;
-  my $compression = '';
+	my $compression = '';
 	if ($filename =~ s/\.(gz|gzip|tar\.gz|tgz|zip)$//){
 		$compression = ".".$1;
 	}
@@ -2359,7 +2359,7 @@ sub fetch_file {
 		}
 		else {
 			if ($compression =~ m/^\.t/){
-				system "tar xf $filename"."$compression";
+				system "tar xf $filename"."$compression $new_name";
 			}
 			elsif ($compression =~ m/^\.g/){
 				system "gunzip $filename"."$compression";
@@ -2367,7 +2367,7 @@ sub fetch_file {
 			elsif ($compression =~ m/^\.z/){
 				system "unzip $filename"."$compression";
 			}
-			if (!-e $filename){
+			if (!-e $filename && !-e $new_name){
 				# this compression type is not currently supported
 				die "ERROR: could not extract $filename"."$compression to $filename\n";
 			}
