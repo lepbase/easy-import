@@ -56,12 +56,8 @@ if (!-e $filename){
   $filename = $infiles{'GFF'}{'name'};
   warn "WARNING: unable to locate prepared GFF, attempting to use unmodified file\n"
 }
-my $protfile;
-if ($infiles{'PROTEIN'}){
-  $protfile = $infiles{'PROTEIN'}{'NAME'};
-}
 
-gff_to_ensembl($filename,$dbh,$params,$protfile);
+gff_to_ensembl($filename,$dbh,$params);
 
 count_rows($dbh,qw( gene transcript translation exon));
 

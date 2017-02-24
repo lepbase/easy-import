@@ -88,6 +88,8 @@ my $meta_container = $dba->get_adaptor("MetaContainer");
 my $production_name = $meta_container->get_production_name();
 my $scientific_name = $meta_container->get_scientific_name();
 my $display_name    = $meta_container->get_display_name();
+my $assembly_name   = $meta_container->single_value_by_key('ASSEMBLY.NAME');
+$display_name .= '_'.$assembly_name; 
 
 # convert display name spaces to underscores
 $display_name =~ s/ /_/g;
@@ -124,35 +126,35 @@ my ($protein_fh, $cds_fh, $cds_translationid_fh);
 my $protein_count = 0;
 my $canonical_count = 0;
 
-open $protein_fh,           ">", "$outdir/$display_name\_-_proteins.fa"             or die $!;
-open $cds_fh,               ">", "$outdir/$display_name\_-_cds.fa"                  or die $!;
-open $cds_translationid_fh, ">", "$outdir/$display_name\_-_cds_translationid.fa"    or die $!;
-
-foreach my $transcript (@transcripts) {
-  if (defined $transcript->translate() ) {
-    $transcript_id   = $transcript->stable_id();
-    $translation_id  = $transcript->translation()->stable_id();
-    $desc = "";
-    $gene            = $gene_adaptor->fetch_by_transcript_stable_id($transcript_id);
-    if (defined $transcript->description) {
-      $desc = $transcript->description;
+if (@transcripts){
+  open $protein_fh,           ">", "$outdir/$display_name\_-_proteins.fa"             or die $!;
+  open $cds_fh,               ">", "$outdir/$display_name\_-_cds.fa"                  or die $!;
+  open $cds_translationid_fh, ">", "$outdir/$display_name\_-_cds_translationid.fa"    or die $!;
+  foreach my $transcript (@transcripts) {
+    if (defined $transcript->translate() ) {
+      $transcript_id   = $transcript->stable_id();
+      $translation_id  = $transcript->translation()->stable_id();
+      $desc = "";
+      $gene            = $gene_adaptor->fetch_by_transcript_stable_id($transcript_id);
+      if (defined $transcript->description) {
+        $desc = " description = " . $transcript->description;
+      }
+      elsif (defined $gene->description) {
+        $desc = " description = " . $gene->description;
+      }
+      $pep = $transcript->translate()->seq;
+      $cds = $transcript->translateable_seq();
+      # print $cds_fh               ">$transcript_id $dbname cds $desc\n$cds\n";
+      # print $cds_translationid_fh ">$translation_id $dbname cds_translationid $desc\n$cds\n";
+      # print $protein_fh           ">$translation_id $dbname protein $desc\n$pep\n";
+      print $cds_fh               ">$transcript_id $dbname cds$desc\n$cds\n";
+      print $protein_fh           ">$translation_id $dbname protein$desc\n$pep\n";
+      print $cds_translationid_fh ">$translation_id $dbname cds_translationid$desc\n$cds\n";
+      $protein_count++;
     }
-    elsif (defined $gene->description) {
-      $desc = $gene->description;
-    }
-    $pep = $transcript->translate()->seq;
-    $cds = $transcript->translateable_seq();
-    # print $cds_fh               ">$transcript_id $dbname cds $desc\n$cds\n";
-    # print $cds_translationid_fh ">$translation_id $dbname cds_translationid $desc\n$cds\n";
-    # print $protein_fh           ">$translation_id $dbname protein $desc\n$pep\n";
-    print $cds_fh               ">$transcript_id $dbname cds $desc\n$cds\n";
-    print $protein_fh           ">$translation_id $dbname protein $desc\n$pep\n";
-    print $cds_translationid_fh ">$translation_id $dbname cds_translationid $desc\n$cds\n";
-    $protein_count++;
   }
+  print "$dbname - Num of proteins           : $protein_count\n";
 }
-
-print "$dbname - Num of proteins           : $protein_count\n";
 
 
 sub usage {

@@ -6,11 +6,70 @@ use Bio::SeqIO;
 use File::Basename;
 use Data::Dumper;
 
+sub create_qsub_script {
+  my ($params,$fullname) = @_;
+  my ($orthogroup_id,$path) = fileparse($fullname);
+  
+  open  BASH, ">$path/$orthogroup_id.bash" or die $!;
+  
+  print BASH 
+  "#!/bin/bash\n\n".
+  "DIR=`pwd`\n".
+  "if [ -f \$DIR/$path/$orthogroup_id.run   ]; then echo $orthogroup_id already done;    exit; fi\n".
+  "if [ -f \$DIR/$path/$orthogroup_id.start ]; then echo $orthogroup_id already started; exit; fi\n".
+  "touch   \$DIR/$path/$orthogroup_id.start && \\\n";
+
+  if (exists $params->{'SETUP'}{'COMPARATEMP'}) {
+    print BASH
+    "mkdir -p \$COMPARATEMP/$orthogroup_id && \\\n".
+    "rsync -av $path \$COMPARATEMP/$orthogroup_id && \\\n".
+    "cd \$COMPARATEMP/$orthogroup_id && \\\n";
+  } else {
+    print BASH "cd \$DIR/$path && \\\n";
+  };
+
+  if (exists $params->{'SETUP'}{'MAFFT'} and
+      exists $params->{'SETUP'}{'NOISY'} and
+      exists $params->{'SETUP'}{'RAXML'} and
+      exists $params->{'SETUP'}{'NOTUNG'} and
+      exists $params->{'SETUP'}{'NOTUNG_SPECIESTREE'}) {
+    print BASH
+    "\$MAFFT --treeout --auto --reorder $orthogroup_id.faa > $orthogroup_id.faa.mafft && \\\n" .
+    "\$NOISY --seqtype P $orthogroup_id.faa.mafft && \\\n" .
+    "\$RAXML -f a -x 12345 -# 100 -T 1 -p 12345 -m PROTGAMMAAUTO -s $orthogroup_id.faa_out.fas -n $orthogroup_id && \\\n" .
+    "mv RAxML_info.$orthogroup_id $orthogroup_id.RAxML_info && \\\n" .
+    "mv RAxML_bipartitionsBranchLabels.$orthogroup_id $orthogroup_id.RAxML_bipartitionsBranchLabels && \\\n" .
+    "mv RAxML_bipartitions.$orthogroup_id $orthogroup_id.RAxML_bipartitions && \\\n" .
+    "mv RAxML_bestTree.$orthogroup_id $orthogroup_id.RAxML_bestTree && \\\n" .
+    "mv RAxML_bootstrap.$orthogroup_id $orthogroup_id.RAxML_bootstrap && \\\n" .
+    "\$JAVA -jar \$NOTUNG --treeoutput nhx --root -s \$NOTUNG_SPECIESTREE -g $orthogroup_id.RAxML_bipartitionsBranchLabels && \\\n" .
+    "\$JAVA -jar \$NOTUNG --treeoutput nhx --root -s \$NOTUNG_SPECIESTREE -g $orthogroup_id.RAxML_bipartitionsBranchLabels.rooting.0 --nolosses --treeoutput nhx --homologtabletabs --reconcile --stpruned && \\\n";
+  }
+  print BASH 
+  "touch $orthogroup_id.run && \\\n";
+
+  if (exists $params->{'SETUP'}{'COMPARATEMP'}) {
+    print BASH 
+    "rsync --remove-source-files -avP * \$DIR/$path && \\\n".
+    "rmdir \$COMPARATEMP/$orthogroup_id && \\\n";
+  };
+  print BASH
+  "rm    \$DIR/$path/$orthogroup_id.start && \\\n".
+  "touch \$DIR/$path/$orthogroup_id.done\n\n";
+
+  print BASH "rm -rf \$COMPARATEMP/$orthogroup_id\n";
+  close BASH;
+  chmod 0755, "$path/$orthogroup_id.bash";
+}
+
+
 # fill in/select from
 sub load_sequences {
   my ($dbh,$params,$st_nodes,$core_dbs,$fullname) = @_;
   my ($file,$path) = fileparse($fullname);
   my %seqs;
+
+  return if not -f $path.'/'.$file.''.$params->{'ORTHOGROUP'}{'HOMOLOG'};
 
   # Leave out gene_tree_root function for now, assume supertree of treetype clusterset default exists in database with root_id 1
   # my $root_id = add_gene_tree_root($dbh,'protein','clusterset','default',$mlss_id);
@@ -21,7 +80,6 @@ sub load_sequences {
   my $cluster_id = $file;
   my $aln_method = $params->{'ORTHOGROUP'}{'PROTEIN_ALIGN'}->[1];
   my $aln_length = read_seqs_to_hash(\%seqs,$path.'/'.$file.''.$params->{'ORTHOGROUP'}{'PROTEIN_ALIGN'}->[0],$params->{'ORTHOGROUP'}{'TAXA'},'aln');
-
 
 
   my $gene_align_id;
@@ -816,26 +874,33 @@ sub fetch_meta_from_core_db {
   my $cdbh = core_db_connect($db_name,$params);
   $core_dbs->{$sp}{'db_handle'} = $cdbh;
   my $csth = $cdbh->prepare("SELECT meta_value FROM meta WHERE meta_key LIKE ?");
-  $csth->execute('species.taxonomy_id');
+  $csth->execute('species.production_name');
   if ($csth->rows > 0){
-    $core_dbs->{$sp}{'taxon_id'} = $csth->fetchrow_arrayref()->[0];
+    $core_dbs->{$sp}{'name'} = lc($csth->fetchrow_arrayref()->[0]);
   }
   else {
     return;
   }
-  my $sth = $dbh->prepare("SELECT genome_db_id,name,assembly,genebuild FROM genome_db WHERE taxon_id = $core_dbs->{$sp}{'taxon_id'}");
+  my $sth = $dbh->prepare("SELECT genome_db_id,taxon_id,assembly,genebuild FROM genome_db WHERE name = ".$dbh->quote($core_dbs->{$sp}{'name'}));
   $sth->execute();
   if ($sth->rows > 0){
     my $ref = $sth->fetchrow_arrayref();
     $core_dbs->{$sp}{'genome_db_id'} = $ref->[0];
-    $core_dbs->{$sp}{'name'} = $ref->[1];
+    $core_dbs->{$sp}{'taxon_id'} = $ref->[1];
     $core_dbs->{$sp}{'assembly'} = $ref->[2];
     $core_dbs->{$sp}{'genebuild'} = $ref->[3];
     return $core_dbs->{$sp}{'genome_db_id'};
   }
   $csth->execute('species.production_name');
   if ($csth->rows > 0){
-    $core_dbs->{$sp}{'name'} = ucfirst($csth->fetchrow_arrayref()->[0]);
+    $core_dbs->{$sp}{'name'} = lc($csth->fetchrow_arrayref()->[0]);
+  }
+  else {
+    return;
+  }
+  $csth->execute('species.taxonomy_id');
+  if ($csth->rows > 0){
+    $core_dbs->{$sp}{'taxon_id'} = $csth->fetchrow_arrayref()->[0];
   }
   else {
     return;
@@ -876,7 +941,7 @@ sub fetch_meta_from_core_db {
   if ($sth->rows > 0){
     my $ref = $sth->fetchrow_arrayref();
     $core_dbs->{$sp}{'genome_db_id'} = $ref->[0];
-    $core_dbs->{$sp}{'name'} = $ref->[1];
+    $core_dbs->{$sp}{'taxon_id'} = $ref->[1];
     $core_dbs->{$sp}{'assembly'} = $ref->[2];
     $core_dbs->{$sp}{'genebuild'} = $ref->[3];
     add_to_species_set($dbh,$core_dbs,$sp);

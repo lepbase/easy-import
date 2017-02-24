@@ -72,6 +72,8 @@ my $dba = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
 my $meta_container = $dba->get_adaptor("MetaContainer");
 
 my $display_name    = $meta_container->get_display_name();
+my $assembly_name   = $meta_container->single_value_by_key('ASSEMBLY.NAME');
+$display_name .= '_'.$assembly_name; 
 
 # convert display name spaces to underscores
 $display_name =~ s/ /_/g;

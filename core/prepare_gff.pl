@@ -63,7 +63,7 @@ foreach my $subsection (keys %{$params->{'TRANSCRIPT_NAMES'}}){
 ## check that gff file is properly formatted, repair problems that can be fixed and weave in gene/transcript names/descriptions
 ## TODO: include test for phase, currently using flag
 
-my $gff_file = rewrite_gff($params,\%{$infiles{'GFF'}},\%gene_properties,$params->{'GENE_STABLE_IDS'}{'GFF'},$params->{'GENE_DESCRIPTIONS'}{'GFF'},$params->{'GENE_NAMES'}{'GFF'},\%transcript_properties,$params->{'TRANSCRIPT_STABLE_IDS'}{'GFF'},$params->{'TRANSCRIPT_DESCRIPTIONS'}{'GFF'},$params->{'TRANSCRIPT_NAMES'}{'GFF'},$params->{'TRANSLATION_STABLE_IDS'}{'GFF'});
+my $gff_file = rewrite_gff($params,\%infiles,\%gene_properties,$params->{'GENE_STABLE_IDS'}{'GFF'},$params->{'GENE_DESCRIPTIONS'}{'GFF'},$params->{'GENE_NAMES'}{'GFF'},\%transcript_properties,$params->{'TRANSCRIPT_STABLE_IDS'}{'GFF'},$params->{'TRANSCRIPT_DESCRIPTIONS'}{'GFF'},$params->{'TRANSCRIPT_NAMES'}{'GFF'},$params->{'TRANSLATION_STABLE_IDS'}{'GFF'});
 
 die "ERROR: no features in rewritten gff file\n" unless $gff_file;
 

@@ -4,6 +4,7 @@ use strict;
 use Cwd 'abs_path';
 use File::Basename;
 use Module::Load;
+use Parallel::ForkManager;
 
 ## find the full path to the directory that this script is executing in
 our $dirname;
@@ -50,10 +51,17 @@ for my $taxon (@{$params->{'SETUP'}{'REMOVE'}}){
   $overwrite{$taxon} = 1;
 }
 
+# Max 2 processes for parallel download
+my $pm = new Parallel::ForkManager(2);
+
 for my $taxon (keys %{$params->{'TAXA'}}){
 
+  $pm->start and next; # do the fork
+
   # test if file exists and should be overwritten
-  if (-e "$outdir/$taxon\_-_canonical_proteins.fa"){
+  if (-e "$outdir/canonical_proteins/$taxon\_-_canonical_proteins.fa" and
+      -e "$outdir/canonical_cds_translationid/$taxon\_-_canonical_cds_translationid.fa" and
+      -e "$outdir/canonical_protein_bounded_exon/$taxon\_-_canonical_protein_bounded_exon.fa"){
     next unless $overwrite{$taxon};
   }
 
@@ -88,9 +96,10 @@ for my $taxon (keys %{$params->{'TAXA'}}){
   my ($canonical_protein_fh, $bounded_exon_fh, $cds_translationid_fh);
   my $canonical_count = 0;
 
-  open $canonical_protein_fh, ">", "$outdir/$taxon\_-_canonical_proteins.fa"   or die $!;
-  open $cds_translationid_fh, ">", "$outdir/$taxon\_-_canonical_cds_translationid.fa"    or die $!;
-  open $bounded_exon_fh,      ">", "$outdir/$taxon\_-_canonical_protein_bounded_exon.fa" or die $!;
+  system "mkdir -p $outdir/canonical_proteins $outdir/canonical_cds_translationid $outdir/canonical_protein_bounded_exon";
+  open $canonical_protein_fh, ">", "$outdir/canonical_proteins/$taxon\_-_canonical_proteins.fa"   or die $!;
+  open $cds_translationid_fh, ">", "$outdir/canonical_cds_translationid/$taxon\_-_canonical_cds_translationid.fa"    or die $!;
+  open $bounded_exon_fh,      ">", "$outdir/canonical_protein_bounded_exon/$taxon\_-_canonical_protein_bounded_exon.fa" or die $!;
 
   foreach my $transcript (@transcripts) {
     if (defined $transcript->translate() ) {
@@ -108,7 +117,11 @@ for my $taxon (keys %{$params->{'TAXA'}}){
     }
   }
   print "$dbname - Num of canonical proteins : $canonical_count\n";
+
+  $pm->finish; # do the exit in the child process
 }
+
+$pm->wait_all_children;
 
 sub usage {
 	return "USAGE: perl /path/to/export_core_sequences.pl /path/to/config_file.ini";

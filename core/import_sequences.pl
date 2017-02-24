@@ -42,8 +42,9 @@ my %sections = (
           'PROVIDER.NAME' => 1,
           'PROVIDER.URL' => 1
         },
-  'FILES' => 	{	'SCAFFOLD' => [ 'CONTIG' ],
-          'CONTIG' => [ 'SCAFFOLD']
+  'FILES' => 	{	'SCAFFOLD' => [ 'CONTIG','CHROMOSOME' ],
+          'CONTIG' => [ 'SCAFFOLD','CHROMOSOME'],
+          'CHROMOSOME' => [ 'SCAFFOLD','CONTIG']
         }
   );
 ## check that all required parameters have been defined in the config file

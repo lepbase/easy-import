@@ -5,7 +5,10 @@ use DBI;
 use GFFTree;
 use EasyImport::GFF;
 use List::Util qw(reduce sum);
+use Bio::Seq;
 use Bio::SeqIO;
+use Bio::Location::Split;
+use Text::LevenshteinXS qw(distance);
 
 sub truncate_seq_tables {
 	my ($dbh) = @_;
@@ -91,6 +94,7 @@ sub gff_to_ensembl {
 		}
 	}
 	while ($gff->parse_chunk('separator','###')){
+#	while ($gff->parse_chunk('change','region')){
 		# modify strands to use +1 or -1
 		my @features = $gff->descendants();
 		while (my $feature = shift @features){
@@ -220,39 +224,7 @@ sub gff_to_ensembl {
 					my ($first,$last) = (-1,-1);
 					my @starts;
 					my @adjust = (0,2,1);
-          if ($cds && $params->{'MODIFY'}{'AUTO_PHASE'}){
-            my @lengths;
-            for (my $s = 0; $s < @startarr; $s++){
-						  push @lengths, $ends[$s]-$startarr[$s]+1;
-            }
-            my $len = sum @lengths;
-            my $l = 0;
-            my $strand = $mrna->attributes->{_strand};
-            for (my $i = 0; $i < @phases; $i++) { $phases[$i] = 0 if $phases[$i] eq "." }
-            if ($len % 3 != 0 || ($strand > 0 && $phases[0] != 0) || ($strand < 0 && $phases[-1] != 0)){
-              # assume first cds has been phased correctly
-              $l = $strand > 0 ? $phases[0] : $phases[-1];
-              if ($params->{'MODIFY'}{'INVERT_PHASE'}){
-                $l = $adjust[$l];
-              }
-            }
-
-            if ($mrna->attributes->{_strand} > 0){
-              for (my $p = 0; $p < @phases; $p++){
-  					  	my $phase = $l % 3;
-                $phases[$p] = $phase;
-                $l += $lengths[$p];
-  					  }
-            }
-            else {
-              for (my $p = @phases - 1; $p >= 0; $p--){
-  					  	my $phase = $l % 3;
-                $phases[$p] = $phase;
-                $l += $lengths[$p];
-  					  }
-            }
-          }
-          elsif ($params->{'MODIFY'}{'INVERT_PHASE'}){
+          if ($params->{'MODIFY'}{'INVERT_PHASE'}){
 						for (my $p = 0; $p < @phases; $p++){
   						$phases[$p] = $adjust[$phases[$p]];
   					}
@@ -363,7 +335,7 @@ sub count_rows {
 }
 
 sub rewrite_gff {
-	my ($params,$infile,$properties,$stable_ids_ref,$desc_ref,$names_ref,$tr_properties,$tr_stable_ids_ref,$tr_desc_ref,$tr_names_ref,$tl_stable_ids_ref) = @_;
+	my ($params,$infiles,$properties,$stable_ids_ref,$desc_ref,$names_ref,$tr_properties,$tr_stable_ids_ref,$tr_desc_ref,$tr_names_ref,$tl_stable_ids_ref) = @_;
 	my (%ids,%dups);
 	my ($stable_id_location,$stable_id_regex,$stable_id_substitution) = @$stable_ids_ref;
 	my ($index,$desc_location,$desc_regex,$desc_substitution) = @$desc_ref if $desc_ref;
@@ -374,6 +346,20 @@ sub rewrite_gff {
 	my ($tl_stable_id_location,$tl_stable_id_regex,$tl_stable_id_substitution) = @$tl_stable_ids_ref if $tl_stable_ids_ref;
 	# create new gff tree object
 	# add lots of validation conditions
+  my $infile = \%{$infiles->{'GFF'}};
+
+  my ($proteins,$scaffolds,$mitochondrial) = ({},{},{});
+  if ($params->{'MODIFY'}{'AUTO_PHASE'}){
+    if ($infiles->{'PROTEIN'}){
+      $proteins = _fasta_file_to_hash($infiles->{'PROTEIN'}{'name'});
+      $scaffolds = _fasta_file_to_hash($infiles->{'SCAFFOLD'}{'name'});
+    }
+    if ($params->{'CODON_TABLE'}{'MITOCHONDRIAL'}){
+      foreach my $seqname (@{$params->{'CODON_TABLE'}{'MITOCHONDRIAL'}}){
+        $mitochondrial->{$seqname} = 5;
+      }
+    }
+  }
 	my $filename = $infile->{'name'};
 	if ($params->{'GFF'}{'SORT'} && $filename !~ m/.sorted/){
 		$filename .= ".sorted";
@@ -425,10 +411,15 @@ sub rewrite_gff {
 	#$gff->add_expectation('exon','hasParent','mrna|transcript','force');
 	#$gff->add_expectation('cds','hasParent','mrna|transcript','force');
 	#$gff->add_expectation('cds|exon|mrna|trna|transcript|gene','<=[_start,_end]','SELF','warn');
+  my ($chunk_by,$chunk_on) = ('separator','###');
 	foreach my $key (keys %{$params->{'GFF'}}){
 		my $value = $params->{'GFF'}{$key};
 		if ($key eq 'FORMAT'){
     #  $gff->format(lc $value);
+    }
+		elsif ($key eq 'CHUNK'){
+      $chunk_by = $value->[0];
+      $chunk_on = $value->[1];
     }
 		elsif (ref $value || ref $value eq 'ARRAY') {
 			my @value = @$value;
@@ -466,9 +457,7 @@ sub rewrite_gff {
 	}
 
 
-	#while ($gff->parse_chunk('separator','###')){
-	while ($gff->parse_chunk('change','region')){
-		# PRIORITY TODO: skip features by source (if set in the ini)
+	while ($gff->parse_chunk($chunk_by,$chunk_on)){
 		$gff->validate_all();
 		my @genes = $gff->by_type('gene');
 		my @exceptions;
@@ -746,6 +735,11 @@ sub rewrite_gff {
 
 		}
 		while (my $gene = shift @valid){
+      if (scalar keys $proteins > 0 && scalar keys $scaffolds > 0){
+        my $codontable_id = 1;
+        $codontable_id = 5 if ($mitochondrial->{$gene->{attributes}->{_seq_name}});
+        fix_phase($gene,$proteins,$scaffolds,$codontable_id);
+      }
 			if (my $out = $gene->structured_output(1)){
 				print OUT $out;
         print OUT "###\n";
@@ -819,7 +813,179 @@ sub dedup_gff {
 	return;
 }
 
-
+sub fix_phase {
+  my ($gene,$proteins,$scaffolds,$codontable_id) = @_;
+  $codontable_id ||= 1;
+  my @frames = (0,2,1);
+  if (my @mrna = $gene->by_type('mrna')){
+    my $scaffold = $scaffolds->{$gene->{attributes}->{_seq_name}}{seq};
+    next unless $scaffold;
+    $scaffold = Bio::Seq->new(-seq=>$scaffold);
+    my $strand = $gene->{attributes}->{_strand} =~ m/-/ ? -1 : 1;
+    while (my $mrna = shift @mrna){
+      my $protein = $proteins->{$mrna->{attributes}->{'translation_stable_id'}}{seq};
+      $protein =~ s/\*/X/g;
+      my $cds = $mrna->by_type('cds');
+      next unless $cds;
+      my (@startarr,@endarr,@phases);
+      if ($cds->attributes->{_start_array}){
+        @startarr = @{$cds->attributes->{_start_array}};
+        @endarr = @{$cds->attributes->{_end_array}};
+        @phases = @{$cds->attributes->{_phase_array}};
+      }
+      else {
+        $startarr[0] = $cds->attributes->{_start};
+        $endarr[0] = $cds->attributes->{_end};
+        $phases[0] = $cds->attributes->{_phase};
+      }
+      my $frame;
+      if ($strand == -1){
+        @startarr = reverse @startarr;
+        @endarr = reverse @endarr;
+        @phases = reverse @phases;
+      }
+      if (1){#$strand == 1){
+        $phases[0] = 0 unless $phases[0] =~ m/^[012]$/;
+        $frame = $frames[$phases[0]];
+        for (my $i = 0; $i < @startarr; $i++){
+          my $f = 0;
+          my %distances;
+          while ($f < 3){
+            my $pep;
+            if ($strand == 1){
+              $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->translate(-frame=>$frame,-codontable_id=>$codontable_id,-terminator=>'X',-unknown=>'X')->seq();
+            }
+            else {
+              $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->revcom()->translate(-frame=>$frame,-codontable_id=>$codontable_id,-terminator=>'X',-unknown=>'X')->seq();
+            }
+            my $shortpep = $pep;
+            $shortpep =~ s/[BXZ]/./g;
+            $shortpep = substr( $shortpep, 1, (length($shortpep) - 2) ) if length $shortpep >= 3;
+            last if (length $pep < 3 || $protein =~ m/$shortpep/);
+            $distances{$frame} = distance($protein,$pep);
+            $frame = $frame < 2 ? $frame + 1 : 0;
+            $f++;
+          }
+          if ($f == 3) {
+            $frame = reduce { $distances{$a} < $distances{$b} ? $a : $b } keys %distances;
+            warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds coordinates ($startarr[$i], $endarr[$i]) do not match provided protein\n";
+          }
+          elsif ($f > 0 && $i > 0){
+            warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds coordinates ($startarr[$i], $endarr[$i]) are  out of phase with previous\n";
+          }
+          if ($cds->attributes->{_phase_array}){
+            my $index = $i;
+            $index = -1 - $i if $strand == -1;
+            $cds->attributes->{_phase_array}->[$index] = $frames[$frame];
+          }
+          else {
+            $cds->attributes->{_phase} = $frames[$frame];
+          }
+          my @features = $mrna->by_type('exon');
+          my $exon;
+          while (my $feature = shift @features){
+            if ($startarr[$i] >= $feature->{attributes}->{_start} && $endarr[$i] <= $feature->{attributes}->{_end}){
+              $exon = $feature;
+            }
+            last if $exon;
+          }
+          if ($i == 0 && $frame > 0){
+            if ($strand == 1 && $exon->{attributes}->{_start} < $startarr[$i]){
+warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds coordinates ($startarr[$i], $endarr[$i]) are out of phase in exon with 5' UTR\n";
+              if ($cds->attributes->{_start_array}){
+                $cds->attributes->{_start_array}->[0] += $frame;
+                $cds->attributes->{_phase_array}->[0] = 0;
+              }
+              else {
+                $cds->attributes->{_start} += $frame;
+                $cds->attributes->{_phase} = 0;
+              }
+            }
+            elsif ($strand == -1 && $exon->{attributes}->{_end} > $endarr[$i]){
+warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds coordinates ($startarr[$i], $endarr[$i]) are out of phase in exon with 5' UTR\n";
+              if ($cds->attributes->{_end_array}){
+                $cds->attributes->{_end_array}->[-1] -= $frame;
+                $cds->attributes->{_phase_array}->[-1] = 0;
+              }
+              else {
+                $cds->attributes->{_end} -= $frame;
+                $cds->attributes->{_phase} = 0;
+              }
+            }
+          }
+          elsif ($i > 0 && $i < @startarr -1){
+            if ($exon->{attributes}->{_start} < $startarr[$i]){
+warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds coordinates ($startarr[$i], $endarr[$i]) do not match exon coordinates (".$exon->{attributes}->{_start}.", ".$exon->{attributes}->{_end}.")\n";
+              $exon->{attributes}->{_start} = $startarr[$i];
+           }
+            if ($exon->{attributes}->{_end} > $endarr[$i]){
+warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds coordinates ($startarr[$i], $endarr[$i]) do not match exon coordinates (".$exon->{attributes}->{_start}.", ".$exon->{attributes}->{_end}.")\n";
+              $exon->{attributes}->{_end} = $endarr[$i];
+            }
+          }
+          my $offset = $frames[(1 + $endarr[$i] - $startarr[$i]) % 3];
+          $frame += $offset;
+          $frame = $frame % 3;
+        }
+      }
+      else {
+        $phases[-1] = 0 unless $phases[-1] =~ m/^[012]$/;
+        $frame = $frames[$phases[-1]];
+        for (my $i = @startarr -1; $i >= 0; $i--){
+          my $f = 0;
+          my %distances;
+          while ($f < 3){
+            my $pep = $scaffold->trunc($startarr[$i],$endarr[$i])->revcom()->translate(-frame=>$frame,-codontable_id=>$codontable_id,-terminator=>'X',-unknown=>'X')->seq();
+            $pep =~ s/X/./g;
+            $pep = substr( $pep, 1, (length($pep) - 2) ) if length $pep >= 3;
+            last if (length $pep < 3 || $protein =~ m/$pep/);
+            $distances{$frame} = distance($protein,$pep);
+            $frame = $frame < 2 ? $frame + 1 : 0;
+            $f++;
+          }
+          if ($f > 0 && $i < @startarr -1){
+            if ($f == 3) {
+              warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds part $i does not match provided protein\n";
+              $frame = reduce { $distances{$a} < $distances{$b} ? $a : $b } keys %distances;
+            }
+            else {
+              warn "WARNING: ".$mrna->{attributes}->{'stable_id'}." cds part $i is out of phase with previous\n";
+            }
+          }
+          if ($cds->attributes->{_phase_array}){
+            $cds->attributes->{_phase_array}->[$i] = $frames[$frame];
+          }
+          else {
+            $cds->attributes->{_phase} = $frames[$frame];
+          }
+          if ($i == @startarr -1 && $frame > 0){
+            my @features = $mrna->by_type('exon');
+            my $exon;
+            while (my $feature = shift @features){
+              if ($startarr[$i] >= $feature->{attributes}->{_start} && $endarr[$i] <= $feature->{attributes}->{_end}){
+                $exon = $feature;
+              }
+              last if $exon;
+            }
+            if ($exon->{attributes}->{_start} < $startarr[$i]){
+              if ($cds->attributes->{_start_array}){
+                $cds->attributes->{_start_array}->[0] += $frame;
+                $cds->attributes->{_phase_array}->[0] = 0;
+              }
+              else {
+                $cds->attributes->{_start} += $frame;
+                $cds->attributes->{_phase} = 0;
+              }
+            }
+          }
+          my $offset = $frames[(1 + $endarr[$i] - $startarr[$i]) % 3];
+          $frame += $offset;
+          $frame = $frame % 3;
+        }
+      }
+    }
+  }
+}
 
 sub get_properties {
 	my ($infile,$property,$properties,$stable_ids_ref,$prop_ref) = @_;
@@ -1085,42 +1251,70 @@ sub load_sequences {
 							.' -dbpass '.$params->{'DATABASE_CORE'}{'RW_PASS'};
 	my $perl_libs = $params->{'ENSEMBL'}{'LOCAL'}.'/ensembl/modules';
 	my $perl = "perl -I $perl_libs";
-	if ($infiles->{'CONTIG'} && !$infiles->{'SCAFFOLD'}){
-		if ($infiles->{'CONTIG'}{'type'} ne 'fas'){
-			die "ERROR: [FILES] CONTIG $infiles->{'CONTIG'}{'name'} must be a fasta file if it is the only sequence file specified\n";
-		}
-		system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_seq_region.pl '.$connection_info.' -coord_system_name contig -rank 1 -coord_system_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -default_version -sequence_level -verbose -fasta_file '.$infiles->{'CONTIG'}{'name'}.' -replace_ambiguous_bases';
-	}
-	elsif ($infiles->{'CONTIG'}){
-		if ($infiles->{'CONTIG'}{'type'} ne 'fas' && $infiles->{'SCAFFOLD'}{'type'} ne 'fas'){
-			die "ERROR: at least one of [FILES] CONTIG $infiles->{'CONTIG'}{'name'} or SCAFFOLD $infiles->{'SCAFFOLD'}{'name'} must be a fasta file\n";
-		}
-		if ($infiles->{'CONTIG'}{'type'} ne 'agp' && $infiles->{'SCAFFOLD'}{'type'} ne 'agp'){
-			die "ERROR: at least one of [FILES] CONTIG $infiles->{'CONTIG'}{'name'} or SCAFFOLD $infiles->{'SCAFFOLD'}{'name'} must be agp file\n";
-		}
-		if ($infiles->{'CONTIG'}{'type'} ne 'agp'){
-			system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_seq_region.pl '.$connection_info.' -coord_system_name scaffold -rank 1 -coord_system_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -default_version -agp_file '.$infiles->{'SCAFFOLD'}{'name'};
-			system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_seq_region.pl '.$connection_info.' -coord_system_name contig -rank 2 -default_version -sequence_level -verbose -fasta_file '.$infiles->{'CONTIG'}{'name'}.' -replace_ambiguous_bases';
-			system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_agp.pl '.$connection_info.' -assembled_name scaffold -assembled_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -component_name contig -agp_file '.$infiles->{'SCAFFOLD'}{'name'};
-		}
-		else {
-			system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_seq_region.pl '.$connection_info.' -coord_system_name scaffold -rank 1 -default_version -sequence_level -verbose -fasta_file '.$infiles->{'SCAFFOLD'}{'name'}.' -replace_ambiguous_bases';
-			system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_seq_region.pl '.$connection_info.' -coord_system_name contig -rank 2 -coord_system_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -default_version -agp_file '.$infiles->{'CONTIG'}{'name'};
-			system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_agp.pl '.$connection_info.' -assembled_name contig -assembled_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -component_name scaffold -agp_file '.$infiles->{'CONTIG'}{'name'};
-		}
-		$dbh->{RaiseError} = 0;
-		$dbh->do('INSERT INTO meta(species_id, meta_key,meta_value) VALUES (1, '.$dbh->quote('assembly.mapping').','.$dbh->quote('scaffold:'.$params->{'META'}{'ASSEMBLY.NAME'}.'|contig').')');
-		$dbh->{RaiseError} = 1;
-	}
-	else {
-		if ($infiles->{'SCAFFOLD'}{'type'} ne 'fas'){
-			die "ERROR: [FILES] SCAFFOLD $infiles->{'SCAFFOLD'}{'name'} must be a fasta file if it is the only sequence file specified\n";
-		}
-		system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_seq_region.pl '.$connection_info.' -coord_system_name scaffold -rank 1 -coord_system_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -default_version -sequence_level -verbose -fasta_file '.$infiles->{'SCAFFOLD'}{'name'}.' -replace_ambiguous_bases';
+  my $rank = 1;
+  if ($infiles->{'CHROMOSOME'}){
+    if ($infiles->{'CHROMOSOME'}{'type'} eq 'agp'){
+      system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_seq_region.pl '.$connection_info.' -coord_system_name scaffold -rank '.$rank.' -coord_system_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -default_version -agp_file '.$infiles->{'CHROMOSOME'}{'name'};
+    }
+    else {
+      system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_seq_region.pl '.$connection_info.' -coord_system_name chromosome -rank '.$rank.' -coord_system_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -default_version -sequence_level -verbose -fasta_file '.$infiles->{'CHROMOSOME'}{'name'}.' -replace_ambiguous_bases';
+    }
+    $dbh->{RaiseError} = 0;
+    if ($infiles->{'SCAFFOLD'}){
+      $dbh->do('INSERT INTO meta(species_id, meta_key,meta_value) VALUES (1, '.$dbh->quote('assembly.mapping').','.$dbh->quote('chromosome:'.$params->{'META'}{'ASSEMBLY.NAME'}.'|scaffold:'.$params->{'META'}{'ASSEMBLY.NAME'}).')');
+    }
+    if ($infiles->{'CONTIG'}){
+      $dbh->do('INSERT INTO meta(species_id, meta_key,meta_value) VALUES (1, '.$dbh->quote('assembly.mapping').','.$dbh->quote('chromosome:'.$params->{'META'}{'ASSEMBLY.NAME'}.'|contig:'.$params->{'META'}{'ASSEMBLY.NAME'}).')');
+    }
+    $dbh->{RaiseError} = 1;
+    $rank++;
+  }
+  if ($infiles->{'SCAFFOLD'}){
+    if ($infiles->{'SCAFFOLD'}{'type'} eq 'agp'){
+      system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_seq_region.pl '.$connection_info.' -coord_system_name scaffold -rank '.$rank.' -coord_system_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -default_version -agp_file '.$infiles->{'SCAFFOLD'}{'name'};
+    }
+    else {
+      system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_seq_region.pl '.$connection_info.' -coord_system_name chromosome -rank '.$rank.' -coord_system_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -default_version -sequence_level -verbose -fasta_file '.$infiles->{'SCAFFOLD'}{'name'}.' -replace_ambiguous_bases';
+    }
+    if ($infiles->{'CONTIG'}){
+      $dbh->do('INSERT INTO meta(species_id, meta_key,meta_value) VALUES (1, '.$dbh->quote('assembly.mapping').','.$dbh->quote('scaffold:'.$params->{'META'}{'ASSEMBLY.NAME'}.'|contig:'.$params->{'META'}{'ASSEMBLY.NAME'}).')');
+    }
+    $rank++;
+  }
+  if ($infiles->{'CONTIG'}){
+    if ($infiles->{'CONTIG'}{'type'} eq 'agp'){
+      system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_seq_region.pl '.$connection_info.' -coord_system_name scaffold -rank '.$rank.' -coord_system_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -default_version -agp_file '.$infiles->{'CONTIG'}{'name'};
+    }
+    else {
+      system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_seq_region.pl '.$connection_info.' -coord_system_name chromosome -rank '.$rank.' -coord_system_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -default_version -sequence_level -verbose -fasta_file '.$infiles->{'CONTIG'}{'name'}.' -replace_ambiguous_bases';
+    }
+    $rank++;
+  }
+  if ($infiles->{'CHROMOSOME'} && $infiles->{'CHROMOSOME'}{'type'} eq 'agp'){
+    system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_agp.pl '.$connection_info.' -assembled_name scaffold -assembled_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -component_name chromosome -agp_file '.$infiles->{'CHROMOSOME'}{'name'};
+  }
+  if ($infiles->{'SCAFFOLD'} && $infiles->{'SCAFFOLD'}{'type'} eq 'agp'){
+    system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_agp.pl '.$connection_info.' -assembled_name scaffold -assembled_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -component_name scaffold -agp_file '.$infiles->{'SCAFFOLD'}{'name'};
+  }
+  if ($infiles->{'CONTIG'} && $infiles->{'CONTIG'}{'type'} eq 'agp'){
+    system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/load_agp.pl '.$connection_info.' -assembled_name scaffold -assembled_version '.$params->{'META'}{'ASSEMBLY.NAME'}.' -component_name contig -agp_file '.$infiles->{'CONTIG'}{'name'};
+  }
 
-	}
 	system $perl.' '.$params->{'ENSEMBL'}{'LOCAL'}.'/ensembl-pipeline/scripts/set_toplevel.pl '.$connection_info;
 
+  if ($params->{'CODON_TABLE'}){
+    foreach my $table (keys %{$params->{'CODON_TABLE'}}){
+      $table = 5 if $table eq 'MITOCHONDRIAL';
+      foreach my $seqname (@{$params->{'CODON_TABLE'}{$table}}){
+        my $sth = $dbh->prepare("SELECT seq_region_id FROM seq_region WHERE name LIKE ".$dbh->quote($seqname));
+        $sth->execute();
+        if ($sth->rows > 0){
+  			  my $id = $sth->fetchrow_arrayref()->[0];
+  			  $dbh->do("INSERT INTO seq_region_attrib (seq_region_id,attrib_type_id,value) values ($id,11,$table)");
+  		  }
+      }
+    }
+  }
 	return 1;
 
 }
@@ -2158,7 +2352,7 @@ sub fetch_file {
 	$location =~ m/.+\/([^\/]+)$/;
 	my $filename = $1 ? $1 : $location;
 	my $command;
-  my $compression = '';
+	my $compression = '';
 	if ($filename =~ s/\.(gz|gzip|tar\.gz|tgz|zip)$//){
 		$compression = ".".$1;
 	}
@@ -2183,7 +2377,7 @@ sub fetch_file {
 		}
 		else {
 			if ($compression =~ m/^\.t/){
-				system "tar xf $filename"."$compression";
+				system "tar xf $filename"."$compression $new_name";
 			}
 			elsif ($compression =~ m/^\.g/){
 				system "gunzip $filename"."$compression";
@@ -2191,7 +2385,7 @@ sub fetch_file {
 			elsif ($compression =~ m/^\.z/){
 				system "unzip $filename"."$compression";
 			}
-			if (!-e $filename){
+			if (!-e $filename && !-e $new_name){
 				# this compression type is not currently supported
 				die "ERROR: could not extract $filename"."$compression to $filename\n";
 			}
